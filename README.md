@@ -66,7 +66,8 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 
 ### 运行方式
 
-直接双击 `index.html` 在浏览器打开即可（需联网加载 CDN 依赖）。
+- 在线演示：<https://fanhuayishiy.github.io/ai-demo/campus-3d-dashboard/>
+- 本地运行：直接双击 `index.html` 在浏览器打开即可（需联网加载 CDN 依赖）。
 
 也可以起一个本地静态服务器：
 
@@ -141,6 +142,7 @@ campus-3d-dashboard/
 
 ### 运行方式
 
+- 在线观看：<https://fanhuayishiy.github.io/ai-demo/mcb-2p-c16-blender-animation/MCB_2P_Engineering_Animation.mp4>
 - 动画成片：直接播放 `MCB_2P_Engineering_Animation.mp4`
 - 交互展示：打开 `index.html`（Three.js 直接加载 `MCB_2P_C16_Animated.glb`，支持 8 章节跳转、拖拽进度与旋转查看）
 - 可编辑场景：用 Blender 5.2.1 或更新版本打开 `MCB_2P_C16_Animated.blend`，在时间轴播放
@@ -209,7 +211,8 @@ mcb-2p-c16-blender-animation/
 
 ### 运行方式
 
-直接双击 `preview.html` 在 Chrome 浏览器打开即可，无需联网、无需构建。
+- 在线演示：<https://fanhuayishiy.github.io/ai-demo/voxel-construction-site/preview.html>
+- 本地运行：直接双击 `preview.html` 在 Chrome 浏览器打开即可，无需联网、无需构建。
 
 如需从源码重新打包单文件：
 
@@ -270,7 +273,8 @@ node build.cjs
 
 ### 运行方式
 
-直接双击 `preview.html` 在 Chrome 浏览器打开即可，无需联网、无需构建。
+- 在线演示：<https://fanhuayishiy.github.io/ai-demo/voxel-ramen-stall/preview.html>
+- 本地运行：直接双击 `preview.html` 在 Chrome 浏览器打开即可，无需联网、无需构建。
 
 如需从源码重新打包单文件，或重新跑一次碰撞审计：
 
