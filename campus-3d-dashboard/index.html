@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>智慧校园数据看板 · Campus Digital Twin</title>
+<style>
+  :root {
+    --ink: #1e2a32;
+    --ink-soft: #5d6f7a;
+    --line: rgba(30, 42, 50, 0.12);
+    --panel: rgba(255, 255, 255, 0.82);
+    --accent: #2c6e8f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #cfe0ea; }
+  body {
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; }
+  .panel {
+    position: fixed;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 6px 24px rgba(20, 40, 55, 0.10);
+  }
+  .topbar {
+    top: 14px; left: 14px; right: 14px; z-index: 6;
+    min-height: 68px; padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 18px;
+    border-radius: 14px; background: rgba(255, 255, 255, 0.60);
+    border: 1px solid rgba(255, 255, 255, 0.58);
+    backdrop-filter: blur(14px) saturate(1.18);
+    box-shadow: 0 10px 34px rgba(20, 40, 55, 0.12);
+  }
+  .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .brand-mark {
+    width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center;
+    color: #fff; font-size: 15px; font-weight: 700;
+    background: linear-gradient(145deg, #2c6e8f, #55a88b);
+    box-shadow: 0 8px 18px rgba(44, 110, 143, 0.24);
+  }
+  .brand h1 { margin: 0; font-size: 16px; letter-spacing: 0.2px; font-weight: 680; white-space: nowrap; }
+  .brand p { margin: 3px 0 0; font-size: 9.5px; color: var(--ink-soft); letter-spacing: 0.75px; white-space: nowrap; }
+  .scene-chips { display: flex; gap: 6px; margin-left: 4px; padding-left: 12px; border-left: 1px solid var(--line); }
+  .chip {
+    display: flex; align-items: center; gap: 4px; font-size: 9.5px; color: var(--ink-soft);
+    padding: 4px 7px; border-radius: 8px; background: rgba(255, 255, 255, 0.48);
+    border: 1px solid rgba(255, 255, 255, 0.42);
+  }
+  .chip b { color: var(--accent); font-size: 11px; font-weight: 680; }
+  .topbar-stats { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+  .metric {
+    min-width: 130px; padding: 7px 10px; border-radius: 11px;
+    background: rgba(255, 255, 255, 0.52); border: 1px solid rgba(255, 255, 255, 0.48);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; box-shadow: 0 0 12px currentColor; }
+  .dot.blue { color: #2c6e8f; background: #2c6e8f; }
+  .dot.green { color: #2f9d66; background: #2f9d66; }
+  .dot.orange { color: #e6943c; background: #e6943c; }
+  .metric-copy { display: flex; flex-direction: column; line-height: 1.05; }
+  .metric-label { font-size: 9px; color: var(--ink-soft); letter-spacing: 0.25px; }
+  .metric-value { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .dashboard {
+    position: fixed; top: 94px; left: 14px; width: 292px; z-index: 5;
+    max-height: calc(100vh - 184px); overflow-y: auto;
+    display: flex; flex-direction: column; gap: 10px; padding: 2px 3px 2px 2px;
+    scrollbar-width: thin; scrollbar-color: rgba(44, 110, 143, 0.28) transparent;
+  }
+  .dashboard::-webkit-scrollbar { width: 5px; }
+  .dashboard::-webkit-scrollbar-thumb { background: rgba(44, 110, 143, 0.28); border-radius: 99px; }
+  .chart-card {
+    position: relative; padding: 12px 12px 11px; border-radius: 14px;
+    background: rgba(255, 255, 255, 0.58); border: 1px solid rgba(255, 255, 255, 0.52);
+    backdrop-filter: blur(10px); box-shadow: 0 8px 26px rgba(20, 40, 55, 0.09);
+  }
+  .card-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
+  .card-title h3 { margin: 0; font-size: 11.5px; font-weight: 650; letter-spacing: 0.2px; white-space: nowrap; }
+  .card-title span { font-size: 9px; color: var(--ink-soft); opacity: 0.82; }
+  .chart-wrap { height: 154px; }
+  .chart-wrap.doughnut { height: 148px; }
+  .modes { top: 94px; right: 14px; padding: 9px 10px; display: flex; align-items: center; gap: 7px; border-radius: 12px; }
+  .dock { bottom: 18px; left: 18px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: 620px; }
+  .btn {
+    font: inherit; font-size: 12px; color: var(--ink);
+    padding: 7px 12px; border-radius: 7px; cursor: pointer;
+    border: 1px solid var(--line); background: rgba(255, 255, 255, 0.9);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .btn:hover { background: #fff; border-color: rgba(44, 110, 143, 0.4); }
+  .btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .sun { display: flex; align-items: center; gap: 9px; padding-left: 4px; }
+  .sun label { font-size: 11.5px; color: var(--ink-soft); white-space: nowrap; }
+  .sun output { font-size: 11.5px; color: var(--accent); font-variant-numeric: tabular-nums; width: 42px; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; width: 132px; height: 3px;
+    border-radius: 3px; background: linear-gradient(90deg, #f0b46a, #d8e8f0, #f0b46a); outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%;
+    background: #fff; border: 2px solid var(--accent); cursor: pointer;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 13px; height: 13px; border-radius: 50%; background: #fff;
+    border: 2px solid var(--accent); cursor: pointer;
+  }
+  .tip { bottom: 18px; right: 18px; padding: 9px 13px; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.2px; }
+  .tip span + span::before { content: "·"; margin: 0 7px; color: rgba(93, 111, 122, 0.5); }
+  #tip3d {
+    position: fixed; z-index: 12; pointer-events: none; opacity: 0;
+    padding: 7px 10px; border-radius: 8px; font-size: 11.5px; font-weight: 650; color: #f4f8fa;
+    background: rgba(18, 30, 38, 0.72); border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 8px 22px rgba(10, 20, 30, 0.18); backdrop-filter: blur(8px);
+    transform: translate(12px, 14px) scale(0.97); transform-origin: left top;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  #tip3d.on { opacity: 1; transform: translate(12px, 14px) scale(1); }
+  #boot {
+    position: fixed; inset: 0; z-index: 9; display: grid; place-items: center;
+    background: linear-gradient(180deg, #e6f0f5, #cfdfe8); color: var(--ink-soft);
+    font-size: 12.5px; letter-spacing: 1.5px; transition: opacity 0.6s ease;
+  }
+  #boot.gone { opacity: 0; pointer-events: none; }
+  @media (max-width: 1100px) {
+    .topbar { flex-direction: column; align-items: stretch; }
+    .topbar-stats { justify-content: flex-start; }
+    .scene-chips { display: none; }
+    .dashboard { width: 250px; top: 150px; max-height: calc(100vh - 230px); }
+    .modes { top: 150px; right: 14px; }
+  }
+  @media (max-width: 720px) {
+    .dashboard { display: none; }
+    .modes { top: 150px; right: 12px; }
+    .dock { left: 12px; right: 12px; bottom: 58px; max-width: none; }
+    .tip { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="boot">正在构建校园场景…</div>
+<header class="panel topbar">
+  <div class="brand">
+    <div class="brand-mark">校</div>
+    <div>
+      <h1>智慧校园数据看板</h1>
+      <p>SMART CAMPUS DATA DASHBOARD</p>
+    </div>
+    <div class="scene-chips">
+      <div class="chip"><b id="mBld">8</b>建筑</div>
+      <div class="chip"><b id="mTree">0</b>树木</div>
+      <div class="chip"><b id="mCar">0</b>车流</div>
+      <div class="chip"><b id="mFps">60</b>FPS</div>
+    </div>
+  </div>
+  <div class="topbar-stats">
+    <div class="metric">
+      <span class="dot blue"></span>
+      <div class="metric-copy">
+        <span class="metric-label">在校人数</span>
+        <span class="metric-value">12,860</span>
+      </div>
+    </div>
+    <div class="metric">
+      <span class="dot green"></span>
+      <div class="metric-copy">
+        <span class="metric-label">教职工</span>
+        <span class="metric-value">1,240</span>
+      </div>
+    </div>
+    <div class="metric">
+      <span class="dot orange"></span>
+      <div class="metric-copy">
+        <span class="metric-label">建筑面积</span>
+        <span class="metric-value">28.6万㎡</span>
+      </div>
+    </div>
+  </div>
+</header>
+<aside class="dashboard">
+  <section class="chart-card">
+    <div class="card-title">
+      <h3>📈 月度校园活跃度趋势</h3>
+      <span>9月 - 8月</span>
+    </div>
+    <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+  </section>
+  <section class="chart-card">
+    <div class="card-title">
+      <h3>📊 各学院人数统计</h3>
+      <span>7 个学院</span>
+    </div>
+    <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+  </section>
+  <section class="chart-card">
+    <div class="card-title">
+      <h3>🥧 校园设施使用占比</h3>
+      <span>6 类设施</span>
+    </div>
+    <div class="chart-wrap doughnut"><canvas id="doughnutChart"></canvas></div>
+  </section>
+</aside>
+<div class="panel modes">
+  <button class="btn" id="bCamera">切换透视</button>
+  <button class="btn" id="bNight">切换夜景</button>
+</div>
+<div class="panel dock">
+  <button class="btn" id="bRotate">自动巡航</button>
+  <button class="btn" id="bReset">重置视角</button>
+  <button class="btn on" id="bShadow">阴影</button>
+  <button class="btn on" id="bPatch">草皮</button>
+  <div class="sun">
+    <label>日照</label>
+    <input type="range" id="rSun" min="0" max="1" step="0.01" value="0.68" />
+    <output id="oSun">15:31</output>
+  </div>
+</div>
+<div class="panel tip">
+  <span>左键拖拽旋转</span><span>滚轮缩放</span><span>右键平移</span>
+</div>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { Chart, registerables } from 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/+esm';
+/* ============================================================
+   0. 全局配置
+   ============================================================ */
+const PAL = {
+  ground: 0x86ab6a,
+  track: 0x3f7fcb,
+  lane: 0xf3f7fa,
+  wall: 0xf6f6f3,
+  plinth: 0xd8dbd8,
+  band: 0xbcc6c4,
+  glass: 0xffffff,
+  trunk: 0x7b5a3f,
+  leaf: 0x4f8a4a,
+  path: 0xe9e5da,
+};
+const TRACK = { w: 74, d: 46, r: 23, lanes: 8, laneW: 1.25 };
+TRACK.width = TRACK.lanes * TRACK.laneW;
+TRACK.in = { w: TRACK.w - TRACK.width * 2, d: TRACK.d - TRACK.width * 2, r: TRACK.r - TRACK.width };
+const RING = { w: TRACK.w + 26, d: TRACK.d + 26, r: TRACK.r + 13, wide: 4.4 };
+const CAMPUS = { w: 248, d: 206, r: 8 };
+const GATE = { w: 20, z: CAMPUS.d / 2 };
+const ROAD = { w: 212, d: 172, r: 53, wide: 13 };
+const BUILDINGS = [
+  { name: '图书馆', ang: 202, w: 30, d: 18, floors: 4, far: 1.02 },
+  { name: '教学楼A', ang: 246, w: 26, d: 13, floors: 5, far: 1.00 },
+  { name: '教学楼B', ang: 292, w: 24, d: 13, floors: 5, far: 1.06 },
+  { name: '行政楼', ang: 336, w: 21, d: 15, floors: 6, far: 1.00 },
+  { name: '科研楼', ang: 24, w: 18, d: 14, floors: 7, far: 1.08 },
+  { name: '体育馆', ang: 68, w: 27, d: 20, floors: 2, far: 1.00 },
+  { name: '学生公寓', ang: 112, w: 16, d: 12, floors: 8, far: 1.10 },
+  { name: '食堂', ang: 156, w: 24, d: 14, floors: 2, far: 1.02 },
+];
+const ELLIPSE = { a: 70, b: 54 };
+const H_PLINTH = 0.55, H_GROUND = 4.4, H_FLOOR = 3.15;
+/* ============================================================
+   1. 工具函数
+   ============================================================ */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), 1 | t);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rnd = mulberry32(20260916);
+const rand = (min, max) => min + rnd() * (max - min);
+function radialDist(w, d, r, ux, uz) {
+  const hw = w / 2, hd = d / 2;
+  r = Math.min(r, hw, hd);
+  const iw = hw - r, iz = hd - r;
+  let best = Infinity;
+  if (Math.abs(ux) > 1e-6) {
+    const t = (ux > 0 ? hw : -hw) / ux, z = uz * t;
+    if (Math.abs(z) <= iz) best = Math.min(best, t);
+  }
+  if (Math.abs(uz) > 1e-6) {
+    const t = (uz > 0 ? hd : -hd) / uz, x = ux * t;
+    if (Math.abs(x) <= iw) best = Math.min(best, t);
+  }
+  const cx = ux > 0 ? iw : -iw, cz = uz > 0 ? iz : -iz;
+  const b = ux * cx + uz * cz, c = cx * cx + cz * cz - r * r, disc = b * b - c;
+  if (disc > 0) {
+    const t = b + Math.sqrt(disc);
+    if (t > 0) best = Math.min(best, t);
+  }
+  return best;
+}
+function distToSeg(px, pz, ax, az, bx, bz) {
+  const vx = bx - ax, vz = bz - az;
+  const len = vx * vx + vz * vz || 1e-6;
+  const t = Math.max(0, Math.min(1, ((px - ax) * vx + (pz - az) * vz) / len));
+  return Math.hypot(px - (ax + vx * t), pz - (az + vz * t));
+}
+function roundedRectSamples(w, d, r, seg = 10) {
+  const hw = w / 2, hd = d / 2;
+  r = Math.max(0.01, Math.min(r, hw, hd));
+  const pts = [];
+  const line = (x1, y1, x2, y2) => {
+    for (let i = 0; i < seg; i++) {
+      const t = i / seg;
+      pts.push(new THREE.Vector2(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t));
+    }
+  };
+  const quad = (x1, y1, cx, cy, x2, y2) => {
+    for (let i = 0; i < seg; i++) {
+      const t = i / seg, u = 1 - t;
+      pts.push(new THREE.Vector2(
+        u * u * x1 + 2 * u * t * cx + t * t * x2,
+        u * u * y1 + 2 * u * t * cy + t * t * y2,
+      ));
+    }
+  };
+  line(-hw + r, -hd, hw - r, -hd);
+  quad(hw - r, -hd, hw, -hd, hw, -hd + r);
+  line(hw, -hd + r, hw, hd - r);
+  quad(hw, hd - r, hw, hd, hw - r, hd);
+  line(hw - r, hd, -hw + r, hd);
+  quad(-hw + r, hd, -hw, hd, -hw, hd - r);
+  line(-hw, hd - r, -hw, -hd + r);
+  quad(-hw, -hd + r, -hw, -hd, -hw + r, -hd);
+  return pts;
+}
+function ringBand(w, d, r, from, to) {
+  const outer = roundedRectSamples(w - from * 2, d - from * 2, r - from);
+  const inner = roundedRectSamples(w - to * 2, d - to * 2, r - to);
+  const n = outer.length, positions = [], normals = [], indices = [];
+  for (let i = 0; i < n; i++) {
+    positions.push(outer[i].x, 0, -outer[i].y, inner[i].x, 0, -inner[i].y);
+    normals.push(0, 1, 0, 0, 1, 0);
+  }
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n, a = i * 2, b = a + 1, c = j * 2, e = c + 1;
+    indices.push(a, c, b, b, c, e);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  g.setIndex(indices);
+  return g;
+}
+function flatMesh(geo, mat, y) {
+  const m = new THREE.Mesh(geo, mat);
+  m.position.y = y;
+  m.receiveShadow = true;
+  return m;
+}
+function box(w, h, d, mat, x, y, z) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  return m;
+}
+function canvasTexture(w, h, draw, repeat = 1) {
+  const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  draw(cv.getContext('2d'), w, h);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(repeat, repeat);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+/* ============================================================
+   2. 渲染器 / 等距相机 / OrbitControls
+   ============================================================ */
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.02;
+document.getElementById('app').appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xdfeef6, 210, 620);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.05).texture;
+scene.environmentIntensity = 1;
+const FRUSTUM = 186;
+let aspect = innerWidth / innerHeight;
+const orthoCamera = new THREE.OrthographicCamera(
+  (-FRUSTUM * aspect) / 2, (FRUSTUM * aspect) / 2, FRUSTUM / 2, -FRUSTUM / 2, 1, 2400
+);
+const perspectiveCamera = new THREE.PerspectiveCamera(40, aspect, 1, 2400);
+let camera = orthoCamera;
+const HOME = { pos: new THREE.Vector3(168, 146, 168), target: new THREE.Vector3(-13, 6, -13), zoom: 0.9 };
+camera.position.copy(HOME.pos);
+perspectiveCamera.position.copy(HOME.pos);
+let controls = new OrbitControls(camera, renderer.domElement);
+controls.target.copy(HOME.target);
+controls.enableDamping = true;
+controls.dampingFactor = 0.055;
+controls.minZoom = 0.55;
+controls.maxZoom = 4.5;
+controls.minPolarAngle = 0.12;
+controls.maxPolarAngle = Math.PI * 0.47;
+controls.autoRotateSpeed = 0.5;
+controls.screenSpacePanning = false;
+controls.update();
+/* ============================================================
+   3. 天空渐变 + Directional / Ambient / Hemisphere 光照
+   ============================================================ */
+const skyMat = new THREE.ShaderMaterial({
+  uniforms: {
+    topColor: { value: new THREE.Color(0x86b6d6) },
+    bottomColor: { value: new THREE.Color(0xe9f2f6) },
+    offset: { value: 60 },
+    exponent: { value: 0.72 },
+  },
+  vertexShader: [
+    'varying vec3 vWorld;',
+    'void main() {',
+    '  vec4 wp = modelMatrix * vec4(position, 1.0);',
+    '  vWorld = wp.xyz;',
+    '  gl_Position = projectionMatrix * viewMatrix * wp;',
+    '}',
+  ].join('\n'),
+  fragmentShader: [
+    'uniform vec3 topColor;',
+    'uniform vec3 bottomColor;',
+    'uniform float offset;',
+    'uniform float exponent;',
+    'varying vec3 vWorld;',
+    'void main() {',
+    '  float h = max(normalize(vWorld + vec3(0.0, offset, 0.0)).y, 0.0);',
+    '  gl_FragColor = vec4(mix(bottomColor, topColor, pow(h, exponent)), 1.0);',
+    '}',
+  ].join('\n'),
+  side: THREE.BackSide,
+  depthWrite: false,
+  fog: false,
+});
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(900, 32, 18), skyMat));
+const hemi = new THREE.HemisphereLight(0xcfe6f3, 0x8a9a72, 0.85);
+scene.add(hemi);
+const ambient = new THREE.AmbientLight(0xffffff, 0.2);
+scene.add(ambient);
+const sun = new THREE.DirectionalLight(0xfff3e2, 2.4);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 80;
+sun.shadow.camera.far = 760;
+sun.shadow.camera.left = -170;
+sun.shadow.camera.right = 170;
+sun.shadow.camera.top = 170;
+sun.shadow.camera.bottom = -170;
+sun.shadow.bias = -0.0004;
+sun.shadow.normalBias = 0.05;
+sun.shadow.radius = 2.2;
+sun.position.set(150, 200, 110);
+scene.add(sun, sun.target);
+function applySun(t) {
+  const elevDeg = 4 + 62 * Math.sin(Math.PI * t);
+  const azimDeg = -104 + 208 * t;
+  const elev = THREE.MathUtils.degToRad(elevDeg);
+  const azim = THREE.MathUtils.degToRad(azimDeg);
+  const R = 330, horiz = Math.cos(elev) * R;
+  sun.position.set(horiz * Math.sin(azim), Math.sin(elev) * R, horiz * Math.cos(azim));
+  const low = 1 - THREE.MathUtils.smoothstep(elevDeg, 5, 36);
+  sun.color.setHSL(THREE.MathUtils.lerp(0.115, 0.055, low), THREE.MathUtils.lerp(0.1, 0.62, low), THREE.MathUtils.lerp(0.99, 0.72, low));
+  sun.intensity = THREE.MathUtils.lerp(2.6, 1.3, low);
+  ambient.intensity = THREE.MathUtils.lerp(0.19, 0.33, low);
+  hemi.intensity = THREE.MathUtils.lerp(0.9, 0.55, low);
+  renderer.toneMappingExposure = THREE.MathUtils.lerp(1.02, 1.16, low);
+  const dusk = 1 - THREE.MathUtils.smoothstep(elevDeg, 8, 44);
+  skyMat.uniforms.topColor.value.set(0x8ab4d8).lerp(new THREE.Color(0x71809b), dusk);
+  skyMat.uniforms.bottomColor.value.set(0xeaf3f7).lerp(new THREE.Color(0xf5c68d), dusk);
+  scene.fog.color.copy(skyMat.uniforms.bottomColor.value);
+  const mins = Math.round(6 * 60 + t * 14 * 60);
+  return String(Math.floor(mins / 60)).padStart(2, '0') + ':' + String(mins % 60).padStart(2, '0');
+}
+document.getElementById('oSun').textContent = applySun(0.68);
+let nightMode = false;
+const lampSpotLights = [];
+const stadiumLights = [];
+function applyNightMode(on) {
+  nightMode = on;
+  if (on) {
+    scene.background = new THREE.Color(0x162030);
+    scene.environmentIntensity = 0.03;
+    scene.fog.color.set(0x162030);
+    skyMat.uniforms.topColor.value.set(0x0f1a28);
+    skyMat.uniforms.bottomColor.value.set(0x162030);
+    hemi.color.set(0x2f405e);
+    hemi.groundColor.set(0x1b2531);
+    hemi.intensity = 0.18;
+    ambient.color.set(0x5a6a85);
+    ambient.intensity = 0.24;
+    sun.color.set(0xffb166);
+    sun.intensity = 0.18;
+    renderer.toneMappingExposure = 0.72;
+    matGlass.emissive.set(0xffc06a);
+    matGlass.emissiveIntensity = 0.78;
+    lampBulbMat.emissiveIntensity = 2.6;
+    sportLampMat.emissiveIntensity = 4.2;
+    headlightMat.emissiveIntensity = 1.7;
+    taillightMat.emissiveIntensity = 1.9;
+    for (const v of vehicles) v.spot.intensity = 120;
+    for (const l of lampSpotLights) l.spot.intensity = 3.2;
+    for (const l of stadiumLights) l.spot.intensity = 460;
+    for (const s of flagUplights) s.intensity = 70;
+    flagBeamMat.opacity = 0.085;
+    flagGlowMat.opacity = 0.5;
+    flagUplightMat.emissiveIntensity = 3.4;
+  } else {
+    scene.background = null;
+    scene.environmentIntensity = 1;
+    oSun.textContent = applySun(parseFloat(rSun.value));
+    matGlass.emissive.set(0x000000);
+    matGlass.emissiveIntensity = 0;
+    lampBulbMat.emissiveIntensity = 0.15;
+    sportLampMat.emissiveIntensity = 0.12;
+    headlightMat.emissiveIntensity = 0.25;
+    taillightMat.emissiveIntensity = 0.3;
+    for (const v of vehicles) v.spot.intensity = 0;
+    for (const l of lampSpotLights) l.spot.intensity = 0;
+    for (const l of stadiumLights) l.spot.intensity = 0;
+    for (const s of flagUplights) s.intensity = 0;
+    flagBeamMat.opacity = 0;
+    flagGlowMat.opacity = 0;
+    flagUplightMat.emissiveIntensity = 0.12;
+  }
+  bNight.classList.toggle('on', on);
+  bNight.textContent = on ? '切换白天' : '切换夜景';
+}
+/* ============================================================
+   4. 地面草皮
+   ============================================================ */
+const grassTex = canvasTexture(512, 512, (ctx, S) => {
+  ctx.fillStyle = '#7fa768';
+  ctx.fillRect(0, 0, S, S);
+  for (let i = 0; i < 26000; i++) {
+    const d = Math.random();
+    ctx.fillStyle = d > 0.55 ? 'rgba(152,184,114,0.55)' : d > 0.28 ? 'rgba(94,132,76,0.5)' : 'rgba(198,208,152,0.35)';
+    ctx.fillRect(Math.random() * S, Math.random() * S, 1.6, 1.6);
+  }
+}, 34);
+const ground = flatMesh(
+  new THREE.CircleGeometry(330, 96).rotateX(-Math.PI / 2),
+  new THREE.MeshStandardMaterial({ color: PAL.ground, map: grassTex, roughness: 0.98, metalness: 0, envMapIntensity: 0.25 }),
+  0
+);
+scene.add(ground);
+function patchTexture(core, mid) {
+  return canvasTexture(256, 256, (ctx, S) => {
+    ctx.clearRect(0, 0, S, S);
+    const g = ctx.createRadialGradient(S / 2, S / 2, S * 0.04, S / 2, S / 2, S * 0.5);
+    g.addColorStop(0, core);
+    g.addColorStop(0.45, mid);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(S / 2, S / 2, S / 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.5;
+    for (let i = 0; i < 900; i++) {
+      const a = Math.random() * Math.PI * 2, rr = Math.sqrt(Math.random()) * S * 0.47;
+      ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.10)' : 'rgba(40,70,35,0.16)';
+      ctx.fillRect(S / 2 + Math.cos(a) * rr, S / 2 + Math.sin(a) * rr, 2, 3.2);
+    }
+  });
+}
+const patchGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+const patchMats = [
+  patchTexture('rgba(112,158,86,0.85)', 'rgba(120,164,92,0.42)'),
+  patchTexture('rgba(148,180,98,0.80)', 'rgba(138,170,96,0.38)'),
+  patchTexture('rgba(86,132,72,0.80)', 'rgba(100,146,84,0.36)'),
+].map((map) => new THREE.MeshStandardMaterial({
+  map, transparent: true, roughness: 1, metalness: 0, depthWrite: false,
+  polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+}));
+const patchGroup = new THREE.Group();
+scene.add(patchGroup);
+/* ============================================================
+   5. 标准运动场
+   ============================================================ */
+const field = new THREE.Group();
+scene.add(field);
+const trackGeo = ringBand(TRACK.w, TRACK.d, TRACK.r, 0, TRACK.width);
+const track = new THREE.Mesh(trackGeo, new THREE.MeshStandardMaterial({
+  color: PAL.track, roughness: 0.92, metalness: 0.02, envMapIntensity: 0.35,
+}));
+track.castShadow = true;
+track.receiveShadow = true;
+track.position.y = 0.5;
+field.add(track);
+const laneMat = new THREE.MeshStandardMaterial({ color: PAL.lane, roughness: 0.85, metalness: 0, envMapIntensity: 0.2 });
+for (let i = 0; i <= TRACK.lanes; i++) {
+  const inset = i * TRACK.laneW;
+  field.add(flatMesh(ringBand(TRACK.w, TRACK.d, TRACK.r, Math.max(0.01, inset - 0.08), inset + 0.08), laneMat, 0.51));
+}
+function pitchTexture() {
+  const W = 1400, H = 680;
+  const tex = canvasTexture(W, H, (ctx) => {
+    const n = 12;
+    for (let i = 0; i < n; i++) {
+      ctx.fillStyle = i % 2 ? '#3d8c4d' : '#4a9d59';
+      ctx.fillRect((W / n) * i, 0, W / n + 1, H);
+    }
+    ctx.globalAlpha = 0.15;
+    for (let i = 0; i < 40000; i++) {
+      ctx.fillStyle = Math.random() > 0.5 ? '#dff0d8' : '#1f5c32';
+      ctx.fillRect(Math.random() * W, Math.random() * H, 1.5, 3);
+    }
+    ctx.globalAlpha = 1;
+    const m = 46, fw = W - m * 2, fh = H - m * 2;
+    ctx.strokeStyle = '#ffffff';
+    ctx.fillStyle = '#ffffff';
+    ctx.lineWidth = 5;
+    ctx.strokeRect(m, m, fw, fh);
+    ctx.beginPath(); ctx.moveTo(W / 2, m); ctx.lineTo(W / 2, H - m); ctx.stroke();
+    const arcR = fh * 0.145;
+    ctx.beginPath(); ctx.arc(W / 2, H / 2, arcR, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(W / 2, H / 2, 6, 0, Math.PI * 2); ctx.fill();
+    const pad = fh * 0.165, pdd = fw * 0.115;
+    const gad = fh * 0.075, gdd = fw * 0.042;
+    for (const side of [1, -1]) {
+      const gx = side === 1 ? m : W - m;
+      const px = gx + side * pdd;
+      const sx = gx + side * (fh * 0.11);
+      ctx.strokeRect(Math.min(gx, px), H / 2 - pad / 2, pdd, pad);
+      ctx.strokeRect(Math.min(gx, gx + side * gdd), H / 2 - gad / 2, gdd, gad);
+      ctx.beginPath(); ctx.arc(sx, H / 2, 5, 0, Math.PI * 2); ctx.fill();
+      const dx = Math.abs(px - sx);
+      if (arcR > dx) {
+        const th = Math.acos(dx / arcR);
+        ctx.beginPath();
+        if (side === 1) ctx.arc(sx, H / 2, arcR, -th, th);
+        else ctx.arc(sx, H / 2, arcR, Math.PI - th, Math.PI + th);
+        ctx.stroke();
+      }
+      ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.moveTo(gx, H / 2 - fh * 0.058); ctx.lineTo(gx, H / 2 + fh * 0.058); ctx.stroke();
+      ctx.lineWidth = 5;
+    }
+    const cr = 22;
+    const corners = [[m, m, 0], [W - m, m, Math.PI / 2], [W - m, H - m, Math.PI], [m, H - m, -Math.PI / 2]];
+    for (const c of corners) {
+      ctx.beginPath(); ctx.arc(c[0], c[1], cr, c[2], c[2] + Math.PI / 2); ctx.stroke();
+    }
+  });
+  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.repeat.set(1, 1);
+  return tex;
+}
+const pitch = new THREE.Mesh(
+  new THREE.PlaneGeometry(TRACK.in.w - 0.5, TRACK.in.d - 0.5).rotateX(-Math.PI / 2),
+  new THREE.MeshStandardMaterial({ map: pitchTexture(), roughness: 0.96, metalness: 0, envMapIntensity: 0.22 })
+);
+pitch.position.y = 0.508;
+pitch.receiveShadow = true;
+field.add(pitch);
+const goalMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.15 });
+for (const s of [1, -1]) {
+  const gx = s * (TRACK.in.w / 2 - 1.1);
+  for (const zs of [1, -1]) field.add(box(0.14, 2.3, 0.14, goalMat, gx - s * 0.7, 0.5 + 1.15, zs * 3.3));
+  field.add(box(0.14, 0.14, 6.9, goalMat, gx - s * 0.7, 0.5 + 2.3, 0));
+  for (const zs of [1, -1]) field.add(box(1.4, 0.12, 0.12, goalMat, gx - s * 1.4, 0.5 + 2.3, zs * 3.3));
+}
+/* ============================================================
+   6. 八栋现代建筑
+   ============================================================ */
+const matWall = new THREE.MeshStandardMaterial({ color: PAL.wall, roughness: 0.72, metalness: 0.02, envMapIntensity: 0.5 });
+const matPlinth = new THREE.MeshStandardMaterial({ color: PAL.plinth, roughness: 0.85, metalness: 0.02, envMapIntensity: 0.4 });
+const matBand = new THREE.MeshStandardMaterial({ color: PAL.band, roughness: 0.6, metalness: 0.08, envMapIntensity: 0.6 });
+const matGlass = new THREE.MeshStandardMaterial({ color: PAL.glass, roughness: 0.1, metalness: 0.3, envMapIntensity: 1.2 });
+const matDoor = new THREE.MeshStandardMaterial({ color: 0x4b7d9a, roughness: 0.16, metalness: 0.4, envMapIntensity: 1.1 });
+const buildingGroup = new THREE.Group();
+scene.add(buildingGroup);
+const buildingTip = document.createElement('div');
+buildingTip.id = 'tip3d';
+document.body.appendChild(buildingTip);
+const windowXf = [];
+const footprints = [];
+const spokes = [];
+const winGeo = new THREE.PlaneGeometry(1, 1);
+const FACE = [
+  { ry: 0, axis: 'z', sign: 1 },
+  { ry: Math.PI, axis: 'z', sign: -1 },
+  { ry: Math.PI / 2, axis: 'x', sign: 1 },
+  { ry: -Math.PI / 2, axis: 'x', sign: -1 },
+];
+for (const b of BUILDINGS) {
+  const th = THREE.MathUtils.degToRad(b.ang);
+  const px = ELLIPSE.a * Math.cos(th) * b.far;
+  const pz = ELLIPSE.b * Math.sin(th) * b.far;
+  const yaw = 0;
+  const g = new THREE.Group();
+  g.userData.label = b.name;
+  const total = H_PLINTH + H_GROUND + (b.floors - 1) * H_FLOOR;
+  g.position.set(px, total / 2, pz);
+  g.rotation.y = yaw;
+  const body = new THREE.Group();
+  body.position.y = -total / 2;
+  g.add(body);
+  b.height = total;
+  body.add(box(b.w + 1.2, H_PLINTH, b.d + 1.2, matPlinth, 0, H_PLINTH / 2, 0));
+  body.add(box(b.w, total - H_PLINTH, b.d, matWall, 0, H_PLINTH + (total - H_PLINTH) / 2, 0));
+  const bandH = H_GROUND * 0.92;
+  body.add(box(b.w + 0.34, bandH, b.d + 0.34, matBand, 0, H_PLINTH + bandH / 2, 0));
+  body.add(box(b.w + 0.52, 0.26, b.d + 0.52, matPlinth, 0, H_PLINTH + bandH + 0.13, 0));
+  body.add(box(b.w, 0.32, b.d, matPlinth, 0, total + 0.16, 0));
+  const pp = 0.34, ph = 1.05, py = total + 0.32 + ph / 2;
+  const ox = (b.w + 0.5) / 2 - pp / 2, oz = (b.d + 0.5) / 2 - pp / 2;
+  body.add(box(b.w + 0.5, ph, pp, matWall, 0, py, oz));
+  body.add(box(b.w + 0.5, ph, pp, matWall, 0, py, -oz));
+  body.add(box(pp, ph, b.d + 0.5, matWall, ox, py, 0));
+  body.add(box(pp, ph, b.d + 0.5, matWall, -ox, py, 0));
+  body.add(box(b.w * 0.24, 1.5, b.d * 0.2, matBand, b.w * 0.18, total + 0.32 + 0.75, -b.d * 0.16));
+  body.add(box(2.4, 0.9, 2.4, matPlinth, -b.w * 0.26, total + 0.32 + 0.45, b.d * 0.1));
+  if (b.floors >= 6) body.add(box(0.16, 4.2, 0.16, matBand, -b.w * 0.3, total + 0.32 + 2.1, -b.d * 0.28));
+  const cw = Math.min(b.w * 0.62, 11), dep = 3.6;
+  body.add(box(cw, 0.34, dep, matPlinth, 0, H_PLINTH + H_GROUND - 0.2, b.d / 2 + dep / 2));
+  body.add(box(cw + 0.3, 0.16, 0.3, matBand, 0, H_PLINTH + H_GROUND + 0.04, b.d / 2 + dep));
+  for (const s of [-1, 1]) body.add(box(0.3, H_GROUND - 0.3, 0.3, matBand, s * (cw / 2 - 0.5), (H_PLINTH + H_GROUND - 0.3) / 2, b.d / 2 + dep - 0.5));
+  body.add(box(cw * 0.86, 0.24, 1.6, matPlinth, 0, H_PLINTH - 0.12, b.d / 2 + 1));
+  const door = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 3.3), matDoor);
+  door.position.set(0, H_PLINTH + 1.7, b.d / 2 + 0.1);
+  door.receiveShadow = true;
+  body.add(door);
+  for (const f of FACE) {
+    const span = f.axis === 'z' ? b.w : b.d;
+    const out = (f.axis === 'z' ? b.d : b.w) / 2 + 0.1;
+    const cols = Math.max(2, Math.round(span / 3.7));
+    const step = span / cols;
+    const winW = Math.min(2.35, step * 0.66);
+    const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, f.ry, 0));
+    const rowBottom = total * 0.10;
+    const rowHeight = (total * 0.80) / b.floors;
+    const winH = rowHeight * 0.80;
+    const rows = Array.from({ length: b.floors }, (_, k) => rowBottom + rowHeight * (k + 0.5));
+    for (const wy of rows) {
+      for (let i = 0; i < cols; i++) {
+        const o = -span / 2 + step * (i + 0.5);
+        const front = f.ry === 0;
+        if (front && wy < H_PLINTH + H_GROUND && Math.abs(o) < 2.7) continue;
+        const pos = f.axis === 'z'
+          ? new THREE.Vector3(o, wy, f.sign * out)
+          : new THREE.Vector3(f.sign * out, wy, o);
+        windowXf.push({ m: new THREE.Matrix4().compose(pos, q, new THREE.Vector3(winW, winH, 1)), g: body });
+      }
+    }
+  }
+  g.updateMatrix();
+  buildingGroup.add(g);
+  footprints.push({ x: px, z: pz, yaw: yaw, hw: b.w / 2, hd: b.d / 2 });
+  const dl = Math.hypot(px, pz);
+  const ux = px / dl, uz = pz / dl;
+  const rEnd = radialDist(RING.w, RING.d, RING.r, ux, uz);
+  const tx = ux === 0 ? Infinity : (b.w / 2) / Math.abs(ux);
+  const tz = uz === 0 ? Infinity : (b.d / 2) / Math.abs(uz);
+  const edgeT = Math.min(tx, tz);
+  const ex = px - ux * edgeT, ez = pz - uz * edgeT;
+  spokes.push({
+    ax: ex - ux * 5.2, az: ez - uz * 5.2,
+    bx: ux * rEnd, bz: uz * rEnd, wide: 3.8,
+  });
+}
+spokes.push({ ax: 0, az: GATE.z - 5.2, bx: 0, bz: radialDist(RING.w, RING.d, RING.r, 0, 1), wide: 6.2 });
+scene.updateMatrixWorld(true);
+{
+  const mesh = new THREE.InstancedMesh(winGeo, matGlass, windowXf.length);
+  mesh.receiveShadow = true;
+  const tmp = new THREE.Matrix4();
+  const col = new THREE.Color();
+  for (let i = 0; i < windowXf.length; i++) {
+    tmp.multiplyMatrices(windowXf[i].g.matrixWorld, windowXf[i].m);
+    mesh.setMatrixAt(i, tmp);
+    col.setHSL(rand(0.545, 0.575), rand(0.36, 0.56), rand(0.42, 0.66));
+    mesh.setColorAt(i, col);
+  }
+  mesh.instanceMatrix.needsUpdate = true;
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  mesh.computeBoundingSphere();
+  scene.add(mesh);
+}
+/* ============================================================
+   7. 浅色路径：步行环道 + 放射连接线
+   ============================================================ */
+const pathMat = new THREE.MeshStandardMaterial({ color: PAL.path, roughness: 0.95, metalness: 0, envMapIntensity: 0.22 });
+const curbMat = new THREE.MeshStandardMaterial({ color: 0xd7d2c4, roughness: 0.95, metalness: 0 });
+const pathGroup = new THREE.Group();
+scene.add(pathGroup);
+const hs = RING.wide / 2;
+pathGroup.add(flatMesh(ringBand(RING.w, RING.d, RING.r, -hs, hs), pathMat, 0.07));
+pathGroup.add(flatMesh(ringBand(RING.w, RING.d, RING.r, -hs - 0.36, -hs), curbMat, 0.062));
+pathGroup.add(flatMesh(ringBand(RING.w, RING.d, RING.r, hs, hs + 0.36), curbMat, 0.062));
+const discGeo = new THREE.CircleGeometry(1, 30).rotateX(-Math.PI / 2);
+for (const sp of spokes) {
+  const len = Math.hypot(sp.bx - sp.ax, sp.bz - sp.az);
+  const seg = flatMesh(new THREE.PlaneGeometry(sp.wide, len).rotateX(-Math.PI / 2), pathMat, 0.075);
+  seg.position.set((sp.ax + sp.bx) / 2, 0.075, (sp.az + sp.bz) / 2);
+  seg.rotation.y = Math.atan2(sp.bx - sp.ax, sp.bz - sp.az);
+  pathGroup.add(seg);
+  const disc = flatMesh(discGeo, pathMat, 0.078);
+  disc.scale.setScalar(sp.wide / 2 + 0.4);
+  disc.position.set(sp.bx, 0.078, sp.bz);
+  pathGroup.add(disc);
+}
+/* ============================================================
+   7.5 校园围墙 / 大门 / 外围道路
+   ============================================================ */
+const asphaltMat = new THREE.MeshStandardMaterial({ color: 0x555e69, roughness: 0.96, metalness: 0 });
+const roadMarkMat = new THREE.MeshStandardMaterial({ color: 0xf1f1e8, roughness: 0.82, metalness: 0 });
+const wallMat = new THREE.MeshStandardMaterial({ color: 0xe8ece9, roughness: 0.78, metalness: 0 });
+const wallCapMat = new THREE.MeshStandardMaterial({ color: 0xb9c1bf, roughness: 0.64, metalness: 0.05 });
+const gateMat = new THREE.MeshStandardMaterial({ color: 0x5d6b76, roughness: 0.55, metalness: 0.22 });
+const lampBulbMat = new THREE.MeshStandardMaterial({
+  color: 0xfff3cc, emissive: 0xffc770, emissiveIntensity: 0.15, roughness: 0.28, metalness: 0,
+});
+
+const roadGroup = new THREE.Group();
+scene.add(roadGroup);
+roadGroup.add(flatMesh(ringBand(ROAD.w, ROAD.d, ROAD.r, -ROAD.wide / 2, ROAD.wide / 2), asphaltMat, 0.05));
+roadGroup.add(flatMesh(ringBand(ROAD.w, ROAD.d, ROAD.r, -0.16, 0.16), roadMarkMat, 0.055));
+const gateRoadLen = CAMPUS.d / 2 - (ROAD.d / 2 + ROAD.wide / 2);
+  const gateRoad = flatMesh(new THREE.PlaneGeometry(GATE.w + 5, Math.max(1, gateRoadLen)).rotateX(-Math.PI / 2), asphaltMat, 0.052);
+  gateRoad.position.set(0, 0.052, (GATE.z + ROAD.d / 2 + ROAD.wide / 2) / 2);
+roadGroup.add(gateRoad);
+const gatePath = flatMesh(new THREE.PlaneGeometry(GATE.w + 2, GATE.z - radialDist(RING.w, RING.d, RING.r, 0, 1)).rotateX(-Math.PI / 2), pathMat, 0.072);
+gatePath.position.set(0, 0.072, (GATE.z + radialDist(RING.w, RING.d, RING.r, 0, 1)) / 2);
+pathGroup.add(gatePath);
+
+const fenceGroup = new THREE.Group();
+scene.add(fenceGroup);
+{
+  const pts = roundedRectSamples(CAMPUS.w, CAMPUS.d, CAMPUS.r, 30);
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i], q = pts[(i + 1) % pts.length];
+    const ax = p.x, az = -p.y, bx = q.x, bz = -q.y;
+    const mx = (ax + bx) / 2, mz = (az + bz) / 2;
+    if (Math.abs(mx) < GATE.w / 2 && mz > CAMPUS.d / 2 - 5) continue;
+    const len = Math.hypot(bx - ax, bz - az);
+    const yaw = Math.atan2(bx - ax, bz - az);
+    const wall = box(0.72, 2.5, len * 1.05, wallMat, mx, 1.25, mz);
+    wall.rotation.y = yaw;
+    const cap = box(1.0, 0.2, len * 1.05, wallCapMat, mx, 2.58, mz);
+    cap.rotation.y = yaw;
+    fenceGroup.add(wall, cap);
+  }
+  for (let i = 0; i < 4; i++) {
+    const x = i < 2 ? -CAMPUS.w / 2 : CAMPUS.w / 2;
+    const z = i % 2 === 0 ? -CAMPUS.d / 2 : CAMPUS.d / 2;
+    fenceGroup.add(box(1.5, 3.1, 1.5, wallCapMat, x, 1.55, z));
+  }
+  for (const side of [-1, 1]) {
+    const pillar = box(3.4, 10.5, 3.4, wallMat, side * (GATE.w / 2 + 2.1), 5.25, GATE.z);
+    pillar.material = wallCapMat;
+    fenceGroup.add(pillar);
+    const lamp = box(0.8, 1.6, 0.8, lampBulbMat, side * (GATE.w / 2 + 2.1), 11.6, GATE.z);
+    fenceGroup.add(lamp);
+    const booth = box(5.4, 4.4, 5.4, wallMat, side * (GATE.w / 2 + 7.6), 2.2, GATE.z - 2.2);
+    fenceGroup.add(booth);
+    const boothRoof = box(6.1, 0.24, 6.1, wallCapMat, side * (GATE.w / 2 + 7.6), 4.52, GATE.z - 2.2);
+    fenceGroup.add(boothRoof);
+  }
+  const lintel = box(GATE.w + 8, 2.4, 2.3, wallMat, 0, 10.2, GATE.z);
+  const lintelRoof = box(GATE.w + 10, 0.35, 3.3, wallCapMat, 0, 11.55, GATE.z);
+  fenceGroup.add(lintel, lintelRoof);
+  for (const y of [1.1, 2.2]) fenceGroup.add(box(GATE.w, 0.18, 0.22, gateMat, 0, y, GATE.z));
+  for (let i = 0; i < 9; i++) fenceGroup.add(box(0.14, 2.5, 0.14, gateMat, -GATE.w / 2 + (i + 0.5) * GATE.w / 9, 1.35, GATE.z));
+}
+/* ============================================================
+   7.6 周边道路系统 / 外层低多边形建筑群
+   ============================================================ */
+const CITY = { x: 130, z: 106, len: 272, wide: 7.6 };
+const CITY_RING = { w: CITY.x * 2, d: CITY.z * 2, r: 46 };
+const cityGroup = new THREE.Group();
+scene.add(cityGroup);
+const cityRoadSegments = [];
+const yellowLineMat = new THREE.MeshStandardMaterial({ color: 0xf2c94c, roughness: 0.78, metalness: 0 });
+function addCityDash(axis, fixed, offset, mat, dashLen, gapLen, markWidth) {
+  const count = Math.floor(CITY.len / (dashLen + gapLen));
+  const start = -CITY.len / 2;
+  for (let i = 0; i < count; i++) {
+    const t = start + dashLen / 2 + i * (dashLen + gapLen);
+    const geo = axis === 'x'
+      ? new THREE.PlaneGeometry(markWidth, dashLen).rotateX(-Math.PI / 2)
+      : new THREE.PlaneGeometry(dashLen, markWidth).rotateX(-Math.PI / 2);
+    const m = flatMesh(geo, mat, 0.056);
+    if (axis === 'x') m.position.set(fixed + offset, 0.056, t);
+    else m.position.set(t, 0.056, fixed + offset);
+    cityGroup.add(m);
+  }
+}
+function addCityRoad(axis, fixed) {
+  const geo = axis === 'x'
+    ? new THREE.PlaneGeometry(CITY.wide, CITY.len).rotateX(-Math.PI / 2)
+    : new THREE.PlaneGeometry(CITY.len, CITY.wide).rotateX(-Math.PI / 2);
+  const road = flatMesh(geo, asphaltMat, 0.051);
+  if (axis === 'x') road.position.set(fixed, 0.051, 0);
+  else road.position.set(0, 0.051, fixed);
+  cityGroup.add(road);
+  cityRoadSegments.push({ axis, fixed });
+  for (const side of [-1, 1]) addCityDash(axis, fixed, side * (CITY.wide / 2 - 0.48), roadMarkMat, 3.2, 2.7, 0.16);
+  addCityDash(axis, fixed, 0, yellowLineMat, 3.8, 3.1, 0.22);
+}
+addCityRoad('x', -CITY.x);
+addCityRoad('x', CITY.x);
+addCityRoad('z', -CITY.z);
+addCityRoad('z', CITY.z);
+
+const outerGroup = new THREE.Group();
+scene.add(outerGroup);
+const outerSpots = [];
+const outerColors = [0xaeb5b9, 0xbcc3c6, 0xa2abb0, 0xc1c7c1, 0xb3b9ae, 0xa7afb4];
+function createOuterBuilding(w, d, h, color) {
+  const g = new THREE.Group();
+  g.userData.label = '周边建筑';
+  const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.92, metalness: 0, flatShading: true, envMapIntensity: 0.28 });
+  const roofMat = new THREE.MeshStandardMaterial({ color: 0x95a0a5, roughness: 0.86, metalness: 0.02, flatShading: true });
+  g.add(box(w, h, d, bodyMat, 0, h / 2, 0));
+  const roofH = Math.min(2.2, h * 0.22);
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.max(w, d) * 0.71, roofH, 4), roofMat);
+  roof.position.y = h + roofH / 2 - 0.12;
+  roof.rotation.y = Math.PI / 4;
+  roof.castShadow = true;
+  roof.receiveShadow = true;
+  g.add(roof);
+  g.add(box(w * 0.42, 0.22, 1.8, roofMat, 0, h * 0.22, d / 2 + 0.9));
+  g.add(box(w * 0.16, h * 0.18, 0.16, matBand, 0, h * 0.09, d / 2 + 0.08));
+  return g;
+}
+function outerBlocked(x, z, w, d) {
+  const dl = Math.hypot(x, z);
+  if (dl < 102 || dl > 252) return true;
+  const ux = x / dl, uz = z / dl;
+  const wallDist = radialDist(CAMPUS.w, CAMPUS.d, CAMPUS.r, ux, uz);
+  const roadDist = radialDist(ROAD.w, ROAD.d, ROAD.r, ux, uz);
+  if (Math.abs(dl - wallDist) < 8) return true;
+  if (dl > roadDist - ROAD.wide / 2 - 6 && dl < roadDist + ROAD.wide / 2 + 6) return true;
+  const half = Math.max(w, d) / 2;
+  for (const rd of cityRoadSegments) {
+    const ax = rd.axis === 'x' ? rd.fixed : -CITY.len / 2;
+    const az = rd.axis === 'x' ? -CITY.len / 2 : rd.fixed;
+    const bx = rd.axis === 'x' ? rd.fixed : CITY.len / 2;
+    const bz = rd.axis === 'x' ? CITY.len / 2 : rd.fixed;
+    if (distToSeg(x, z, ax, az, bx, bz) < CITY.wide / 2 + half + 2.8) return true;
+  }
+  return false;
+}
+{
+  const rings = [
+    { count: 20, offset: [16, 26], h: [8.5, 12.5], size: [12, 18] },
+    { count: 20, offset: [34, 48], h: [5, 9], size: [10, 16] },
+    { count: 20, offset: [56, 72], h: [4.5, 7.5], size: [9, 14] },
+  ];
+  for (const ring of rings) {
+    let placed = 0;
+    for (let attempt = 0; attempt < 180 && placed < ring.count; attempt++) {
+      const aa = (attempt / ring.count) * Math.PI * 2 + rand(-0.045, 0.045);
+      const ux = Math.cos(aa), uz = Math.sin(aa);
+      const base = radialDist(CITY_RING.w, CITY_RING.d, CITY_RING.r, ux, uz);
+      const dl = base + rand(ring.offset[0], ring.offset[1]);
+      const x = ux * dl, z = uz * dl;
+      const w = rand(ring.size[0], ring.size[1]);
+      const d = rand(ring.size[0], ring.size[1]);
+      const h = rand(ring.h[0], ring.h[1]);
+      if (outerBlocked(x, z, w, d)) continue;
+      let tooClose = false;
+      for (const p of outerSpots) {
+        if (Math.hypot(p.x - x, p.z - z) < Math.max(17, (w + p.w) / 2 + 4)) { tooClose = true; break; }
+      }
+      if (tooClose) continue;
+      const color = outerColors[Math.floor(rnd() * outerColors.length)];
+      const b = createOuterBuilding(w, d, h, color);
+      b.position.set(x, 0, z);
+      b.rotation.y = rand(-0.12, 0.12);
+      outerGroup.add(b);
+      outerSpots.push({ x, z, w, d });
+      footprints.push({ x, z, yaw: b.rotation.y, hw: w / 2, hd: d / 2 });
+      placed++;
+    }
+  }
+}
+/* ============================================================
+   8. 树木：分层锥体树冠 + 圆柱树干
+   ============================================================ */
+function keepOut(x, z, pad) {
+  const dl = Math.hypot(x, z);
+  if (dl < 1e-3) return true;
+  const ux = x / dl, uz = z / dl;
+  if (dl < radialDist(RING.w, RING.d, RING.r, ux, uz) + pad) return true;
+  const wallDist = radialDist(CAMPUS.w, CAMPUS.d, CAMPUS.r, ux, uz);
+  const wallPad = Math.max(1.4, pad);
+  if (Math.abs(dl - wallDist) < wallPad) return true;
+  const roadDist = radialDist(ROAD.w, ROAD.d, ROAD.r, ux, uz);
+  const roadPad = Math.max(1.2, pad);
+  if (dl > roadDist - ROAD.wide / 2 - roadPad && dl < roadDist + ROAD.wide / 2 + roadPad) return true;
+  if (Math.abs(x) < GATE.w / 2 + 4 && z > GATE.z - 16 && z < GATE.z + ROAD.wide + 8) return true;
+  if (dl > 190) return true;
+  for (const rd of cityRoadSegments) {
+    const ax = rd.axis === 'x' ? rd.fixed : -CITY.len / 2;
+    const az = rd.axis === 'x' ? -CITY.len / 2 : rd.fixed;
+    const bx = rd.axis === 'x' ? rd.fixed : CITY.len / 2;
+    const bz = rd.axis === 'x' ? CITY.len / 2 : rd.fixed;
+    if (distToSeg(x, z, ax, az, bx, bz) < CITY.wide / 2 + pad) return true;
+  }
+  for (const f of footprints) {
+    const c = Math.cos(-f.yaw), si = Math.sin(-f.yaw);
+    const lx = (x - f.x) * c - (z - f.z) * si;
+    const lz = (x - f.x) * si + (z - f.z) * c;
+    if (Math.abs(lx) < f.hw + pad && Math.abs(lz) < f.hd + pad) return true;
+  }
+  for (const sp of spokes) {
+    if (distToSeg(x, z, sp.ax, sp.az, sp.bx, sp.bz) < sp.wide / 2 + pad) return true;
+  }
+  return false;
+}
+const treeSpots = [];
+{
+  const tryAdd = (x, z, minGap) => {
+    if (keepOut(x, z, 5.4)) return;
+    for (const p of treeSpots) {
+      if (Math.hypot(p.x - x, p.z - z) < minGap) return;
+    }
+    treeSpots.push({ x: x, z: z, h: rand(7, 14.5), r: rand(2.2, 4.2), tone: rnd() });
+  };
+
+  // 用带抖动的网格铺满可绿化区域；按校内、路侧、外围分区控制密度，
+  // 避免以前按距离环带生成时树集中成块。
+  const step = 7.4;
+  const candidates = [];
+  for (let gx = -26; gx <= 26; gx++) {
+    for (let gz = -21; gz <= 21; gz++) {
+      const x = gx * step + rand(-3.0, 3.0);
+      const z = gz * step * 0.94 + rand(-3.0, 3.0);
+      if (keepOut(x, z, 5.4)) continue;
+      const dl = Math.hypot(x, z), ux = x / dl, uz = z / dl;
+      const wallDist = radialDist(CAMPUS.w, CAMPUS.d, CAMPUS.r, ux, uz);
+      const roadDist = radialDist(ROAD.w, ROAD.d, ROAD.r, ux, uz);
+      const roadGap = Math.abs(dl - roadDist) - ROAD.wide / 2;
+      let zone = 'outer', weight = 0.46;
+      if (dl < wallDist - 4) {
+        zone = 'inner';
+        weight = 0.74;
+      } else if (roadGap < 12) {
+        zone = 'road';
+        weight = 0.94;
+      }
+      candidates.push({ x: x, z: z, zone: zone, weight: weight });
+    }
+  }
+
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+  for (const c of candidates) {
+    if (treeSpots.length >= 238) break;
+    if (rnd() > c.weight) continue;
+    tryAdd(c.x, c.z, 5.8);
+  }
+}
+document.getElementById('mTree').textContent = treeSpots.length;
+document.getElementById('mBld').textContent = 8 + outerSpots.length;
+{
+  const LAYERS = 3;
+  const trunkGeo = new THREE.CylinderGeometry(0.5, 0.68, 1, 8).translate(0, 0.5, 0);
+  const coneGeo = new THREE.ConeGeometry(1, 1, 14).translate(0, 0.5, 0);
+  const trunkMat = new THREE.MeshStandardMaterial({ color: PAL.trunk, roughness: 0.95, metalness: 0 });
+  const leafMat = new THREE.MeshStandardMaterial({ color: PAL.leaf, roughness: 0.9, metalness: 0, envMapIntensity: 0.35, flatShading: true });
+  const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, treeSpots.length);
+  const crowns = new THREE.InstancedMesh(coneGeo, leafMat, treeSpots.length * LAYERS);
+  trunks.castShadow = true;
+  crowns.castShadow = true;
+  trunks.receiveShadow = true;
+  crowns.receiveShadow = true;
+  const m = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
+  const up = new THREE.Vector3(0, 1, 0);
+  const col = new THREE.Color();
+  for (let i = 0; i < treeSpots.length; i++) {
+    const t = treeSpots[i];
+    const trunkH = t.h * 0.32;
+    trunks.setMatrixAt(i, m.compose(p.set(t.x, 0, t.z), q.identity(), s.set(t.r * 0.2, trunkH, t.r * 0.2)));
+    col.setHSL(0.09, rand(0.24, 0.34), rand(0.24, 0.32));
+    trunks.setColorAt(i, col);
+    const crownH = t.h - trunkH;
+    for (let k = 0; k < LAYERS; k++) {
+      const f = k / LAYERS;
+      const rad = t.r * (1 - f * 0.3);
+      const y = trunkH + crownH * f * 0.6;
+      crowns.setMatrixAt(i * LAYERS + k, m.compose(p.set(t.x, y, t.z), q.setFromAxisAngle(up, k * 0.8), s.set(rad, crownH * 0.54, rad)));
+      col.setHSL(0.29 + t.tone * 0.05 - f * 0.02, 0.34 + f * 0.12, 0.24 + f * 0.11 + t.tone * 0.05);
+      crowns.setColorAt(i * LAYERS + k, col);
+    }
+  }
+  trunks.instanceMatrix.needsUpdate = true;
+  crowns.instanceMatrix.needsUpdate = true;
+  if (trunks.instanceColor) trunks.instanceColor.needsUpdate = true;
+  if (crowns.instanceColor) crowns.instanceColor.needsUpdate = true;
+  trunks.computeBoundingSphere();
+  crowns.computeBoundingSphere();
+  scene.add(trunks, crowns);
+}
+/* ============================================================
+   9. 渐变草皮贴片点缀
+   ============================================================ */
+{
+  for (const t of treeSpots) {
+    const sc = t.r * rand(2.15, 3.15);
+    const mesh = new THREE.Mesh(patchGeo, patchMats[Math.floor(rnd() * patchMats.length)]);
+    mesh.scale.set(sc, sc * rand(0.62, 1), sc);
+    mesh.position.set(t.x, 0.04, t.z);
+    mesh.rotation.y = rand(0, Math.PI * 2);
+    patchGroup.add(mesh);
+  }
+}
+/* ============================================================
+   9.5 路灯 / 长椅 / 旗杆
+   ============================================================ */
+const poleMat = new THREE.MeshStandardMaterial({ color: 0x6f7982, roughness: 0.6, metalness: 0.42 });
+const benchMat = new THREE.MeshStandardMaterial({ color: 0x8d6d4b, roughness: 0.88, metalness: 0 });
+const stoneMat = new THREE.MeshStandardMaterial({ color: 0xccd1cb, roughness: 0.84, metalness: 0.02, envMapIntensity: 0.42 });
+const stoneDarkMat = new THREE.MeshStandardMaterial({ color: 0xaeb5af, roughness: 0.9, metalness: 0 });
+const stoneSideMat = stoneMat.clone();
+stoneSideMat.side = THREE.DoubleSide;
+const sportLampMat = new THREE.MeshStandardMaterial({
+  color: 0xf7fbff, emissive: 0xfff4d8, emissiveIntensity: 0.12, roughness: 0.28, metalness: 0.04,
+});
+
+const lampSpots = [];
+function createBench() {
+  const g = new THREE.Group();
+  g.add(box(2.3, 0.13, 0.62, benchMat, 0, 0.5, 0));
+  g.add(box(2.3, 0.56, 0.12, benchMat, 0, 0.8, -0.27));
+  for (const s of [-1, 1]) g.add(box(0.12, 0.5, 0.56, stoneDarkMat, s * 0.94, 0.25, 0));
+  return g;
+}
+{
+  const near = (x, z, min) => {
+    for (const p of lampSpots) if (Math.hypot(p.x - x, p.z - z) < min) return true;
+    return false;
+  };
+  const addLamp = (x, z, yaw) => {
+    if (Math.hypot(x, z) > 172) return;
+    if (keepOut(x, z, 3.0) || near(x, z, 7.6)) return;
+    for (const t of treeSpots) {
+      if (Math.hypot(t.x - x, t.z - z) < t.r + 1.1) return;
+    }
+    lampSpots.push({ x, z, yaw });
+  };
+  // 外围车行环道
+  for (let i = 0; i < 24; i++) {
+    const aa = (i / 24) * Math.PI * 2 + 0.02;
+    const nx = Math.cos(aa), nz = Math.sin(aa);
+    const rr = radialDist(ROAD.w, ROAD.d, ROAD.r, nx, nz);
+    for (const side of [-1, 1]) {
+      const lampR = rr + side * (ROAD.wide / 2 + 4.2);
+      const yaw = side > 0 ? Math.atan2(-nx, -nz) : Math.atan2(nx, nz);
+      addLamp(nx * lampR, nz * lampR, yaw);
+    }
+  }
+  // 市政道路两侧
+  for (const rd of cityRoadSegments) {
+    for (const t of [-114, -76, -38, 0, 38, 76, 114]) {
+      for (const side of [-1, 1]) {
+        const off = CITY.wide / 2 + 3.7;
+        if (rd.axis === 'x') {
+          addLamp(rd.fixed + side * off, t, Math.atan2(-side, 0));
+        } else {
+          addLamp(t, rd.fixed + side * off, Math.atan2(0, -side));
+        }
+      }
+    }
+  }
+  const n = lampSpots.length;
+  const poleGeo = new THREE.CylinderGeometry(0.1, 0.17, 6.2, 8).translate(0, 3.1, 0);
+  const armGeo = new THREE.BoxGeometry(0.15, 0.15, 1.45).translate(0, 0, 0.7);
+  const headGeo = new THREE.SphereGeometry(0.33, 10, 8);
+  const poles = new THREE.InstancedMesh(poleGeo, poleMat, n);
+  const arms = new THREE.InstancedMesh(armGeo, poleMat, n);
+  const heads = new THREE.InstancedMesh(headGeo, lampBulbMat, n);
+  poles.castShadow = true;
+  arms.castShadow = true;
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), qi = new THREE.Quaternion();
+  const p = new THREE.Vector3(), s = new THREE.Vector3(1, 1, 1), up = new THREE.Vector3(0, 1, 0);
+  for (let i = 0; i < n; i++) {
+    const L = lampSpots[i];
+    q.setFromAxisAngle(up, L.yaw);
+    poles.setMatrixAt(i, m.compose(p.set(L.x, 0, L.z), qi, s));
+    arms.setMatrixAt(i, m.compose(p.set(L.x, 6.05, L.z), q, s));
+    heads.setMatrixAt(i, m.compose(p.set(L.x + Math.sin(L.yaw) * 1.38, 5.94, L.z + Math.cos(L.yaw) * 1.38), q, s));
+  }
+  poles.instanceMatrix.needsUpdate = true;
+  arms.instanceMatrix.needsUpdate = true;
+  heads.instanceMatrix.needsUpdate = true;
+  poles.computeBoundingSphere(); arms.computeBoundingSphere(); heads.computeBoundingSphere();
+  scene.add(poles, arms, heads);
+
+  // A capped set of real lamp lights keeps night mode readable without
+  // forcing WebGL to compile hundreds of SpotLight shader slots.
+  const lampLightStride = Math.max(3, Math.round(n / 18));
+  for (let i = 0; i < n; i += lampLightStride) {
+    const L = lampSpots[i];
+    const spot = new THREE.SpotLight(0xffd9a2, 0, 27, 1.02, 0.58, 1.2);
+    const target = new THREE.Object3D();
+    spot.position.set(L.x + Math.sin(L.yaw) * 1.38, 5.94, L.z + Math.cos(L.yaw) * 1.38);
+    target.position.set(L.x, 0.8, L.z);
+    scene.add(spot, target);
+    spot.target = target;
+    lampSpotLights.push({ spot });
+  }
+}
+
+// 操场四角高杆投光灯
+{
+  const cornerMat = new THREE.MeshStandardMaterial({ color: 0xdde2dd, roughness: 0.82, metalness: 0.04 });
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      const x = sx * 44.5, z = sz * 31.5;
+      const g = new THREE.Group();
+      g.position.set(x, 0, z);
+      g.rotation.y = Math.atan2(-x, -z);
+      g.add(box(4.4, 0.75, 4.4, cornerMat, 0, 0.38, 0));
+      g.add(box(0.62, 19.4, 0.62, poleMat, 0, 10.05, 0));
+      g.add(box(1.5, 0.3, 1.5, poleMat, 0, 19.8, 0));
+      g.add(box(6.0, 1.25, 2.8, sportLampMat, 0, 20.7, 0));
+      for (const bx of [-1.75, 0, 1.75]) {
+        g.add(box(1.3, 0.45, 0.3, sportLampMat, bx, 20.05, 1.42));
+      }
+      const spot = new THREE.SpotLight(0xfff6dd, 0, 130, 0.48, 0.46, 1.0);
+      const target = new THREE.Object3D();
+      spot.position.set(x, 20.4, z);
+      target.position.set(x * 0.14, 0.8, z * 0.14);
+      scene.add(spot, target);
+      spot.target = target;
+      stadiumLights.push({ spot });
+      scene.add(g);
+    }
+  }
+}
+
+// 运动场内侧长椅
+{
+  const pts = roundedRectSamples(RING.w - RING.wide - 3.4, RING.d - RING.wide - 3.4, RING.r - 1.7, 12);
+  const stride = Math.max(4, Math.round(pts.length / 24));
+  for (let i = 0; i < pts.length; i += stride) {
+    const x = pts[i].x, z = -pts[i].y;
+    let skip = false;
+    for (const sp of spokes) {
+      if (distToSeg(x, z, sp.ax, sp.az, sp.bx, sp.bz) < sp.wide / 2 + 6.5) skip = true;
+    }
+    for (const f of footprints) {
+      if (Math.hypot(f.x - x, f.z - z) < 15) skip = true;
+    }
+    if (skip) continue;
+    const dl = Math.hypot(x, z) || 1;
+    const b = createBench();
+    b.position.set(x, 0, z);
+    b.rotation.y = Math.atan2(-x / dl, -z / dl);
+    scene.add(b);
+  }
+}
+
+// 中轴旗杆 + 旗帜
+const flagGroup = new THREE.Group();
+scene.add(flagGroup);
+const flagGeo = new THREE.PlaneGeometry(3.0, 1.85, 14, 7).translate(1.52, 0, 0);
+const flagBase = Float32Array.from(flagGeo.attributes.position.array);
+const flagBeamMat = new THREE.MeshBasicMaterial({
+  color: 0xffdca4, transparent: true, opacity: 0, blending: THREE.AdditiveBlending,
+  depthWrite: false, side: THREE.DoubleSide,
+});
+const flagUplightMat = new THREE.MeshStandardMaterial({
+  color: 0xfff3cc, emissive: 0xffc770, emissiveIntensity: 0.12, roughness: 0.28, metalness: 0,
+});
+const flagGlowMat = new THREE.MeshBasicMaterial({
+  map: patchTexture('rgba(255,214,150,0.62)', 'rgba(255,190,120,0.2)'),
+  transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false,
+});
+const flagUplights = [];
+{
+  const poleGeo = new THREE.CylinderGeometry(0.09, 0.15, 9.4, 10).translate(0, 4.7, 0);
+  const redMat = new THREE.MeshStandardMaterial({ color: 0xcf3b30, roughness: 0.86, side: THREE.DoubleSide });
+  const whiteMat = new THREE.MeshStandardMaterial({ color: 0x3a7ca8, roughness: 0.86, side: THREE.DoubleSide });
+  const wellGeo = new THREE.CylinderGeometry(0.16, 0.2, 0.12, 12).translate(0, 0.06, 0);
+  const lensGeo = new THREE.CylinderGeometry(0.11, 0.11, 0.02, 12).translate(0, 0.13, 0);
+  const beamGeo = new THREE.ConeGeometry(3.1, 8.2, 16, 1, true).rotateX(Math.PI).translate(0, 4.1, 0);
+  const glowGeo = new THREE.PlaneGeometry(9.5, 9.5).rotateX(-Math.PI / 2);
+  for (let i = 0; i < 3; i++) {
+    const x = (i - 1) * 6.6, z = 43;
+    const pole = new THREE.Mesh(poleGeo, poleMat);
+    pole.position.set(x, 0, z);
+    pole.castShadow = true;
+    flagGroup.add(pole);
+    flagGroup.add(box(0.9, 0.18, 0.9, stoneMat, x, 0.09, z));
+    const fl = new THREE.Mesh(flagGeo, i === 1 ? redMat : whiteMat);
+    fl.position.set(x + 0.18, 8.05, z);
+    fl.castShadow = true;
+    flagGroup.add(fl);
+    const lx = x + 0.55, lz = z + 1.4;
+    flagGroup.add(new THREE.Mesh(wellGeo, stoneMat).translateX(lx).translateY(0).translateZ(lz));
+    flagGroup.add(new THREE.Mesh(lensGeo, flagUplightMat).translateX(lx).translateY(0).translateZ(lz));
+    const glow = new THREE.Mesh(glowGeo, flagGlowMat);
+    glow.position.set(x, 0.06, z);
+    flagGroup.add(glow);
+    const beam = new THREE.Mesh(beamGeo, flagBeamMat);
+    beam.position.set(lx, 0.1, lz);
+    beam.rotation.x = -0.17;
+    flagGroup.add(beam);
+    const spot = new THREE.SpotLight(0xffe2b0, 0, 21, 0.88, 0.88, 1.0);
+    spot.position.set(lx, 0.2, lz);
+    const target = new THREE.Object3D();
+    target.position.set(x, 7.9, z);
+    flagGroup.add(spot, target);
+    spot.target = target;
+    flagUplights.push(spot);
+  }
+}
+let animT = 0;
+function updateFlag(dt) {
+  animT += dt;
+  const pos = flagGeo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = flagBase[i * 3], y = flagBase[i * 3 + 1];
+    const k = THREE.MathUtils.clamp(x / 3.0, 0, 1);
+    pos.array[i * 3 + 2] = (Math.sin(x * 2.6 - animT * 5.4) * 0.2 + Math.sin(y * 2.2 + animT * 3.4) * 0.07) * k;
+  }
+  pos.needsUpdate = true;
+  flagGeo.computeVertexNormals();
+}
+/* ============================================================
+   9.6 中心喷泉（三层水景 + 粒子水花）
+   ============================================================ */
+const FOUNTAIN = { x: 0, z: 58, pool: 7.5, water: 6.5 };
+let updateFountain = null;
+const fountainGroup = new THREE.Group();
+fountainGroup.position.set(FOUNTAIN.x, 0, FOUNTAIN.z);
+scene.add(fountainGroup);
+const waterMat = new THREE.MeshStandardMaterial({
+  color: 0x53a9cf, roughness: 0.14, metalness: 0.08, transparent: true, opacity: 0.88,
+  envMapIntensity: 1.5,
+});
+{
+  const mk = (geo, mat, y) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.y = y;
+    m.castShadow = true;
+    m.receiveShadow = true;
+    fountainGroup.add(m);
+    return m;
+  };
+  const disc = (r, seg = 48) => new THREE.CircleGeometry(r, seg).rotateX(-Math.PI / 2);
+  fountainGroup.add(flatMesh(disc(10.9), pathMat, 0.076));
+  fountainGroup.add(flatMesh(new THREE.RingGeometry(FOUNTAIN.pool + 0.3, FOUNTAIN.pool + 1.5, 48).rotateX(-Math.PI / 2), stoneDarkMat, 0.084));
+  mk(new THREE.CylinderGeometry(FOUNTAIN.pool + 0.4, FOUNTAIN.pool + 1.0, 0.45, 48), stoneMat, 0.22);
+  mk(new THREE.CylinderGeometry(FOUNTAIN.pool, FOUNTAIN.pool, 0.98, 48, 1, true), stoneSideMat, 0.9);
+  mk(new THREE.CylinderGeometry(FOUNTAIN.water, FOUNTAIN.water, 0.98, 48, 1, true), stoneDarkMat, 0.9);
+  mk(disc(FOUNTAIN.water), stoneDarkMat, 0.5);
+  mk(new THREE.RingGeometry(FOUNTAIN.water - 0.04, FOUNTAIN.pool + 0.4, 48).rotateX(-Math.PI / 2), stoneMat, 1.38);
+  mk(disc(FOUNTAIN.water), waterMat, 1.1);
+  mk(new THREE.CylinderGeometry(0.9, 1.28, 1.5, 24), stoneMat, 1.85);
+  mk(new THREE.CylinderGeometry(2.75, 1.0, 0.4, 32), stoneMat, 2.72);
+  mk(disc(2.62), waterMat, 2.95);
+  mk(new THREE.CylinderGeometry(0.42, 0.62, 1.15, 20), stoneMat, 3.45);
+  mk(new THREE.CylinderGeometry(1.42, 0.55, 0.32, 28), stoneMat, 4.15);
+  mk(disc(1.36), waterMat, 4.34);
+  const nozzle = mk(new THREE.SphereGeometry(0.2, 10, 8), stoneDarkMat, 4.46);
+  nozzle.castShadow = false;
+}
+{
+  const COUNT = 350;
+  const fpos = new Float32Array(COUNT * 3);
+  const fvel = new Float32Array(COUNT * 3);
+  const ftier = new Uint8Array(COUNT);
+  function reset(i) {
+    const j = i * 3, tier = ftier[i], a = Math.random() * Math.PI * 2;
+    if (tier === 0) {
+      const rr = Math.random() * 0.16;
+      fpos[j] = Math.cos(a) * rr;
+      fpos[j + 1] = 4.56;
+      fpos[j + 2] = Math.sin(a) * rr;
+      const sp = rand(6.3, 7.6);
+      fvel[j] = Math.cos(a) * rand(1.4, 2.8);
+      fvel[j + 1] = sp;
+      fvel[j + 2] = Math.sin(a) * rand(1.4, 2.8);
+    } else if (tier === 1) {
+      const rr = rand(1.28, 1.4);
+      fpos[j] = Math.cos(a) * rr;
+      fpos[j + 1] = 4.42;
+      fpos[j + 2] = Math.sin(a) * rr;
+      const sp = rand(1.8, 2.8);
+      fvel[j] = Math.cos(a) * sp;
+      fvel[j + 1] = rand(0.35, 1.05);
+      fvel[j + 2] = Math.sin(a) * sp;
+    } else {
+      const rr = rand(2.5, 2.66);
+      fpos[j] = Math.cos(a) * rr;
+      fpos[j + 1] = 3.0;
+      fpos[j + 2] = Math.sin(a) * rr;
+      const sp = rand(2.1, 3.2);
+      fvel[j] = Math.cos(a) * sp;
+      fvel[j + 1] = rand(0.15, 0.7);
+      fvel[j + 2] = Math.sin(a) * sp;
+    }
+  }
+  for (let i = 0; i < COUNT; i++) {
+    ftier[i] = i < 110 ? 0 : i < 220 ? 1 : 2;
+    reset(i);
+  }
+  const fgeo = new THREE.BufferGeometry();
+  fgeo.setAttribute('position', new THREE.BufferAttribute(fpos, 3));
+  const dropTex = canvasTexture(64, 64, (ctx, S) => {
+    ctx.clearRect(0, 0, S, S);
+    const g = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.35, 'rgba(224,244,255,0.72)');
+    g.addColorStop(1, 'rgba(184,224,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, S, S);
+  });
+  dropTex.wrapS = dropTex.wrapT = THREE.ClampToEdgeWrapping;
+  const fmat = new THREE.PointsMaterial({
+    size: 0.58, map: dropTex, color: 0xffffff, transparent: true, opacity: 0.95,
+    blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+  });
+  const points = new THREE.Points(fgeo, fmat);
+  points.frustumCulled = false;
+  points.renderOrder = 2;
+  fountainGroup.add(points);
+  updateFountain = (dt) => {
+    for (let i = 0; i < COUNT; i++) {
+      const j = i * 3;
+      fvel[j + 1] -= 9.0 * dt;
+      fpos[j] += fvel[j] * dt;
+      fpos[j + 1] += fvel[j + 1] * dt;
+      fpos[j + 2] += fvel[j + 2] * dt;
+      if (fpos[j + 1] < 1.1) reset(i);
+    }
+    fgeo.attributes.position.needsUpdate = true;
+  };
+}
+/* ============================================================
+   9.7 移动车流
+   ============================================================ */
+const carGlassMat = new THREE.MeshStandardMaterial({ color: 0x24333c, roughness: 0.1, metalness: 0.32, envMapIntensity: 1.5 });
+const carDarkMat = new THREE.MeshStandardMaterial({ color: 0x2b3238, roughness: 0.72, metalness: 0.2 });
+const headlightMat = new THREE.MeshStandardMaterial({ color: 0xfff8e8, emissive: 0xfff2cf, emissiveIntensity: 0.25, roughness: 0.4 });
+const taillightMat = new THREE.MeshStandardMaterial({ color: 0xff6a5a, emissive: 0xd8351f, emissiveIntensity: 0.3, roughness: 0.5 });
+const wheelGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.26, 12).rotateZ(Math.PI / 2);
+const CAR_COLORS = [0xd9dde0, 0x3d6f9e, 0xb8443a, 0x2f3a44, 0xe4e8d8, 0x6f9e7a, 0xd8a13a];
+function createVehicle(color) {
+  const g = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.34, metalness: 0.5, envMapIntensity: 1.2 });
+  g.add(box(2.0, 0.62, 4.5, bodyMat, 0, 0.76, 0));
+  g.add(box(1.98, 0.24, 4.3, bodyMat, 0, 1.03, -0.1));
+  g.add(box(1.72, 0.6, 2.05, carGlassMat, 0, 1.35, -0.22));
+  g.add(box(1.86, 0.3, 1.6, bodyMat, 0, 1.62, -0.28));
+  g.add(box(2.04, 0.26, 0.4, carDarkMat, 0, 0.5, 2.3));
+  g.add(box(2.04, 0.26, 0.4, carDarkMat, 0, 0.5, -2.3));
+  const wheels = [];
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    const w = new THREE.Mesh(wheelGeo, carDarkMat);
+    w.position.set(sx * 0.98, 0.38, sz * 1.42);
+    w.castShadow = true;
+    g.add(w);
+    wheels.push(w);
+  }
+  for (const sx of [-1, 1]) {
+    g.add(box(0.44, 0.18, 0.12, headlightMat, sx * 0.6, 0.82, 2.29));
+    g.add(box(0.46, 0.18, 0.12, taillightMat, sx * 0.62, 0.86, -2.31));
+  }
+  const spot = new THREE.SpotLight(0xfff0d2, 0, 42, 0.52, 0.6, 1.2);
+  spot.position.set(0, 0.95, 2.35);
+  const tgt = new THREE.Object3D();
+  tgt.position.set(0, -0.55, 17);
+  g.add(spot, tgt);
+  spot.target = tgt;
+  return { g, wheels, spot };
+}
+const vehicles = [];
+{
+  let idx = 0;
+  for (let r = 0; r < cityRoadSegments.length; r++) {
+    const rd = cityRoadSegments[r];
+    for (const dir of [-1, 1]) {
+      const n = r < 2 ? (dir < 0 ? 2 : 1) : (dir < 0 ? 1 : 2);
+      for (let i = 0; i < n; i++) {
+        const v = createVehicle(CAR_COLORS[idx++ % CAR_COLORS.length]);
+        scene.add(v.g);
+        vehicles.push(Object.assign(v, {
+          axis: rd.axis, fixed: rd.fixed, dir,
+          t: rand(-CITY.len / 2 + 10, CITY.len / 2 - 10),
+          speed: rand(9, 17),
+        }));
+      }
+    }
+  }
+}
+function updateVehicles(dt) {
+  const half = CITY.len / 2;
+  for (const v of vehicles) {
+    v.t += v.dir * v.speed * dt;
+    if (v.t > half) v.t = -half;
+    else if (v.t < -half) v.t = half;
+    const off = (v.axis === 'x' ? 1 : -1) * v.dir * 1.9;
+    if (v.axis === 'x') {
+      v.g.position.set(v.fixed + off, 0, v.t);
+      v.g.rotation.y = v.dir > 0 ? 0 : Math.PI;
+    } else {
+      v.g.position.set(v.t, 0, v.fixed + off);
+      v.g.rotation.y = v.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+    }
+    const w = (v.speed * dt) / 0.38;
+    for (const m of v.wheels) m.rotation.x += w;
+  }
+}
+document.getElementById('mCar').textContent = vehicles.length;
+/* ============================================================
+   10. HUD 交互
+   ============================================================ */
+const hoverTargets = [buildingGroup, outerGroup];
+const hoverRaycaster = new THREE.Raycaster();
+const hoverPointer = new THREE.Vector2();
+renderer.domElement.addEventListener('pointermove', (event) => {
+  const rect = renderer.domElement.getBoundingClientRect();
+  hoverPointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  hoverPointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  hoverRaycaster.setFromCamera(hoverPointer, camera);
+  const hits = hoverRaycaster.intersectObjects(hoverTargets, true);
+  let label = '';
+  if (hits.length) {
+    let owner = hits[0].object;
+    while (owner && !owner.userData?.label) owner = owner.parent;
+    label = owner?.userData?.label || '';
+  }
+  const hasHit = !!label;
+  buildingTip.textContent = label || '周边建筑';
+  buildingTip.classList.toggle('on', hasHit);
+  if (hasHit) {
+    const tx = Math.min(event.clientX + 12, innerWidth - buildingTip.offsetWidth - 12);
+    const ty = Math.min(event.clientY + 14, innerHeight - buildingTip.offsetHeight - 12);
+    buildingTip.style.left = `${Math.max(12, tx)}px`;
+    buildingTip.style.top = `${Math.max(12, ty)}px`;
+  }
+  renderer.domElement.style.cursor = hasHit ? 'pointer' : 'grab';
+});
+renderer.domElement.addEventListener('pointerleave', () => {
+  buildingTip.classList.remove('on');
+  renderer.domElement.style.cursor = 'grab';
+});
+const bRotate = document.getElementById('bRotate');
+const bReset = document.getElementById('bReset');
+const bShadow = document.getElementById('bShadow');
+const bPatch = document.getElementById('bPatch');
+const bCamera = document.getElementById('bCamera');
+const bNight = document.getElementById('bNight');
+const rSun = document.getElementById('rSun');
+const oSun = document.getElementById('oSun');
+let isPerspective = false;
+function configureControls() {
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.055;
+  controls.minZoom = 0.55;
+  controls.maxZoom = 4.5;
+  controls.minDistance = 55;
+  controls.maxDistance = 720;
+  controls.minPolarAngle = 0.12;
+  controls.maxPolarAngle = Math.PI * 0.47;
+  controls.autoRotateSpeed = 0.5;
+  controls.screenSpacePanning = false;
+}
+bRotate.addEventListener('click', () => {
+  controls.autoRotate = !controls.autoRotate;
+  bRotate.classList.toggle('on', controls.autoRotate);
+});
+bReset.addEventListener('click', () => {
+  camera.position.copy(HOME.pos);
+  controls.target.copy(HOME.target);
+  camera.zoom = HOME.zoom;
+  camera.updateProjectionMatrix();
+  controls.update();
+});
+bShadow.addEventListener('click', () => {
+  const on = !renderer.shadowMap.enabled;
+  renderer.shadowMap.enabled = on;
+  sun.castShadow = on;
+  scene.traverse((o) => {
+    if (!o.material) return;
+    (Array.isArray(o.material) ? o.material : [o.material]).forEach((mm) => { mm.needsUpdate = true; });
+  });
+  bShadow.classList.toggle('on', on);
+});
+bPatch.addEventListener('click', () => {
+  patchGroup.visible = !patchGroup.visible;
+  bPatch.classList.toggle('on', patchGroup.visible);
+});
+rSun.addEventListener('input', () => {
+  oSun.textContent = applySun(parseFloat(rSun.value));
+  if (nightMode) applyNightMode(true);
+});
+bCamera.addEventListener('click', () => {
+  const target = controls.target.clone();
+  const position = camera.position.clone();
+  const autoRotate = controls.autoRotate;
+  controls.dispose();
+  isPerspective = !isPerspective;
+  camera = isPerspective ? perspectiveCamera : orthoCamera;
+  camera.position.copy(position);
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.copy(target);
+  configureControls();
+  controls.autoRotate = autoRotate;
+  controls.update();
+  bCamera.textContent = isPerspective ? '切换正交' : '切换透视';
+  bCamera.classList.toggle('on', isPerspective);
+});
+bNight.addEventListener('click', () => {
+  applyNightMode(!nightMode);
+});
+addEventListener('resize', () => {
+  aspect = innerWidth / innerHeight;
+  orthoCamera.left = (-FRUSTUM * aspect) / 2;
+  orthoCamera.right = (FRUSTUM * aspect) / 2;
+  orthoCamera.top = FRUSTUM / 2;
+  orthoCamera.bottom = -FRUSTUM / 2;
+  orthoCamera.updateProjectionMatrix();
+  perspectiveCamera.aspect = aspect;
+  perspectiveCamera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+/* ============================================================
+   10.5 数据看板
+   ============================================================ */
+{
+  Chart.register(...registerables);
+  Chart.defaults.font.family = '-apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif';
+  Chart.defaults.font.size = 10;
+  Chart.defaults.color = '#5d6f7a';
+  Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(30, 42, 50, 0.88)';
+  Chart.defaults.plugins.tooltip.padding = 8;
+  Chart.defaults.plugins.tooltip.cornerRadius = 7;
+  Chart.defaults.plugins.tooltip.titleFont = { size: 10, weight: '600' };
+  Chart.defaults.plugins.tooltip.bodyFont = { size: 9.5 };
+
+  const gridColor = 'rgba(30, 42, 50, 0.08)';
+  const tickColor = '#5d6f7a';
+  const rainbow = ['#2c6e8f', '#2f9d66', '#e6943c', '#5d8bd8', '#73b9a1', '#d76d85', '#8b6fb5'];
+
+  new Chart(document.getElementById('lineChart'), {
+    type: 'line',
+    data: {
+      labels: ['9月', '10月', '11月', '12月', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月'],
+      datasets: [
+        {
+          label: '图书馆入馆(千次)',
+          data: [218, 245, 232, 205, 150, 92, 224, 260, 248, 225, 118, 78],
+          borderColor: '#2c6e8f',
+          backgroundColor: 'rgba(44, 110, 143, 0.10)',
+          pointBackgroundColor: '#2c6e8f',
+          borderWidth: 2, pointRadius: 2, pointHoverRadius: 4, tension: 0.38, fill: true,
+        },
+        {
+          label: '体育活动(千人次)',
+          data: [132, 158, 146, 118, 88, 54, 168, 186, 172, 140, 72, 48],
+          borderColor: '#2f9d66',
+          pointBackgroundColor: '#2f9d66',
+          borderWidth: 2, pointRadius: 2, pointHoverRadius: 4, tension: 0.38,
+        },
+        {
+          label: '社团活动(场)',
+          data: [46, 58, 52, 38, 22, 10, 62, 72, 65, 48, 16, 8],
+          borderColor: '#e6943c',
+          pointBackgroundColor: '#e6943c',
+          borderWidth: 2, pointRadius: 2, pointHoverRadius: 4, tension: 0.38,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'top', align: 'start',
+          labels: { boxWidth: 7, boxHeight: 7, usePointStyle: true, pointStyle: 'circle', padding: 7, font: { size: 9 } },
+        },
+      },
+      scales: {
+        x: { ticks: { font: { size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 }, grid: { color: gridColor }, border: { display: false } },
+        y: { beginAtZero: true, ticks: { font: { size: 9 }, padding: 4 }, grid: { color: gridColor }, border: { display: false } },
+      },
+    },
+  });
+
+  new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: ['计算机', '建筑学', '机械', '电子', '经管', '外语', '艺术'],
+      datasets: [{
+        label: '在校人数',
+        data: [2260, 1880, 2120, 2020, 1760, 1280, 1540],
+        backgroundColor: rainbow.map((c) => `${c}cc`),
+        borderColor: rainbow,
+        borderWidth: 1, borderRadius: 6, borderSkipped: false, maxBarThickness: 24,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (item) => ` ${item.parsed.y.toLocaleString()} 人` } },
+      },
+      scales: {
+        x: { ticks: { font: { size: 9 }, maxRotation: 0, autoSkip: false }, grid: { display: false }, border: { display: false } },
+        y: { beginAtZero: true, ticks: { font: { size: 9 }, padding: 4 }, grid: { color: gridColor }, border: { display: false } },
+      },
+    },
+  });
+
+  new Chart(document.getElementById('doughnutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['图书馆', '体育场馆', '实验室', '食堂', '报告厅', '创客空间'],
+      datasets: [{
+        data: [24, 21, 18, 16, 12, 9],
+        backgroundColor: rainbow.slice(0, 6),
+        borderColor: 'rgba(255, 255, 255, 0.82)',
+        borderWidth: 2, hoverOffset: 6,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: {
+          position: 'right', align: 'center',
+          labels: { boxWidth: 7, boxHeight: 7, usePointStyle: true, pointStyle: 'circle', padding: 7, font: { size: 9 } },
+        },
+        tooltip: { callbacks: { label: (item) => ` ${item.parsed}%` } },
+      },
+    },
+  });
+}
+/* ============================================================
+   11. 渲染循环
+   ============================================================ */
+const mFps = document.getElementById('mFps');
+let last = performance.now(), frames = 0, acc = 0;
+renderer.setAnimationLoop(() => {
+  const now = performance.now();
+  const dt = Math.min((now - last) / 1000, 0.05);
+  frames++; acc += now - last; last = now;
+  controls.update();
+  updateFlag(dt);
+  if (updateFountain) updateFountain(dt);
+  updateVehicles(dt);
+  renderer.render(scene, camera);
+  if (acc > 900) {
+    mFps.textContent = Math.round((frames * 1000) / acc);
+    frames = 0; acc = 0;
+  }
+});
+requestAnimationFrame(() => document.getElementById('boot').classList.add('gone'));
+</script>
+</body>
+</html>
