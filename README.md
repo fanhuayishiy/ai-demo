@@ -7,7 +7,7 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 | 项目 | 简介 | 状态 |
 | --- | --- | --- |
 | [campus-3d-dashboard](./campus-3d-dashboard/) | 智慧校园 3D 数据大屏（单 HTML 文件） | 可运行 |
-| [mcb-2p-c16-blender-animation](./mcb-2p-c16-blender-animation/) | 双极空气开关 Blender 精细建模与工程动画（主提示：调研空气开关，作为参考，然后使用 Blender 精细建模，我的标准很高，都要有动画） | 已交付 |
+| [mcb-2p-c16-blender-animation](./mcb-2p-c16-blender-animation/) | 双极空气开关 Blender 精细建模与工程动画（主提示：调研空气开关，作为参考，然后使用 Blender 精细建模，我的标准很高，都要有动画） | 可交互 |
 | [voxel-construction-site](./voxel-construction-site/) | 体素微缩建筑工地沙盘「方寸之间」（Three.js r160 完全离线单 HTML） | 可运行 |
 | [voxel-ramen-stall](./voxel-ramen-stall/) | 体素微缩深夜拉面摊沙盘「深夜拉面摊」（Three.js r160 完全离线单 HTML） | 可运行 |
 
@@ -142,6 +142,7 @@ campus-3d-dashboard/
 ### 运行方式
 
 - 动画成片：直接播放 `MCB_2P_Engineering_Animation.mp4`
+- 交互展示：打开 `index.html`（Three.js 直接加载 `MCB_2P_C16_Animated.glb`，支持 8 章节跳转、拖拽进度与旋转查看）
 - 可编辑场景：用 Blender 5.2.1 或更新版本打开 `MCB_2P_C16_Animated.blend`，在时间轴播放
 - 通用模型：`MCB_2P_C16_Animated.glb` 可拖入支持 glTF 的查看器或引擎
 - 静帧展示：查看 `01_Hero.png`、`02_Cutaway.png`、`03_Exploded.png`
@@ -150,6 +151,7 @@ campus-3d-dashboard/
 
 ```
 mcb-2p-c16-blender-animation/
+├── index.html                  # Three.js 交互查看器（加载同目录 GLB）
 ├── 00_Exterior_Preview.png       # 外观预览
 ├── 01_Hero.png                   # 主视觉
 ├── 02_Cutaway.png                # 剖视图

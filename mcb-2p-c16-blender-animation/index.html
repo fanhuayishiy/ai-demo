@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MCB 2P C16 — Three.js 工程模型</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #08090c;
+      --ink: #eef2f4;
+      --muted: #9ca4ac;
+      --line: rgba(238, 242, 244, 0.12);
+      --panel: rgba(8, 9, 12, 0.72);
+      --copper: #d98f4a;
+      --copper-dim: rgba(217, 143, 74, 0.32);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    #stage {
+      position: fixed;
+      inset: 0;
+    }
+    #stage canvas { display: block; }
+
+    .overlay {
+      position: fixed;
+      z-index: 2;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(14px);
+    }
+
+    .head {
+      top: 16px;
+      left: 16px;
+      padding: 16px 18px 15px;
+      max-width: 340px;
+      border-radius: 4px;
+    }
+
+    .eyebrow {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    h1 {
+      margin: 7px 0 8px;
+      font-family: "Space Grotesk", Inter, sans-serif;
+      font-size: 24px;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      margin-top: 14px;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+
+    .stats span {
+      display: block;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 17px;
+    }
+
+    .stats small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .dock {
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      width: min(920px, calc(100% - 32px));
+      padding: 12px 14px 10px;
+      border-radius: 4px;
+    }
+
+    .rail {
+      position: relative;
+      height: 34px;
+    }
+
+    .chapter-track {
+      position: absolute;
+      inset: 10px 0 auto;
+      height: 2px;
+      background: rgba(238, 242, 244, 0.16);
+    }
+
+    .chapter-track::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      width: var(--progress, 0%);
+      background: var(--copper);
+    }
+
+    .chapter-mark {
+      position: absolute;
+      top: 6px;
+      width: 10px;
+      height: 10px;
+      border: 1px solid var(--copper-dim);
+      border-radius: 50%;
+      background: var(--bg);
+      transform: translateX(-50%);
+    }
+
+    .playhead {
+      position: absolute;
+      top: 2px;
+      width: 2px;
+      height: 18px;
+      background: var(--copper);
+      transform: translateX(-50%);
+    }
+
+    .range {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      margin: 0;
+      opacity: 0;
+      cursor: ew-resize;
+    }
+
+    .dock-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 8px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+
+    .buttons::-webkit-scrollbar { display: none; }
+
+    button {
+      appearance: none;
+      flex: 0 0 auto;
+      padding: 6px 9px;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: transparent;
+      color: var(--ink);
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+
+    button:hover { border-color: var(--copper-dim); }
+    button.active { border-color: var(--copper); color: var(--copper); }
+    button:focus-visible, .range:focus-visible { outline: 2px solid var(--copper); outline-offset: 2px; }
+
+    .readout {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .loading {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      color: var(--muted);
+      font-family: "JetBrains Mono", monospace;
+      transition: opacity 0.35s ease;
+    }
+
+    .loading.hidden { opacity: 0; pointer-events: none; }
+
+    @media (max-width: 640px) {
+      .head { left: 12px; right: 12px; top: 12px; max-width: none; }
+      h1 { font-size: 20px; }
+      .dock { bottom: 12px; width: calc(100% - 24px); }
+      .readout { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .loading { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="stage" aria-label="Three.js 三维模型查看器"></div>
+
+  <header class="overlay head">
+    <div class="eyebrow">Blender · Three.js</div>
+    <h1>MCB 2P C16 工程模型</h1>
+    <p class="note">Three.js 直接加载 GLB，可旋转查看并预览结构动画。内部机构为原理性示意。</p>
+    <div class="stats" aria-hidden="true">
+      <div><span>22s</span><small>时长</small></div>
+      <div><span>337</span><small>网格</small></div>
+      <div><span>83</span><small>通道</small></div>
+    </div>
+  </header>
+
+  <section class="overlay dock" aria-label="动画控制">
+    <div class="rail">
+      <div class="chapter-track" id="chapterTrack"></div>
+      <input id="scrubber" class="range" type="range" min="0" max="22" step="0.01" value="0" aria-label="动画时间">
+      <div class="playhead" id="playhead"></div>
+    </div>
+    <div class="dock-row">
+      <div class="buttons" id="chapters">
+        <button id="toggle">暂停</button>
+      </div>
+      <div class="readout"><span id="current">00.00</span> / <span id="total">22.00</span>s</div>
+    </div>
+  </section>
+
+  <div class="loading" id="loading">正在解析模型…</div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    const host = document.getElementById('stage');
+    const loading = document.getElementById('loading');
+    const scrubber = document.getElementById('scrubber');
+    const playhead = document.getElementById('playhead');
+    const track = document.getElementById('chapterTrack');
+    const chapterBar = document.getElementById('chapters');
+    const toggle = document.getElementById('toggle');
+    const currentEl = document.getElementById('current');
+    const totalEl = document.getElementById('total');
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const chapterFrames = [1, 73, 144, 193, 239, 288, 385, 465];
+    const chapterNames = ['整机旋转', '分合闸', '剖视', '磁脱扣', '热脱扣', '爆炸回装', '导轨锁定', '装配'];
+
+    let renderer, scene, camera, controls, mixer, action, clock;
+    let playing = !reducedMotion;
+    let duration = 22;
+
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    host.appendChild(renderer.domElement);
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color('#08090c');
+
+    camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(3.4, 2.1, 4.6);
+
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.autoRotate = false;
+    controls.minDistance = 1.4;
+    controls.maxDistance = 12;
+
+    const hemi = new THREE.HemisphereLight('#c7d3dd', '#12161a', 1.0);
+    const key = new THREE.DirectionalLight('#fff8ec', 2.2);
+    const rim = new THREE.DirectionalLight('#d98f4a', 1.1);
+    const fill = new THREE.DirectionalLight('#c9d8e2', 0.6);
+    key.position.set(4, 6, 4);
+    rim.position.set(-5, 2, -4);
+    fill.position.set(-2, -1, 5);
+    scene.add(hemi, key, rim, fill);
+
+    clock = new THREE.Clock();
+
+    const loader = new GLTFLoader();
+    loader.load('MCB_2P_C16_Animated.glb', (gltf) => {
+      const model = gltf.scene;
+      const box = new THREE.Box3().setFromObject(model);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const fit = 3 / Math.max(size.x, size.y, size.z);
+      model.scale.setScalar(fit);
+      model.position.sub(center.multiplyScalar(fit));
+      scene.add(model);
+
+      const clip = gltf.animations[0];
+      duration = clip.duration || 22;
+      mixer = new THREE.AnimationMixer(model);
+      action = mixer.clipAction(clip);
+      action.setLoop(THREE.LoopRepeat);
+      action.paused = reducedMotion;
+      action.play();
+
+      scrubber.max = duration;
+      totalEl.textContent = duration.toFixed(2);
+      buildChapters();
+      loading.classList.add('hidden');
+      toggle.textContent = reducedMotion ? '播放' : '暂停';
+    }, (event) => {
+      if (event.total) loading.textContent = `正在加载模型 ${(event.loaded / event.total * 100).toFixed(0)}%`;
+    }, () => {
+      loading.textContent = '模型加载失败，请刷新或检查 GLB 路径。';
+    });
+
+    function buildChapters() {
+      chapterFrames.forEach((frame, index) => {
+        const seconds = (frame - 1) / 24;
+        const mark = document.createElement('div');
+        mark.className = 'chapter-mark';
+        mark.style.left = `${seconds / duration * 100}%`;
+        track.appendChild(mark);
+
+        const button = document.createElement('button');
+        button.textContent = chapterNames[index];
+        button.dataset.time = seconds;
+        button.addEventListener('click', () => {
+          seek(seconds);
+          playing = true;
+          if (action) action.paused = false;
+          toggle.textContent = '暂停';
+        });
+        chapterBar.appendChild(button);
+      });
+    }
+
+    function seek(seconds) {
+      if (!mixer || !action) return;
+      action.reset();
+      action.time = Math.max(0, Math.min(duration, seconds));
+      mixer.update(0);
+    }
+
+    function updateChapterButtons(seconds) {
+      [...chapterBar.querySelectorAll('button')].slice(1).forEach((button, index) => {
+        const start = (chapterFrames[index] - 1) / 24;
+        const end = index === chapterFrames.length - 1 ? duration : (chapterFrames[index + 1] - 1) / 24;
+        button.classList.toggle('active', seconds >= start && seconds < end);
+      });
+    }
+
+    function render() {
+      const delta = clock.getDelta();
+      if (mixer && playing) mixer.update(delta);
+
+      if (action) {
+        const seconds = action.time % duration;
+        scrubber.value = seconds;
+        playhead.style.left = `${seconds / duration * 100}%`;
+        track.style.setProperty('--progress', `${seconds / duration * 100}%`);
+        currentEl.textContent = seconds.toFixed(2).padStart(5, '0');
+        updateChapterButtons(seconds);
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    renderer.setAnimationLoop(render);
+
+    scrubber.addEventListener('input', () => {
+      playing = false;
+      if (action) action.paused = true;
+      seek(Number(scrubber.value));
+    });
+    scrubber.addEventListener('change', () => {
+      playing = true;
+      if (action) action.paused = false;
+      toggle.textContent = '暂停';
+    });
+    toggle.addEventListener('click', () => {
+      playing = !playing;
+      if (action) action.paused = !playing;
+      toggle.textContent = playing ? '暂停' : '播放';
+    });
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  </script>
+</body>
+</html>
