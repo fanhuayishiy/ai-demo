@@ -1,0 +1,250 @@
+{
+  "status": "Technical and media checks passed; subjective visual acceptance not performed",
+  "reference": "https://new.abb.com/products/2CDS252001R0164/s202-c16",
+  "mechanism_reference": "https://new.abb.com/low-voltage/products/system-pro-m/miniature-circuit-breakers/infographic",
+  "fidelity": "Unbranded reference-based exterior. Internal mechanism and timings are schematic, not factory CAD or electrical simulation.",
+  "blender_version": "5.2.1 LTS",
+  "scene_statistics": {
+    "scene_objects": 441,
+    "data_objects": 441,
+    "type_counts": {
+      "EMPTY": 62,
+      "MESH": 328,
+      "FONT": 46,
+      "CAMERA": 1,
+      "LIGHT": 4
+    },
+    "mesh_data_blocks": 328,
+    "actions": 72,
+    "frame_start": 1,
+    "frame_end": 528,
+    "fps": 24,
+    "fps_base": 1.0,
+    "model_collection_objects": 379,
+    "resolution_xy": [
+      1920,
+      1080
+    ],
+    "resolution_percentage": 100
+  },
+  "nominal_enclosure_xyz_mm": [
+    35.00000014901161,
+    69.00086626410484,
+    88.00000697374344
+  ],
+  "geometry": {
+    "mesh_objects_checked": 316,
+    "critical_mesh_objects_checked": 68,
+    "nonfinite_objects": 0,
+    "nonmanifold_objects": 0,
+    "critical_nonmanifold_objects": 0,
+    "critical_nonpositive_volume_objects": 0
+  },
+  "trip_timing": [
+    {
+      "event": "manual_open",
+      "contacts_fully_open_frame": 92,
+      "handle_off_frame": 100,
+      "contacts_precede_handle_off": true
+    },
+    {
+      "event": "magnetic_trip",
+      "contacts_fully_open_frame": 204,
+      "handle_off_frame": 218,
+      "contacts_precede_handle_off": true
+    },
+    {
+      "event": "thermal_trip",
+      "contacts_fully_open_frame": 269,
+      "handle_off_frame": 281,
+      "contacts_precede_handle_off": true
+    }
+  ],
+  "glb": {
+    "animations": 1,
+    "nodes": 381,
+    "meshes": 337,
+    "channel_counts": {
+      "rotation": 9,
+      "translation": 49,
+      "scale": 9,
+      "weights": 17
+    },
+    "morph_animated_nodes": 17,
+    "nonfinite_accessor_count": 0
+  },
+  "rendered_animation": {
+    "decoded_frames": 528,
+    "resolution": [
+      1920,
+      1080
+    ],
+    "issues": [],
+    "luminance_mean_range": [
+      0.7727910876274109,
+      0.8273801207542419
+    ],
+    "luminance_std_range": [
+      0.1291765570640564,
+      0.16457867622375488
+    ],
+    "unique_frame_images": 371,
+    "chapter_unique_images": [
+      {
+        "frames": [
+          1,
+          72
+        ],
+        "unique_images": 72
+      },
+      {
+        "frames": [
+          73,
+          143
+        ],
+        "unique_images": 42
+      },
+      {
+        "frames": [
+          144,
+          192
+        ],
+        "unique_images": 14
+      },
+      {
+        "frames": [
+          193,
+          238
+        ],
+        "unique_images": 39
+      },
+      {
+        "frames": [
+          239,
+          287
+        ],
+        "unique_images": 47
+      },
+      {
+        "frames": [
+          288,
+          384
+        ],
+        "unique_images": 71
+      },
+      {
+        "frames": [
+          385,
+          464
+        ],
+        "unique_images": 71
+      },
+      {
+        "frames": [
+          465,
+          528
+        ],
+        "unique_images": 15
+      }
+    ]
+  },
+  "video": [
+    {
+      "codec": "avc1",
+      "width": 1920,
+      "height": 1080,
+      "frames": 528,
+      "duration_seconds": 22.0,
+      "fps": 24.0
+    }
+  ],
+  "video_decoded_test_frames": [
+    1,
+    264,
+    528
+  ],
+  "video_roundtrip_comparison": [
+    {
+      "frame": 1,
+      "mae_8bit": 0.6862437129020691,
+      "psnr_db": 46.81288300197916
+    },
+    {
+      "frame": 264,
+      "mae_8bit": 0.7060966491699219,
+      "psnr_db": 46.16531721585977
+    },
+    {
+      "frame": 528,
+      "mae_8bit": 0.6622707843780518,
+      "psnr_db": 47.534671317415075
+    }
+  ],
+  "stills": [
+    {
+      "file": "01_Hero.png",
+      "resolution": [
+        2560,
+        1440
+      ],
+      "luminance_mean": 0.8000380992889404,
+      "luminance_std": 0.14221130311489105
+    },
+    {
+      "file": "02_Cutaway.png",
+      "resolution": [
+        2560,
+        1440
+      ],
+      "luminance_mean": 0.7868400812149048,
+      "luminance_std": 0.14421892166137695
+    },
+    {
+      "file": "03_Exploded.png",
+      "resolution": [
+        2560,
+        1440
+      ],
+      "luminance_mean": 0.7865265011787415,
+      "luminance_std": 0.12824493646621704
+    }
+  ],
+  "files": [
+    {
+      "name": "MCB_2P_C16_Animated.blend",
+      "bytes": 15166314,
+      "sha256": "33cef8c4cf2f528c9094093e19d6a6eafb47ba4c7e85fce9a7285124e60918a6"
+    },
+    {
+      "name": "MCB_2P_C16_Animated.glb",
+      "bytes": 10070164,
+      "sha256": "5ae9b42af290e6ecde5b542abb4f1a385bb138da578669b3bd4edc512209c8c7"
+    },
+    {
+      "name": "MCB_2P_Engineering_Animation.mp4",
+      "bytes": 5857602,
+      "sha256": "b6085f1ca49870ef3bce8204a8cb6ef75438b0acf2599dc16ee99ab99ba59210"
+    },
+    {
+      "name": "01_Hero.png",
+      "bytes": 2965650,
+      "sha256": "d065587c0e276d765d96824b47c444ac303ed4eaceda5e9e3f2b6e5901a20522"
+    },
+    {
+      "name": "02_Cutaway.png",
+      "bytes": 3045538,
+      "sha256": "1beb5255a6530623edc34cfec91409b030ed01e7a39dc6196b5383affb74d5fc"
+    },
+    {
+      "name": "03_Exploded.png",
+      "bytes": 3008037,
+      "sha256": "664dea34053ca40da8a84ca9b0e8dce16dd79776ad1a8b8233408a3602930fc9"
+    },
+    {
+      "name": "README.md",
+      "bytes": 4016,
+      "sha256": "06a6b8c611630f215e31b130172f7d31bc4c3aeed80a70d3f03672112ae736fa"
+    }
+  ],
+  "visual_review_limitation": "The session could not receive image inputs. Numerical image checks and renders are not a subjective frame-by-frame visual review."
+}
