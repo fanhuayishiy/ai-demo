@@ -1,0 +1,9 @@
+{
+  "mesh_count": 240,
+  "sample_count": 1921,
+  "sample_seconds": 480.3,
+  "static_obstacles": 433,
+  "collisions": [],
+  "dynamic_collisions": [],
+  "outside": []
+}

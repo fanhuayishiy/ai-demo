@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; font-src 'none'; base-uri 'none'">
+    <title>深夜拉面摊 · 体素微缩沙盘</title>
+    <style>
+        :root{font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:#f0e9dd;background:#171214;font-synthesis:none}
+        *{box-sizing:border-box}body{margin:0;overflow:hidden}canvas#scene{display:block;width:100vw;height:100vh;touch-action:none;outline:none}
+        button{font:inherit;color:inherit;cursor:pointer}button:focus-visible{outline:2px solid #f0a75a;outline-offset:5px}
+        #overlay{position:fixed;inset:0;pointer-events:none;padding:34px 40px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(180deg,rgba(20,10,8,.55),transparent 23%,transparent 82%,rgba(16,8,7,.78))}
+        header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}.eyebrow{font-size:10px;letter-spacing:3px;color:#e8b47c;display:flex;gap:12px;align-items:center}.eyebrow:before{content:"";width:24px;height:2px;background:#e8874f}h1{font-family:"Microsoft YaHei",sans-serif;font-size:36px;letter-spacing:8px;font-weight:500;margin:11px 0 9px;text-shadow:0 2px 18px #000a}.sub{font-size:11px;letter-spacing:2px;color:#b3a292}
+        .status{display:flex;gap:26px;align-items:center;margin-top:7px}.live{font-size:10px;letter-spacing:2px;color:#c8b4a4;display:flex;align-items:center;gap:9px}.dot{width:5px;height:5px;border-radius:50%;background:#f0b25a;box-shadow:0 0 9px #f0b25a77}.time{font-size:28px;line-height:1;font-weight:300;letter-spacing:2px;font-variant-numeric:tabular-nums}.time small{font-size:10px;letter-spacing:1px;display:block;margin-top:10px;text-align:right;color:#b3a096}.top-action{pointer-events:auto;background:#2b1d1780;border:1px solid #a893862a;border-radius:50%;width:36px;height:36px;font-size:18px;transition:.2s}.top-action:hover{background:#54382c}
+        .left-note{position:absolute;left:40px;top:43%;border-left:1px solid #a58a764a;padding:4px 0 4px 15px;max-width:135px}.left-note .num{font-size:10px;color:#e2a878;letter-spacing:2px}.left-note h2{font-size:13px;font-weight:400;line-height:1.8;letter-spacing:2px;margin:7px 0}.left-note p{color:#a4908a;font-size:10px;line-height:1.9;letter-spacing:1px;margin:0}
+        footer{display:flex;justify-content:space-between;align-items:end;gap:22px}.legend{display:flex;gap:18px;font-size:10px;letter-spacing:1px;color:#c0b0a2;align-items:center;pointer-events:auto}.legend span{display:flex;align-items:center;gap:7px}.legend kbd{border:1px solid #8f7a6e52;padding:4px 6px;border-radius:4px;font-size:9px;color:#e8dcc9;font-family:inherit}.weather-button{border:1px solid #a3908237;background:#2417128c;border-radius:7px;font-size:10px;padding:9px 13px;letter-spacing:1px}.weather-button.active{background:#6b453070;border-color:#d09a6a88}.metrics{font-size:10px;letter-spacing:1px;color:#9c8d84;text-align:right;white-space:nowrap;line-height:2}.metrics strong{color:#dccfc0;font-weight:400}
+        #control-readout{position:absolute;bottom:106px;left:50%;transform:translateX(-50%);display:flex;gap:29px;padding:11px 20px;border:1px solid #a8938629;border-radius:6px;background:#1d121080;backdrop-filter:blur(8px);pointer-events:auto}.readout-button{padding:0;background:none;border:none;font-size:10px;color:#bfae9e;letter-spacing:1px;white-space:nowrap;display:flex;align-items:center;gap:8px}.readout-button b{font-weight:500;color:#f0b878;font-size:11px}.readout-button:before{content:"";width:4px;height:4px;border-radius:50%;background:#f0b878}
+        #hint{position:absolute;left:50%;bottom:79px;transform:translateX(-50%);font-size:9px;letter-spacing:2px;color:#9c8a80;white-space:nowrap}#toast{position:absolute;top:25%;left:50%;transform:translate(-50%,-8px);background:#241511e6;border:1px solid #a3887455;padding:13px 22px;letter-spacing:2px;font-size:12px;border-radius:5px;opacity:0;transition:opacity .3s,transform .3s}#toast.show{opacity:1;transform:translate(-50%,0)}
+        #loader{position:fixed;inset:0;background:#1a1113;z-index:5;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .65s;letter-spacing:4px}.loader-mark{width:44px;height:44px;border:1px solid #f0a75a;border-radius:0 0 50% 50%;margin-bottom:30px;box-shadow:0 14px 34px -6px #f08c4f66;animation:breathe 1.8s infinite}.loader-title{font-size:24px;font-weight:400}.loader-sub{font-size:10px;color:#a8958c;margin-top:16px;letter-spacing:2px}@keyframes breathe{50%{opacity:.4}}
+        #help{position:fixed;inset:0;z-index:8;background:#120a08b8;display:none;align-items:center;justify-content:center;backdrop-filter:blur(12px)}#help.open{display:flex}.help-card{max-width:510px;width:calc(100% - 40px);padding:36px;background:#251813;border:1px solid #a68a744d;border-radius:12px;box-shadow:0 20px 90px #000a}.help-card h2{margin:0 0 20px;font-size:23px;letter-spacing:4px;font-weight:400}.help-card p{font-size:12px;line-height:2;color:#c9b8ab}.help-card strong{color:#f0b878;font-weight:400}.help-card button{margin-top:10px;border:1px solid #d8b08c66;border-radius:5px;background:#d8b08c14;padding:10px 22px;font-size:12px}.help-card .fine{font-size:10px;color:#8f7d74}
+        @media(max-width:850px){#overlay{padding:23px 24px}h1{font-size:28px;letter-spacing:5px}.left-note{display:none}.status{gap:14px}.live{display:none}.legend{gap:9px}.legend span:nth-child(2){display:none}#control-readout{bottom:95px;gap:15px;padding:10px 13px}#hint{bottom:71px;font-size:8px}.metrics{font-size:8px}.sub{font-size:9px}.eyebrow{font-size:8px;letter-spacing:2px}.time{font-size:22px}}
+        @media(max-width:500px){.sub{max-width:190px;line-height:1.8}.status .time{display:none}.legend span{display:none}.metrics{max-width:155px;white-space:normal}#control-readout{gap:14px}.readout-button{font-size:9px;gap:5px}.readout-button b{font-size:9px}footer{gap:10px}h1{font-size:25px}}
+    </style>
+</head>
+<body>
+    <canvas id="scene" aria-label="可拖拽环视的体素深夜拉面摊沙盘，点击桌面旋钮改变模拟参数" tabindex="0"></canvas>
+    <div id="overlay">
+        <header>
+            <div><div class="eyebrow">微缩世界研究所 / 作品 002</div><h1>深夜拉面摊</h1><div class="sub">一盏灯，一口锅，巷口的热气到天亮。</div></div>
+            <div class="status"><div class="live"><span class="dot"></span><span id="live-status">摊位营业中</span></div><div class="time"><span id="clock">23:30</span><small id="phase">晴朗 · 夜晚灯火</small></div><button class="top-action" id="help-button" aria-label="操作说明">?</button><button class="top-action" id="home-button" aria-label="重置视角">⌖</button></div>
+        </header>
+        <aside class="left-note"><div class="num">01 / 巷口食摊</div><h2>抻面下锅<br>灯影与人声</h2><p>汤锅 · 暖帘 · 灯笼串<br>每一碗，都冒着热气。</p></aside>
+        <div id="control-readout"><button class="readout-button" id="speed-button" aria-label="切换摊位运转速度">运转 <b id="speed-value">1.0×</b></button><button class="readout-button" id="day-button" aria-label="开关昼夜循环">昼夜 <b id="day-value">定格深夜</b></button><button class="readout-button" id="steam-button" aria-label="切换汤锅蒸汽强度">蒸汽 <b id="steam-value">浓郁</b></button></div>
+        <div id="hint">点击推车台面前的实体旋钮，掌管这盏深夜的灯</div>
+        <div id="toast" role="status"></div>
+        <footer><div class="legend"><span><kbd>拖拽</kbd>环视</span><span><kbd>滚轮</kbd>缩放</span><button class="weather-button" id="rain-button"><span style="display:inline">☂</span> 空格 · 模拟夜雨</button></div><div class="metrics"><strong id="fps">— FPS</strong> <span id="quality">自适应画质</span><br>体素构造 / WebGL / Three.js r160 / 完全离线</div></footer>
+    </div>
+    <div id="loader"><div class="loader-mark"></div><div class="loader-title">深夜拉面摊</div><div class="loader-sub" id="loader-status">正在点亮一盏深夜的灯</div></div>
+    <div id="help" role="dialog" aria-modal="true" aria-labelledby="help-title"><div class="help-card"><h2 id="help-title">巷口的那盏灯</h2><p><strong>拖拽</strong> 环视沙盘，<strong>滚轮 / 双指</strong> 缩放。闲置片刻后相机将缓缓环绕，右上角 <strong>⌖</strong> 返回初始视角。</p><p>点击推车台面前的三个<strong>实体控制旋钮</strong>，或下方对应按钮：调节摊位运转速度与甩面节奏、开关昼夜循环、切换汤锅蒸汽强度。</p><p><strong>空格</strong> 切换模拟夜雨。雨丝斜落，地面湿滑反光，水洼泛起涟漪，摊位灯火愈加明亮。再按一次，雨夜放晴。</p><p class="fine">所有模型、纹理与粒子均由代码生成，固定种子每次打开完全一致。Three.js r160 已内嵌，无需网络。外卖摩托沿固定路线穿行后巷并在街口掉头，竹竿吊运灯笼在独立高度与扇区作业；全部运动物体经过全时段碰撞自查。帧率由硬件决定，画质将自动调节。</p><button id="close-help">继续观察</button></div></div>
+    <script>/*THREE_LIBRARY*/</script>
+    <script>
+    'use strict';
+    /*APP_CODE*/
+    </script>
+</body>
+</html>
