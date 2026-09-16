@@ -1,0 +1,783 @@
+{
+    "mesh_count": 1097,
+    "sample_count": 1201,
+    "sample_seconds": 240,
+    "collisions": [
+        {
+            "name": "vehicle_0",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:29/evalmachine.<anonymous>:415",
+            "static_center": [
+                -12.5,
+                -0.06,
+                0
+            ],
+            "moving_center": [
+                -13.135,
+                0.285,
+                -6.784000000000003
+            ]
+        },
+        {
+            "name": "vehicle_0",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:65/evalmachine.<anonymous>:415",
+            "static_center": [
+                -12.6,
+                0.012,
+                0
+            ],
+            "moving_center": [
+                -13.135,
+                0.285,
+                -6.784000000000003
+            ]
+        },
+        {
+            "name": "vehicle_1",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:29/evalmachine.<anonymous>:415",
+            "static_center": [
+                6.5,
+                -0.06,
+                0
+            ],
+            "moving_center": [
+                -0.1605487481495661,
+                0.285,
+                8.535
+            ]
+        },
+        {
+            "name": "vehicle_1",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:64/evalmachine.<anonymous>:415",
+            "static_center": [
+                0,
+                0.012,
+                8
+            ],
+            "moving_center": [
+                -0.1605487481495661,
+                0.285,
+                8.535
+            ]
+        },
+        {
+            "name": "vehicle_2",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:29/evalmachine.<anonymous>:415",
+            "static_center": [
+                6.5,
+                -0.06,
+                0
+            ],
+            "moving_center": [
+                13.206278722403782,
+                0.285,
+                -6.803888335435122
+            ]
+        },
+        {
+            "name": "vehicle_2",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:63/evalmachine.<anonymous>:415",
+            "static_center": [
+                0,
+                0.012,
+                -8
+            ],
+            "moving_center": [
+                13.206278722403782,
+                0.285,
+                -6.803888335435122
+            ]
+        },
+        {
+            "name": "vehicle_2",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:66/evalmachine.<anonymous>:415",
+            "static_center": [
+                12.6,
+                0.012,
+                0
+            ],
+            "moving_center": [
+                13.206278722403782,
+                0.285,
+                -6.803888335435122
+            ]
+        },
+        {
+            "name": "worker_5",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:298/evalmachine.<anonymous>:415",
+            "static_center": [
+                -3.780000000000001,
+                0.085,
+                -4.22
+            ],
+            "moving_center": [
+                -3.734999895095825,
+                0.09399999678134918,
+                -4.40500020980835
+            ],
+            "moving_source": [
+                "worker_part_1"
+            ]
+        },
+        {
+            "name": "worker_6",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:300/evalmachine.<anonymous>:415",
+            "static_center": [
+                -6.12,
+                0.92,
+                4.27
+            ],
+            "moving_center": [
+                -9.199999809265137,
+                0.9869999885559082,
+                4.400000095367432
+            ],
+            "moving_source": [
+                "worker_part_11"
+            ]
+        },
+        {
+            "name": "worker_7",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:297/evalmachine.<anonymous>:415",
+            "static_center": [
+                -8.46,
+                0.5,
+                4.27
+            ],
+            "moving_center": [
+                -8.385000228881836,
+                0.09399999678134918,
+                4.394999980926514
+            ],
+            "moving_source": [
+                "worker_part_1"
+            ]
+        },
+        {
+            "name": "worker_7",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:298/evalmachine.<anonymous>:415",
+            "static_center": [
+                -8.46,
+                0.085,
+                4.27
+            ],
+            "moving_center": [
+                -8.385000228881836,
+                0.09399999678134918,
+                4.394999980926514
+            ],
+            "moving_source": [
+                "worker_part_1"
+            ]
+        },
+        {
+            "name": "worker_7",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:301/evalmachine.<anonymous>:415",
+            "static_center": [
+                -6.12,
+                0.46,
+                4.27
+            ],
+            "moving_center": [
+                -8.136362075805664,
+                0.6163074970245361,
+                4.294878005981445
+            ],
+            "moving_source": [
+                "worker_part_8"
+            ]
+        },
+        {
+            "name": "worker_7",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:300/evalmachine.<anonymous>:415",
+            "static_center": [
+                -6.12,
+                0.92,
+                4.27
+            ],
+            "moving_center": [
+                -8.300000190734863,
+                0.9399999976158142,
+                4.375
+            ],
+            "moving_source": [
+                "worker_part_12"
+            ]
+        },
+        {
+            "name": "worker_7",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:303/evalmachine.<anonymous>:415",
+            "static_center": [
+                -8.48,
+                0.921,
+                4.271999999999999
+            ],
+            "moving_center": [
+                -8.300000190734863,
+                0.9399999976158142,
+                4.375
+            ],
+            "moving_source": [
+                "worker_part_12"
+            ]
+        },
+        {
+            "name": "worker_8",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:300/evalmachine.<anonymous>:415",
+            "static_center": [
+                -6.12,
+                0.92,
+                4.27
+            ],
+            "moving_center": [
+                -6.750197887420654,
+                0.9399999976158142,
+                4.375
+            ],
+            "moving_source": [
+                "worker_part_12"
+            ]
+        },
+        {
+            "name": "worker_8",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:303/evalmachine.<anonymous>:415",
+            "static_center": [
+                -6.6,
+                0.921,
+                4.271999999999999
+            ],
+            "moving_center": [
+                -6.750197887420654,
+                0.9399999976158142,
+                4.375
+            ],
+            "moving_source": [
+                "worker_part_12"
+            ]
+        },
+        {
+            "name": "worker_9",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:301/evalmachine.<anonymous>:415",
+            "static_center": [
+                -6.12,
+                0.46,
+                4.27
+            ],
+            "moving_center": [
+                -5.497425079345703,
+                0.6174996495246887,
+                4.31158971786499
+            ],
+            "moving_source": [
+                "worker_part_8"
+            ]
+        },
+        {
+            "name": "worker_9",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:300/evalmachine.<anonymous>:415",
+            "static_center": [
+                -6.12,
+                0.92,
+                4.27
+            ],
+            "moving_center": [
+                -5.699999809265137,
+                0.9399999976158142,
+                4.385000228881836
+            ],
+            "moving_source": [
+                "worker_part_12"
+            ]
+        },
+        {
+            "name": "worker_9",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:303/evalmachine.<anonymous>:415",
+            "static_center": [
+                -5.66,
+                0.921,
+                4.271999999999999
+            ],
+            "moving_center": [
+                -5.699999809265137,
+                0.9399999976158142,
+                4.385000228881836
+            ],
+            "moving_source": [
+                "worker_part_12"
+            ]
+        },
+        {
+            "name": "worker_10",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:300/evalmachine.<anonymous>:415",
+            "static_center": [
+                -6.12,
+                0.92,
+                4.27
+            ],
+            "moving_center": [
+                -4.199999809265137,
+                0.9399999976158142,
+                4.375
+            ],
+            "moving_source": [
+                "worker_part_12"
+            ]
+        },
+        {
+            "name": "worker_10",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:303/evalmachine.<anonymous>:415",
+            "static_center": [
+                -4.25,
+                0.921,
+                4.271999999999999
+            ],
+            "moving_center": [
+                -4.199999809265137,
+                0.9399999976158142,
+                4.375
+            ],
+            "moving_source": [
+                "worker_part_12"
+            ]
+        },
+        {
+            "name": "worker_11",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:301/evalmachine.<anonymous>:415",
+            "static_center": [
+                -6.12,
+                0.46,
+                4.27
+            ],
+            "moving_center": [
+                -2.938871145248413,
+                0.6167420148849487,
+                4.297075271606445
+            ],
+            "moving_source": [
+                "worker_part_8"
+            ]
+        },
+        {
+            "name": "worker_11",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:300/evalmachine.<anonymous>:415",
+            "static_center": [
+                -6.12,
+                0.92,
+                4.27
+            ],
+            "moving_center": [
+                -3.0999999046325684,
+                0.9399999976158142,
+                4.40500020980835
+            ],
+            "moving_source": [
+                "worker_part_12"
+            ]
+        },
+        {
+            "name": "worker_33",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:175/evalmachine.<anonymous>:415",
+            "static_center": [
+                7.75,
+                0.11,
+                -5.62
+            ],
+            "moving_center": [
+                6.414999961853027,
+                0.09399999678134918,
+                -4.425000190734863
+            ],
+            "moving_source": [
+                "worker_part_0"
+            ]
+        },
+        {
+            "name": "worker_33",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:179/evalmachine.<anonymous>:415",
+            "static_center": [
+                7.75,
+                0.3,
+                -4.505
+            ],
+            "moving_center": [
+                6.416999816894531,
+                0.28999999165534973,
+                -4.449999809265137
+            ],
+            "moving_source": [
+                "worker_part_2"
+            ]
+        },
+        {
+            "name": "worker_33",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:189/evalmachine.<anonymous>:415",
+            "static_center": [
+                6.404999999999999,
+                0.955,
+                -4.498
+            ],
+            "moving_center": [
+                6.416999816894531,
+                0.28999999165534973,
+                -4.449999809265137
+            ],
+            "moving_source": [
+                "worker_part_2"
+            ]
+        },
+        {
+            "name": "worker_33",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:178/evalmachine.<anonymous>:415",
+            "static_center": [
+                7.75,
+                0.955,
+                -5.62
+            ],
+            "moving_center": [
+                6.5,
+                0.6050000190734863,
+                -4.449999809265137
+            ],
+            "moving_source": [
+                "worker_part_4"
+            ]
+        },
+        {
+            "name": "worker_33",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:183/evalmachine.<anonymous>:415",
+            "static_center": [
+                7.04,
+                1.01,
+                -4.498
+            ],
+            "moving_center": [
+                6.5,
+                0.6050000190734863,
+                -4.449999809265137
+            ],
+            "moving_source": [
+                "worker_part_4"
+            ]
+        },
+        {
+            "name": "worker_33",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:184/evalmachine.<anonymous>:415",
+            "static_center": [
+                7.04,
+                1.01,
+                -4.470000000000001
+            ],
+            "moving_center": [
+                6.5,
+                0.6050000190734863,
+                -4.449999809265137
+            ],
+            "moving_source": [
+                "worker_part_4"
+            ]
+        },
+        {
+            "name": "worker_33",
+            "time": 0,
+            "static_source": "evalmachine.<anonymous>:186/evalmachine.<anonymous>:415",
+            "static_center": [
+                7.04,
+                1.01,
+                -4.436
+            ],
+            "moving_center": [
+                6.5,
+                0.9869999885559082,
+                -4.449999809265137
+            ],
+            "moving_source": [
+                "worker_part_11"
+            ]
+        },
+        {
+            "name": "vehicle_1",
+            "time": 16.2,
+            "static_source": "evalmachine.<anonymous>:81/evalmachine.<anonymous>:415",
+            "static_center": [
+                9.02,
+                0.03,
+                8.545
+            ],
+            "moving_center": [
+                8.459451251850433,
+                0.285,
+                8.535
+            ]
+        },
+        {
+            "name": "vehicle_1",
+            "time": 19.200000000000003,
+            "static_source": "evalmachine.<anonymous>:66/evalmachine.<anonymous>:415",
+            "static_center": [
+                12.6,
+                0.012,
+                0
+            ],
+            "moving_center": [
+                12.178644173742041,
+                0.285,
+                6.901908694866198
+            ]
+        },
+        {
+            "name": "vehicle_0",
+            "time": 19.8,
+            "static_source": "evalmachine.<anonymous>:64/evalmachine.<anonymous>:415",
+            "static_center": [
+                0,
+                0.012,
+                8
+            ],
+            "moving_center": [
+                -13.135,
+                0.285,
+                6.803999999999988
+            ]
+        },
+        {
+            "name": "vehicle_0",
+            "time": 20.6,
+            "static_source": "evalmachine.<anonymous>:70/evalmachine.<anonymous>:415",
+            "static_center": [
+                -12.3,
+                0.027,
+                8
+            ],
+            "moving_center": [
+                -12.521188526829684,
+                0.285,
+                8.034062501894265
+            ]
+        },
+        {
+            "name": "vehicle_2",
+            "time": 35.4,
+            "static_source": "evalmachine.<anonymous>:65/evalmachine.<anonymous>:415",
+            "static_center": [
+                -12.6,
+                0.012,
+                0
+            ],
+            "moving_center": [
+                -12.251458248306163,
+                0.285,
+                -6.713262148139942
+            ]
+        },
+        {
+            "name": "vehicle_2",
+            "time": 35.6,
+            "static_source": "evalmachine.<anonymous>:69/evalmachine.<anonymous>:415",
+            "static_center": [
+                -12.3,
+                0.027,
+                -8
+            ],
+            "moving_center": [
+                -12.374982060363214,
+                0.285,
+                -8.000750693548788
+            ]
+        },
+        {
+            "name": "vehicle_1",
+            "time": 36.2,
+            "static_source": "evalmachine.<anonymous>:63/evalmachine.<anonymous>:415",
+            "static_center": [
+                0,
+                0.012,
+                -8
+            ],
+            "moving_center": [
+                13.010869757493227,
+                0.285,
+                -7.386026641892588
+            ]
+        },
+        {
+            "name": "vehicle_0",
+            "time": 41.800000000000004,
+            "static_source": "evalmachine.<anonymous>:81/evalmachine.<anonymous>:415",
+            "static_center": [
+                9.02,
+                0.03,
+                8.545
+            ],
+            "moving_center": [
+                8.428000000000006,
+                0.285,
+                8.535
+            ]
+        },
+        {
+            "name": "vehicle_0",
+            "time": 44.800000000000004,
+            "static_source": "evalmachine.<anonymous>:66/evalmachine.<anonymous>:415",
+            "static_center": [
+                12.6,
+                0.012,
+                0
+            ],
+            "moving_center": [
+                12.167290235731473,
+                0.285,
+                6.925460197310484
+            ]
+        },
+        {
+            "name": "vehicle_2",
+            "time": 45.400000000000006,
+            "static_source": "evalmachine.<anonymous>:64/evalmachine.<anonymous>:415",
+            "static_center": [
+                0,
+                0.012,
+                8
+            ],
+            "moving_center": [
+                -13.135,
+                0.285,
+                6.772548748149617
+            ]
+        },
+        {
+            "name": "vehicle_2",
+            "time": 46.2,
+            "static_source": "evalmachine.<anonymous>:70/evalmachine.<anonymous>:415",
+            "static_center": [
+                -12.3,
+                0.027,
+                8
+            ],
+            "moving_center": [
+                -12.552990689896248,
+                0.285,
+                8.00377427469613
+            ]
+        },
+        {
+            "name": "vehicle_1",
+            "time": 54.6,
+            "static_source": "evalmachine.<anonymous>:65/evalmachine.<anonymous>:415",
+            "static_center": [
+                -12.6,
+                0.012,
+                0
+            ],
+            "moving_center": [
+                -12.251990714195435,
+                0.285,
+                -6.711516838937752
+            ]
+        },
+        {
+            "name": "vehicle_1",
+            "time": 54.800000000000004,
+            "static_source": "evalmachine.<anonymous>:69/evalmachine.<anonymous>:415",
+            "static_center": [
+                -12.3,
+                0.027,
+                -8
+            ],
+            "moving_center": [
+                -12.377176792136229,
+                0.285,
+                -7.998844820686728
+            ]
+        },
+        {
+            "name": "vehicle_0",
+            "time": 55.2,
+            "static_source": "evalmachine.<anonymous>:63/evalmachine.<anonymous>:415",
+            "static_center": [
+                0,
+                0.012,
+                -8
+            ],
+            "moving_center": [
+                13.135,
+                0.285,
+                -7.049646244448898
+            ]
+        },
+        {
+            "name": "vehicle_2",
+            "time": 72,
+            "static_source": "evalmachine.<anonymous>:81/evalmachine.<anonymous>:415",
+            "static_center": [
+                9.02,
+                0.03,
+                8.545
+            ],
+            "moving_center": [
+                8.18345125185048,
+                0.285,
+                8.535
+            ]
+        },
+        {
+            "name": "vehicle_1",
+            "time": 76.60000000000001,
+            "static_source": "evalmachine.<anonymous>:70/evalmachine.<anonymous>:415",
+            "static_center": [
+                -12.3,
+                0.027,
+                8
+            ],
+            "moving_center": [
+                -12.521188526829626,
+                0.285,
+                8.03406250189432
+            ]
+        },
+        {
+            "name": "vehicle_0",
+            "time": 91.60000000000001,
+            "static_source": "evalmachine.<anonymous>:69/evalmachine.<anonymous>:415",
+            "static_center": [
+                -12.3,
+                0.027,
+                -8
+            ],
+            "moving_center": [
+                -12.374982060363159,
+                0.285,
+                -8.000750693548838
+            ]
+        }
+    ],
+    "dynamic_collisions": [],
+    "outside": []
+}

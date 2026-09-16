@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; font-src 'none'; base-uri 'none'">
+    <title>方寸之间 · 体素工地沙盘</title>
+    <style>
+        :root{font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:#edece4;background:#151c21;font-synthesis:none}
+        *{box-sizing:border-box}body{margin:0;overflow:hidden}canvas#scene{display:block;width:100vw;height:100vh;touch-action:none;outline:none}
+        button{font:inherit;color:inherit;cursor:pointer}button:focus-visible{outline:2px solid #edb96c;outline-offset:5px}
+        #overlay{position:fixed;inset:0;pointer-events:none;padding:34px 40px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(180deg,rgba(10,18,24,.5),transparent 23%,transparent 82%,rgba(9,15,20,.76))}
+        header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}.eyebrow{font-size:10px;letter-spacing:3px;color:#d4b88e;display:flex;gap:12px;align-items:center}.eyebrow:before{content:"";width:24px;height:2px;background:#e6a74f}h1{font-family:"Microsoft YaHei",sans-serif;font-size:36px;letter-spacing:8px;font-weight:500;margin:11px 0 9px;text-shadow:0 2px 18px #0008}.sub{font-size:11px;letter-spacing:2px;color:#adb5b7}
+        .status{display:flex;gap:26px;align-items:center;margin-top:7px}.live{font-size:10px;letter-spacing:2px;color:#b7c4c5;display:flex;align-items:center;gap:9px}.dot{width:5px;height:5px;border-radius:50%;background:#bcd5a3;box-shadow:0 0 9px #bcd5a366}.time{font-size:28px;line-height:1;font-weight:300;letter-spacing:2px;font-variant-numeric:tabular-nums}.time small{font-size:10px;letter-spacing:1px;display:block;margin-top:10px;text-align:right;color:#a9b8bc}.top-action{pointer-events:auto;background:#1e2b3280;border:1px solid #94a3a62a;border-radius:50%;width:36px;height:36px;font-size:18px;transition:.2s}.top-action:hover{background:#4d5357}
+        .left-note{position:absolute;left:40px;top:43%;border-left:1px solid #81939c4a;padding:4px 0 4px 15px;max-width:135px}.left-note .num{font-size:10px;color:#d9b070;letter-spacing:2px}.left-note h2{font-size:13px;font-weight:400;line-height:1.8;letter-spacing:2px;margin:7px 0}.left-note p{color:#91a0a6;font-size:10px;line-height:1.9;letter-spacing:1px;margin:0}
+        footer{display:flex;justify-content:space-between;align-items:end;gap:22px}.legend{display:flex;gap:18px;font-size:10px;letter-spacing:1px;color:#aebabe;align-items:center;pointer-events:auto}.legend span{display:flex;align-items:center;gap:7px}.legend kbd{border:1px solid #6f858652;padding:4px 6px;border-radius:4px;font-size:9px;color:#dce4e2;font-family:inherit}.weather-button{border:1px solid #8aa0a237;background:#19252a8c;border-radius:7px;font-size:10px;padding:9px 13px;letter-spacing:1px}.weather-button.active{background:#47667370;border-color:#8bbcca88}.metrics{font-size:10px;letter-spacing:1px;color:#8ea0a7;text-align:right;white-space:nowrap;line-height:2}.metrics strong{color:#cbd6d2;font-weight:400}
+        #control-readout{position:absolute;bottom:106px;left:50%;transform:translateX(-50%);display:flex;gap:29px;padding:11px 20px;border:1px solid #94a0a229;border-radius:6px;background:#111a1d80;backdrop-filter:blur(8px);pointer-events:auto}.readout-button{padding:0;background:none;border:none;font-size:10px;color:#aeb6b7;letter-spacing:1px;white-space:nowrap;display:flex;align-items:center;gap:8px}.readout-button b{font-weight:500;color:#e4bd83;font-size:11px}.readout-button:before{content:"";width:4px;height:4px;border-radius:50%;background:#e4bd83}
+        #hint{position:absolute;left:50%;bottom:79px;transform:translateX(-50%);font-size:9px;letter-spacing:2px;color:#8e9ea4;white-space:nowrap}#toast{position:absolute;top:25%;left:50%;transform:translate(-50%,-8px);background:#142329e6;border:1px solid #8b9b9655;padding:13px 22px;letter-spacing:2px;font-size:12px;border-radius:5px;opacity:0;transition:opacity .3s,transform .3s}#toast.show{opacity:1;transform:translate(-50%,0)}
+        #loader{position:fixed;inset:0;background:#151e22;z-index:5;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .65s;letter-spacing:4px}.loader-mark{width:44px;height:44px;border:1px solid #edb96c;transform:rotate(30deg);margin-bottom:30px;box-shadow:9px -9px 0 -1px #151e22,9px -9px 0 #847051;animation:breathe 1.8s infinite}.loader-title{font-size:24px;font-weight:400}.loader-sub{font-size:10px;color:#a3aaa7;margin-top:16px;letter-spacing:2px}@keyframes breathe{50%{opacity:.4}}
+        #help{position:fixed;inset:0;z-index:8;background:#070e14b8;display:none;align-items:center;justify-content:center;backdrop-filter:blur(12px)}#help.open{display:flex}.help-card{max-width:510px;width:calc(100% - 40px);padding:36px;background:#1c282d;border:1px solid #8ca1a24d;border-radius:12px;box-shadow:0 20px 90px #0008}.help-card h2{margin:0 0 20px;font-size:23px;letter-spacing:4px;font-weight:400}.help-card p{font-size:12px;line-height:2;color:#b9c3c3}.help-card strong{color:#e8bb7a;font-weight:400}.help-card button{margin-top:10px;border:1px solid #d5b68c66;border-radius:5px;background:#d5b68c14;padding:10px 22px;font-size:12px}.help-card .fine{font-size:10px;color:#819296}
+        @media(max-width:850px){#overlay{padding:23px 24px}h1{font-size:28px;letter-spacing:5px}.left-note{display:none}.status{gap:14px}.live{display:none}.legend{gap:9px}.legend span:nth-child(2){display:none}#control-readout{bottom:95px;gap:15px;padding:10px 13px}#hint{bottom:71px;font-size:8px}.metrics{font-size:8px}.sub{font-size:9px}.eyebrow{font-size:8px;letter-spacing:2px}.time{font-size:22px}}
+        @media(max-width:500px){.sub{max-width:190px;line-height:1.8}.status .time{display:none}.legend span{display:none}.metrics{max-width:155px;white-space:normal}#control-readout{gap:14px}.readout-button{font-size:9px;gap:5px}.readout-button b{font-size:9px}footer{gap:10px}h1{font-size:25px}}
+    </style>
+</head>
+<body>
+    <canvas id="scene" aria-label="可拖拽环视的体素建筑工地沙盘，点击桌面旋钮改变模拟参数" tabindex="0"></canvas>
+    <div id="overlay">
+        <header>
+            <div><div class="eyebrow">微缩世界研究所 / 作品 001</div><h1>方寸之间</h1><div class="sub">一座城市，在这张桌上缓缓生长。</div></div>
+            <div class="status"><div class="live"><span class="dot"></span><span id="live-status">工地运行中</span></div><div class="time"><span id="clock">09:30</span><small id="phase">晴朗 · 白昼</small></div><button class="top-action" id="help-button" aria-label="操作说明">?</button><button class="top-action" id="home-button" aria-label="重置视角">⌖</button></div>
+        </header>
+        <aside class="left-note"><div class="num">01 / 施工现场</div><h2>向上建造<br>让时间流动</h2><p>土方 · 钢筋 · 混凝土<br>每一块，都各得其所。</p></aside>
+        <div id="control-readout"><button class="readout-button" id="speed-button" aria-label="切换设备速度">设备 <b id="speed-value">1.0×</b></button><button class="readout-button" id="day-button" aria-label="开关昼夜循环">昼夜 <b id="day-value">循环</b></button><button class="readout-button" id="dust-button" aria-label="切换扬尘强度">扬尘 <b id="dust-value">轻微</b></button></div>
+        <div id="hint">点击桌面实体旋钮，调度你的微缩世界</div>
+        <div id="toast" role="status"></div>
+        <footer><div class="legend"><span><kbd>拖拽</kbd>环视</span><span><kbd>滚轮</kbd>缩放</span><button class="weather-button" id="rain-button"><span style="display:inline">☂</span> 空格 · 模拟暴雨</button></div><div class="metrics"><strong id="fps">— FPS</strong> <span id="quality">自适应画质</span><br>体素构造 / WebGL / Three.js r160 / 完全离线</div></footer>
+    </div>
+    <div id="loader"><div class="loader-mark"></div><div class="loader-title">方寸之间</div><div class="loader-sub" id="loader-status">正在搭建一个忙碌的小世界</div></div>
+    <div id="help" role="dialog" aria-modal="true" aria-labelledby="help-title"><div class="help-card"><h2 id="help-title">桌上的城市</h2><p><strong>拖拽</strong> 环视沙盘，<strong>滚轮 / 双指</strong> 缩放。闲置片刻后相机将缓缓环绕，右上角 <strong>⌖</strong> 返回初始视角。</p><p>点击桌面前方的三个<strong>实体控制旋钮</strong>，或下方对应按钮：调节设备速度、暂停昼夜循环、切换扬尘强度。</p><p><strong>空格</strong> 切换暴雨。雨势渐起时，地面变得湿润，工地照明增强。再按一次，天气逐渐放晴。</p><p class="fine">所有模型、纹理与粒子均由代码生成。Three.js r160 已内嵌，无需网络。车辆使用间隔车队与固定装卸窗口；塔吊在独立安全高度和扇区工作。帧率由硬件决定，画质将自动调节。</p><button id="close-help">继续观察</button></div></div>
+    <script>/*THREE_LIBRARY*/</script>
+    <script>
+    'use strict';
+    /*APP_CODE*/
+    </script>
+</body>
+</html>

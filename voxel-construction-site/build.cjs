@@ -1,0 +1,14 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const base_path = __dirname;
+const source_names = ['core.js', 'room.js', 'site.js', 'machines.js', 'effects.js', 'main.js'];
+const app_code = source_names.map(name => name === 'machines.js' && process.argv.includes('--static') ? 'const machines = { build() {}, update() {} };' : fs.readFileSync(path.join(base_path, name), 'utf8')).join('\n');
+new vm.Script(app_code, { filename: 'sandbox-app.js' });
+const three_code = fs.readFileSync(path.join(base_path, 'three-r160.min.js'), 'utf8');
+const shell = fs.readFileSync(path.join(base_path, 'shell.html'), 'utf8');
+const html = shell.replace('/*THREE_LIBRARY*/', () => three_code.replace(/<\/script/gi, '<\\/script')).replace('/*APP_CODE*/', () => app_code);
+const output_path = process.argv.includes('--final') ? path.join(base_path, '..', 'outputs', '方寸之间-体素工地沙盘.html') : path.join(base_path, 'preview.html');
+fs.writeFileSync(output_path, html, 'utf8');
+console.log(JSON.stringify({ path: output_path, bytes: Buffer.byteLength(html), external_tags: /<(?:script|img|link)[^>]+(?:src|href)=["']https?:/i.test(html) }, null, 4));
+
