@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Demo Collection</title>
+<style>
+:root{font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:#e8e6e1;background:#141a1e}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:64px 24px}
+h1{font-size:34px;font-weight:500;letter-spacing:6px;margin:0 0 10px}
+.sub{color:#9aa7ab;font-size:13px;letter-spacing:2px;margin-bottom:48px}
+.grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));width:100%;max-width:960px}
+a.card{display:block;padding:28px;border:1px solid #94a3a62b;border-radius:10px;background:#1c2529;text-decoration:none;color:inherit;transition:.2s}
+a.card:hover{border-color:#e6a74f88;background:#232f34;transform:translateY(-3px)}
+.tag{font-size:10px;letter-spacing:2px;color:#d4b88e}
+.card h2{font-size:20px;font-weight:400;letter-spacing:2px;margin:10px 0 8px}
+.card p{font-size:12px;color:#9aa7ab;line-height:1.9;margin:0}
+.badge{display:inline-block;margin-top:16px;font-size:10px;letter-spacing:1px;padding:4px 10px;border-radius:4px;border:1px solid #b7c4c544;color:#b7c4c5}
+footer{margin-top:56px;font-size:11px;letter-spacing:1px;color:#6f7f85}
+</style>
+</head>
+<body>
+<h1>AI Demo Collection</h1>
+<div class="sub">AI 辅助生成的交互式前端 Demo 合集</div>
+<div class="grid">
+<a class="card" href="./campus-3d-dashboard/index.html">
+<div class="tag">THREE.JS / CHART.JS</div>
+<h2>智慧校园 3D 数据大屏</h2>
+<p>等距视角校园场景 + 数据看板，支持昼夜切换、双相机、悬停提示与循环车流。</p>
+<span class="badge">可运行</span>
+</a>
+<a class="card" href="./voxel-construction-site/preview.html">
+<div class="tag">THREE.JS R160 / 完全离线</div>
+<h2>方寸之间 · 体素工地沙盘</h2>
+<p>桌面上的微缩建筑工地：挖掘机、渣土车、塔吊昼夜运转，支持暴雨天气与实体旋钮交互。</p>
+<span class="badge">可运行</span>
+</a>
+<a class="card" href="./mcb-2p-c16-blender-animation/MCB_2P_Engineering_Animation.mp4">
+<div class="tag">BLENDER / 工程动画</div>
+<h2>双极空气开关精细建模</h2>
+<p>MCB 断路器程序化建模与 22 秒 8 章节工程动画，附 .blend 源文件与 .glb 通用模型。</p>
+<span class="badge">动画成片</span>
+</a>
+</div>
+<footer>fanhuayishiy / ai-demo</footer>
+</body>
+</html>
