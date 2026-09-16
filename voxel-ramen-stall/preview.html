@@ -1091,7 +1091,7 @@ const machines = {
     },
     set_moto(t) {
         const s = this.moto_distance(t);
-        const pose = this.moto_pose(this.path_len - s);
+        const pose = this.moto_pose(s);
         this.moto.position.set(pose.x, 0, pose.z);
         this.moto.rotation.y = pose.yaw;
         for (const wheel of this.wheels) wheel.rotation.x = s / 0.35;
