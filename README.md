@@ -6,10 +6,21 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 
 | 项目 | 简介 | 状态 |
 | --- | --- | --- |
+| [hydrogen-energy-system](./hydrogen-energy-system/) | H₂ NEXUS 含氢综合能源数字孪生，五类能流动态可视化与守恒仿真 | 可交互 |
 | [campus-3d-dashboard](./campus-3d-dashboard/) | 智慧校园 3D 数据大屏（单 HTML 文件） | 可运行 |
 | [mcb-2p-c16-blender-animation](./mcb-2p-c16-blender-animation/) | 双极空气开关 Blender 精细建模与工程动画（主提示：调研空气开关，作为参考，然后使用 Blender 精细建模，我的标准很高，都要有动画） | 可交互 |
 | [voxel-construction-site](./voxel-construction-site/) | 体素微缩建筑工地沙盘「方寸之间」（Three.js r160 完全离线单 HTML） | 可运行 |
 | [voxel-ramen-stall](./voxel-ramen-stall/) | 体素微缩深夜拉面摊沙盘「深夜拉面摊」（Three.js r160 完全离线单 HTML） | 可运行 |
+
+---
+
+## hydrogen-energy-system — H₂ NEXUS 综合能源数字孪生
+
+深色工业中控风格的三维能源园区，包含光伏、风机、电解槽、储氢罐、燃料电池、天然气调压站、燃气热电联产、热泵、复合制冷及用能建筑。支持 360° 环绕、设备点选、能流筛选、气象 / 电热冷负荷调节、暂停与加速、运行记录导出。
+
+所有数值来自本地确定性仿真，包含设备效率、损耗、环境吸热、冷凝排热、双向电网平衡与有界储氢积分；**不是已接入现场的实时遥测，也不是工程设计软件**。
+
+运行与模型说明见 [项目 README](./hydrogen-energy-system/README.md)。已提交构建产物，使用仓库原有静态服务器即可访问 `/hydrogen-energy-system/`；无运行时 CDN 依赖。
 
 ---
 
