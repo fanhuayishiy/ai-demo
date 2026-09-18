@@ -221,8 +221,9 @@ function updateUI() {
   $('#metric-kg').textContent = format(state.nextStored / 33.33);
   $('#tank-level').style.width = `${state.nextStored / storageCapacity * 100}%`;
   $('#metric-grid').textContent = format(Math.abs(state.grid));
-  $('#grid-direction').textContent = state.grid > 0 ? '↙' : '↗';
-  $('#grid-label').textContent = state.grid > 0 ? '电网购电 · 补足用电缺口' : '余电上网 · 双向功率平衡';
+  const exchange = Math.abs(state.grid) < 1e-6 ? 0 : state.grid;
+  $('#grid-direction').textContent = exchange > 0 ? '↙' : exchange < 0 ? '↗' : '→';
+  $('#grid-label').textContent = exchange > 0 ? '电网购电 · 补足用电缺口' : exchange < 0 ? '余电上网 · 双向功率平衡' : '电网平衡 · 无功率交换';
   $('#residual').textContent = `${format(Math.abs(state.residuals.total), 3)} kW`;
   const rows: [Carrier, number, string][] = [
     ['electricity', state.consumption, '供需平衡'],
@@ -396,4 +397,6 @@ setInterval(() => {
     drawTrend();
   }
 }, 1000);
-window.addEventListener('pagehide', () => scene?.dispose(), { once: true });
+window.addEventListener('pagehide', event => {
+  if (!event.persisted) scene?.dispose();
+});
