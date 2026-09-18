@@ -75,6 +75,8 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 
 ### 运行方式
 
+- 在线演示：<https://hydrogen-energy-release-ndombjnp.devinapps.com/>（已公开部署，持有链接即可访问）。
+
 已提交静态构建产物，本地运行无需安装 Node.js。在仓库根目录执行：
 
 ```bash
