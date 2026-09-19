@@ -1,0 +1,220 @@
+// 引擎：渲染器 / 场景 / 相机 / 后期 / 主循环
+import * as THREE from 'three';
+import { U } from './toon.js';
+import { buildComposer } from './postfx.js';
+import { createCameraRig } from './camera-rig.js';
+import { setupLighting, skyEnvironment, backgroundTexture, syncSunToView, SUN_DIR } from './lighting.js';
+
+export const VIEWS = {
+  hero: { pos: [13.6, 5.4, 15.8], target: [-3.6, 1.9, 1.2] },
+  store: { pos: [-4.4, 2.4, 13.6], target: [-6.8, 1.7, 2.2] },
+  interior: { pos: [-6.2, 1.9, 11.0], target: [-7.6, 1.3, 1.0] },
+  corner: { pos: [10.4, 3.6, 14.2], target: [-0.6, 1.5, 3.4] },
+  // 车站机位要在店北侧的空地上：原来 pos 的 z=4.6 落在店铺轮廓内（store z -0.8..4.8），
+  // 等于把相机塞进店里隔着后墙看站台。
+  station: { pos: [-4.6, 2.3, -2.6], target: [-9.6, 0.9, -12.2] },
+  crossing: { pos: [13.6, 5.2, -4.4], target: [5.4, 0.6, -12.6] },
+  top: { pos: [1.0, 40.0, 14.0], target: [-1.0, -0.5, -1.0] },
+  blossom: { pos: [-12.4, 3.4, 3.6], target: [-15.0, 3.0, -5.2] },
+  vending: { pos: [-9.2, 1.6, 9.6], target: [-11.3, 1.1, 5.7] },
+  bike: { pos: [-6.2, 1.6, -1.6], target: [-12.4, 0.5, -4.4] },
+  tight: { pos: [-4.4, 1.35, 6.9], target: [-6.6, 1.15, 3.4] },
+};
+
+export function createEngine({ canvas, quality = {} } = {}) {
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: false,
+    alpha: false,
+    powerPreference: 'high-performance',
+    stencil: false,
+    preserveDrawingBuffer: typeof location !== 'undefined' && location.search.includes('sample'),
+  });
+  /** 视口尺寸：兼容离屏 / 无窗口环境（innerWidth 为 0 时回退） */
+  const viewSize = () => ({
+    w: window.innerWidth || canvas.clientWidth || quality.width || 1280,
+    h: window.innerHeight || canvas.clientHeight || quality.height || 720,
+  });
+  let { w: vw, h: vh } = viewSize();
+  const dpr = Math.min(window.devicePixelRatio || 1, quality.pixelRatio ?? 2);
+  renderer.setPixelRatio(dpr);
+  renderer.setSize(vw, vh, false);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = quality.toneMapping ?? THREE.NeutralToneMapping;
+  renderer.toneMappingExposure = quality.exposure ?? 0.94;
+  renderer.shadowMap.enabled = true;
+  // VSM 会在大平面接收者（路面・铺砖）上拉出「梳齿」状的漏光条纹，而且每帧要跑两次
+  // 12 样本高斯。r186 已删除 PCFSoftShadowMap（设了会回退到 PCF 并打一条警告），
+  // 软边交给贴图的接触影与 SMAA。
+  renderer.shadowMap.type = quality.shadowType ?? THREE.PCFShadowMap;
+  // 微缩场景：日光与几何基本静止，阴影贴图按需刷新（省去每帧整场景阴影 pass）
+  renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.needsUpdate = true;
+
+  const scene = new THREE.Scene();
+  scene.name = 'diorama';
+  const env = skyEnvironment(renderer);
+  if (env) scene.environment = env;
+  scene.background = backgroundTexture();
+  scene.fog = new THREE.FogExp2(0xe9eef2, 0.0041);
+
+  const camera = new THREE.PerspectiveCamera(quality.fov ?? 32, vw / vh, 0.12, 220);
+  camera.position.set(...VIEWS.hero.pos);
+
+  const light = setupLighting(scene, { quality });
+  const rig = createCameraRig(camera, canvas, { target: VIEWS.hero.target });
+  rig.place(VIEWS.hero.pos, VIEWS.hero.target);
+
+  const fx = buildComposer(renderer, scene, camera, { size: { width: vw, height: vh }, dpr, quality });
+
+  const updaters = [];
+  const resizeSubs = [];
+  let running = true;
+  let frame = 0;
+  let framesTotal = 0;
+  let shadowTick = 999;
+  let camStill = 0;
+  const _camPos = new THREE.Vector3();
+  const _camQuat = new THREE.Quaternion();
+  let acc = 0;
+  const stats = { fps: 60, calls: 0, tris: 0 };
+
+  function onResize() {
+    const { w, h } = viewSize();
+    vw = w; vh = h;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h, false);
+    fx.composer.setSize(w, h);
+    const px = renderer.getDrawingBufferSize(new THREE.Vector2());
+    fx.edge.uniforms.uResolution.value.set(px.x, px.y);
+    fx.dof.uniforms.uResolution.value.set(px.x, px.y);
+    for (const f of resizeSubs) f(w, h);
+  }
+  window.addEventListener('resize', onResize);
+  onResize();
+
+  function renderFrame(dt) {
+    U.time.value += dt;
+    rig.update(dt);
+    syncSunToView(camera);
+
+    // 景深：焦点锁定视线目标 —— 绕视时主体始终清晰，前后景柔化（移轴微缩感）
+    const dist = camera.position.distanceTo(rig.controls.target);
+    const f = fx.dof.uniforms;
+    f.uFocus.value += (dist - f.uFocus.value) * Math.min(1, dt * 6);
+    f.uNearFar.value.set(camera.near, camera.far);
+    const g = fx.grade.uniforms;
+    g.uTime.value = U.time.value;
+
+    // 描边：投影信息随相机变化
+    const tanHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5));
+    fx.edge.uniforms.uProjInfo.value.set(1 / (tanHalf * camera.aspect), 1 / tanHalf);
+    fx.edge.uniforms.uNearFar.value.set(camera.near, camera.far);
+    fx.edge.uniforms.uStrength.value = THREE.MathUtils.clamp(1.12 - dist * 0.006, 0.42, 1.05) * (quality.edge ?? 1);
+    fx.edge.uniforms.uLineWidth.value = dist < 6 ? 0.8 : 1.0;
+
+    // 阴影只在「画面静止」后才重绘。日光方向固定、正交视锥罩住整块台座，
+    // 唯一会动的投影物是花枝与吊幌子；拖动过程中每 0.45 s 重画一次整场景阴影，
+    // 实测每 10 帧插入一个尖峰帧（draw calls 9.5k → 15k，多花 ~75 ms），
+    // 表现就是「一闪一闪的一顿一顿」。松手后再补一次即可。
+    // 阻尼是指数收敛的，永远差一点点 → 四元数要用点积容差判等，否则「静止」永远攒不出来
+    const turned = 1 - Math.abs(camera.quaternion.dot(_camQuat)) > 1e-10;
+    if (camera.position.distanceToSquared(_camPos) > 1e-9 || turned) {
+      camStill = 0;
+      _camPos.copy(camera.position);
+      _camQuat.copy(camera.quaternion);
+    } else {
+      camStill += dt;
+    }
+    shadowTick += dt;
+    // 静止が長く続くほど影は動かない（日光は固定、動くのは花枝と吊幌子だけ）：
+    // 落ち着いてすぐ一度だけ直した後は刻みを緩め、待ち受け中の微脈動を消す。
+    const refresh = camStill > 3 ? (quality.shadowRefresh ?? 0.45) * 5 : (quality.shadowRefresh ?? 0.45);
+    if (shadowTick > refresh && camStill > (quality.shadowSettle ?? 0.2)) {
+      shadowTick = 0;                 // 注意不要清 camStill：清了它就永远攒不到「静止很久」
+      renderer.shadowMap.needsUpdate = true;
+    }
+    for (const fn of updaters) fn(dt, U.time.value, { camera, scene, renderer, rig, dist });
+    fx.composer.render(dt);
+
+    frame++;
+    framesTotal++;
+    acc += dt;
+    if (acc > 0.5) {
+      stats.fps = frame / acc;
+      frame = 0;
+      acc = 0;
+      const info = renderer.info.render;
+      stats.calls = info.calls;
+      stats.tris = info.triangles;
+    }
+  }
+
+  let raf = 0;
+  let last = performance.now();
+  function loop() {
+    raf = requestAnimationFrame(loop);
+    if (!running) return;
+    const now = performance.now();
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    renderFrame(dt);
+  }
+  loop();
+
+  const api = {
+    THREE,
+    renderer,
+    scene,
+    camera,
+    rig,
+    lights: light,
+    fx,
+    stats,
+    sunDir: SUN_DIR,
+    onUpdate(fn) {
+      updaters.push(fn);
+      return fn;
+    },
+    onResize(fn) {
+      resizeSubs.push(fn);
+    },
+    add(o) {
+      scene.add(o);
+      return o;
+    },
+    /** 让世界在下一帧重画一次阴影贴图（装配完成、或任何静止几何发生变化时调用） */
+    markShadowsDirty() {
+      shadowTick = 999;
+      camStill = 999;
+    },
+    setView(name, { instant = true } = {}) {
+      const v = VIEWS[name] || VIEWS.hero;
+      rig.place(v.pos, v.target);
+      return v;
+    },
+    resize(w, h) {
+      if (w && h) { vw = w; vh = h; }
+      onResize();
+    },
+    get ready() {
+      return framesTotal > 2;
+    },
+    step(dt = 1 / 60, n = 1) {
+      for (let i = 0; i < n; i++) renderFrame(dt);
+    },
+    pause(v = true) {
+      running = !v;
+    },
+    dispose() {
+      cancelAnimationFrame(raf);
+      running = false;
+      window.removeEventListener('resize', onResize);
+      rig.dispose();
+      fx.composer.dispose?.();
+      renderer.dispose();
+    },
+  };
+  return api;
+}

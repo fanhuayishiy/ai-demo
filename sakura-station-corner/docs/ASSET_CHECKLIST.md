@@ -1,0 +1,368 @@
+# docs/ASSET_CHECKLIST.md — 分阶段开发步骤清单（按序执行，完成打勾）
+
+> 阶段 0~2 由主控完成。阶段 3 起资产逐个建模，可并行分发，但**一个文件只由一个人写**。
+> 每完成一项：`npm run check` 必须通过，并在本文件打勾。
+
+## 阶段 0 · 需求与规划（已完成）
+- [x] 0.1 `AGENT.md` 核心需求与硬性约束固化
+- [x] 0.2 `docs/LAYOUT.md` 布局方案（分区/坐标/机位/光影）
+- [x] 0.3 `docs/CONTRACT.md` 资产接口契约
+- [x] 0.4 本清单
+
+## 阶段 1 · 工程骨架与引擎层（已完成）
+- [x] 1.1 `package.json` / `vite.config.js` / `index.html`（仅入口，无 UI）
+- [x] 1.2 `src/core/palette.js` 全场景调色板
+- [x] 1.3 `src/core/textures.js` 程序化纹理库（沥青/混凝土/铺砖/木/树皮/金属/道床/盲道/海报/标签/花瓣/瓦/波纹/纸/织物/草/做旧贴花）
+- [x] 1.4 `src/core/toon.js` 三渲二内核（渐变色阶 + 阴影冷染 + 卡通高光 + 边缘光 + 风动 + 呼吸 + 流光 + 抖动）
+- [x] 1.5 `src/core/materials.js` 材质家族（42 个预设，含真实玻璃/水/金属/花瓣）
+- [x] 1.6 `src/core/kit.js` 几何与组装工具（图元/曲线/阵列/做旧/贴花/实例化/收尾）
+- [x] 1.7 `src/core/outline.js` 反壳描边
+- [x] 1.8 `src/core/postfx.js` 屏幕空间描边 + 景深 + Bloom + 分级 + SMAA + 输出
+- [x] 1.9 `src/core/lighting.js` 程序化天空环境 + 主光/半球/补光/反弹光
+- [x] 1.10 `src/core/camera-rig.js` 拖拽 / 360° / 无极缩放
+- [x] 1.11 `src/core/engine.js` 渲染主循环 + 多机位
+- [x] 1.12 `tools/check-assets.mjs` 离线资产 smoke test
+- [x] 1.13 `tools/shoot.mjs` 实拍校验（Playwright + 本机 Chrome）
+- [x] 1.14 管线自检通过（材质/描边/阴影/景深/纹理全部可见证）
+
+## 阶段 2 · 地图层（世界底图）
+- [x] 2.1 `src/world/baseplate.js` 正方形纯色底座（40×40×1.6，倒角）
+- [x] 2.2 `src/world/ground.js` 地表分层（草地/泥土/路基层/道床/法面高差）
+- [x] 2.3 `src/world/road-network.js` 丁字路口柏油路网 + 路缘石 + 中心线 + 路侧带
+- [x] 2.4 `src/world/crosswalk.js` 横断歩道（两处）+ 停止线 + 安全导流带
+- [x] 2.5 `src/world/drainage.js` U 字側溝 + 集水桝 + 落し蓋
+- [x] 2.6 `src/world/sidewalk.js` 歩道铺砖 + 段差 + 車道cpy 岛 + 南側法面
+- [x] 2.7 `src/world/alley.js` 小巷（幅员 2.6m、側溝、注意標識、番地札、行き止まり）
+- [x] 2.8 `src/world/station-platform.js` 站台（顶面 +0.72、端部階段、盲道、排水口）
+- [x] 2.9 `src/world/station-track.js` 単線軌道（ゲージ 1.067、枕木、レール、道床、側溝）
+- [x] 2.10 `src/world/level-crossing.js` 踏切（踏み板、遮断台、注意標識、誘導線）
+- [x] 2.11 `src/world/index.js` 组装 + `src/world/placement.js` 落位总表（83 项清单，import.meta.glob 静态收集 + 异步装配）
+
+## 阶段 3 · 植生（樱花优先，决定画面气质）
+- [x] 3.1 `assets/flora/sakura-somei-yoshino.js` 染井吉野（树干分枝/树皮/花球/透光；seed 变化）
+- [x] 3.2 `assets/flora/sakura-late-yaezeni.js` 晚樱八重红（浓密重瓣、深粉）
+- [x] 3.3 `assets/flora/sakura-branch-detail.js` 近景细枝 + 花簇（地被枝、掉落枝）
+- [x] 3.4 `assets/flora/street-tree-keyaki.js` 街路樹（新绿）
+- [x] 3.5 `assets/flora/hedge.js` 生垣/植栽带
+- [x] 3.6 `assets/flora/flower-bed.js` 站前花壇（パンジー・チューリップ）
+- [x] 3.7 `assets/flora/grass-slope.js` 法面草 + 防護柵 + 田んぼ strip
+- [x] 3.8 `assets/flora/potted-plant.js` 盆栽（店舗前・ホーム端）
+- [x] 3.9 `assets/flora/ground-cover.js` 地被（苔、落叶层、土）
+
+## 阶段 4 · 便利店建筑外壳
+- [x] 4.1 `assets/store/convenience-store.js` 主体（基础/壁/天井/女墙/屋根/雨樋/配管/外部階段无）
+- [x] 4.2 `assets/store/glass-curtain-wall.js` 大面積ガラスカーテンウォール（框・サッシ・反射・室内可见）
+- [x] 4.3 `assets/store/auto-door.js` 自動ドア（センサー・開閉表示・床レール・安全ステッカー）
+- [x] 4.4 `assets/store/awning.js` 雨棚 + 看板帯（三色帯）
+- [x] 4.5 `assets/store/store-signage.js` 店招・立柱看板・夜間照明
+- [x] 4.6 `assets/store/entrance-mat.js` 门口地垫
+- [x] 4.7 `assets/store/exterior-poster-case.js` 屋外ポスターケース・チラシ
+- [x] 4.8 `assets/store/backroom-door.js` 後扉（金属防火扉・施錠・表示）
+- [x] 4.9 `assets/store/wall-facilities.js` 壁面設備（換気口・ダクト・ケーブル引き回し・避雷）
+- [x] 4.10 `assets/store/pavement-frontage.js` 店舗前タイル・点字ブロック・段差・車止め
+
+## 阶段 5 · 街道设施 A（店前点名项）
+- [x] 5.1 `assets/street/vending-machine.js` **自动贩卖机（重点：真实玻璃门 + 每层饮料 + 面板/灯管/退出口/磨损）**
+- [x] 5.2 `assets/street/vending-machine-tea.js` 第二形态（お茶/咖啡自販機，不同配色与商品）
+- [x] 5.3 `assets/street/umbrella-stand.js` 雨伞架（含多把伞：透明塑料伞、折叠伞、长伞）
+- [x] 5.4 `assets/street/trash-bin-combustible.js` 可燃ごみ箱
+- [x] 5.5 `assets/street/trash-bin-recyclable.js` 資源ごみ（缶・瓶・ペットボトル 3 分类口）
+- [x] 5.6 `assets/street/trash-bin-bottle-can.js` 瓶・缶専用箱（网罩/投入口）
+- [x] 5.7 `assets/street/flower-planter.js` 花箱・花盆（葉ボタン・パンジー・土・苔）※ 実ファイル名に修正
+- [x] 5.8 `assets/street/ac-outdoor-unit.js` 冷暖房室外機（羽根・金网・配管・ドレン水跡）
+- [x] 5.9 `assets/street/bulletin-board.js` 公告掲示板（多张海报叠贴、日付、雨晒色褪）
+- [x] 5.10 `assets/street/post-box.js` 郵便ポスト
+- [x] 5.11 `assets/street/bench-wait.js` 待合ベンチ（街角）※主控代建
+
+## 阶段 6 · 街道设施 B（电气与交通）
+- [x] 6.1 `assets/street/utility-pole.js` 電柱（鉄筋・架台・碍子・変圧器・点検踏板・番号札）
+- [x] 6.2 `assets/street/power-lines.js` 架空電線（**两端必须锚定在相邻两电线杆上**，多回路 + 引下線）
+- [x] 6.3 `assets/street/street-lamp-retro.js` レトロ街灯（笠・グローブ・灯門・呼吸点灯）
+- [x] 6.4 `assets/street/traffic-light-vehicle.js` 車両用信号機（三眼・バイザー・缓慢渐变）
+- [x] 6.5 `assets/street/traffic-light-pedestrian.js` 歩行者用信号機（青人/赤人・点滅）
+- [x] 6.6 `assets/street/road-sign-set.js` 道路標識群（一時停止・注意信号・速度制限・自転車・駐禁止・踏切）
+- [x] 6.7 `assets/street/guard-rail.js` 护栏（波形ガードレール + 柱 + 反射標識）
+- [x] 6.8 `assets/street/bollard.js` ボラード・車止め
+- [x] 6.9 `assets/street/manhole-cover.js` 側溝蓋・manhole（鉄筋文様・錆・水たまり跡）
+- [x] 6.10 `assets/street/parking-space.js` 駐車区画（白線・車輪止め・番号・砂利）
+- [x] 6.11 `assets/street/fire-hydrant.js` 消火器ボックス / 防火水槽標識
+- [x] 6.12 `assets/street/traffic-cone.js` カラーコーン・立て看板・路地注意鏡
+
+## 阶段 7 · 自行车与駐輪場
+- [x] 7.1 `assets/bike/bicycle-commuter-a.js` 通勤自転車 A（前カゴ・ダイナモ・泥除け・チェーンガード・サドルバッグ）
+- [x] 7.2 `assets/bike/bicycle-commuter-b.js` 通勤自転車 B（女子仕様・バスケット・低床・ライト）
+- [x] 7.3 `assets/bike/bicycle-old-c.js` 旧型自転車（錆・塗装剥がれ・チェーン垂れ・パンク気味）
+- [x] 7.4 `assets/bike/bicycle-parent-d.js` 子乗せ自転車（前チャイルドシート・バー・ヘルメット）
+- [x] 7.5 `assets/bike/bike-parking-rack.js` 駐輪ラック（車輪止め・アーチ・区画表示）
+- [x] 7.6 `assets/bike/bike-park-sign.js` 駐輪場看板・整理券ポスト
+- [x] 7.7 `assets/bike/bike-pump.js` 空気入れ（立式・ゲージ・ホース）
+- [x] 7.8 `assets/bike/bike-lock-post.js` 施錠柱・U 字ロック・チェーン
+
+## 阶段 8 · 车站与电车
+- [x] 8.1 `assets/station/platform-canopy.js` ホーム上屋（木柱・トタン・雨樋・梁・照明）
+- [x] 8.2 `assets/station/station-name-sign.js` 駅名標（木製・白地・青帯・邻站表示）
+- [x] 8.3 `assets/station/platform-bench.js` 候车长椅（木製・錆脚・ゴミ）
+- [x] 8.4 `assets/station/timetable-board.js` 時刻表看板（便数・最終・雨晒）
+- [x] 8.5 `assets/station/platform-bin.js` ホームゴミ箱 + 自販機横の灰皿
+- [x] 8.6 `assets/station/crossing-barrier.js` 遮断機 + 踏切警報機 + 非常ボタン + 誘導標
+- [x] 8.7 `assets/station/rail-signal.js` 閉そく信号機（色灯・腕木風）
+- [x] 8.8 `assets/station/ticket-machine.js` 券売機（簡易）+ 乗車整理券箱
+- [x] 8.9 `assets/station/train-car-front.js` 先頭車（ヘッドライト・目的地表示・窓・扉・台車・屋根上）
+- [x] 8.10 `assets/station/train-car-rear.js` 後述車（連結面・尾灯・广告带）
+- [x] 8.11 `assets/station/platform-stairs.js` 階段 + 手すり + 滑り止め + 矢印表示
+- [x] 8.12 `assets/station/rail-furniture.js` レール周辺（転換機・ケーブル槽・防草シート・標識）
+
+## 阶段 9 · 便利店内部（大件设备，透过玻璃全可见）
+- [x] 9.1 `assets/interior/shelf-gondola.js` 背合わせ棚（4 段・価格札・フック）
+- [x] 9.2 `assets/interior/shelf-wall.js` 壁側棚（文房具・日用）
+- [x] 9.3 `assets/interior/drink-fridge.js` 飲料冷ケース（4 門ガラス・各層飲料・庫内灯）
+- [x] 9.4 `assets/interior/bento-display.js` 弁当・おにぎり・寿司陳列（多段・冷気カーテン）
+- [x] 9.5 `assets/interior/register-counter.js` レジカウンター（POS・レジ袋・金庫・モニター）
+- [x] 9.6 `assets/interior/coffee-machine.js` カフェマシン（カップ・シロップ・排水・灯）
+- [x] 9.7 `assets/interior/oden-counter.js` 关东煮柜台（仕切り・具材・湯気・たれ）
+- [x] 9.8 `assets/interior/magazine-rack.js` 雑誌・新聞ラック
+- [x] 9.9 `assets/interior/upright-freezer.js` 立式アイスクリーム庫
+- [x] 9.10 `assets/interior/lockers.js` コインロッカー ※主控代建
+- [x] 9.11 `assets/interior/poster-lightbox.js` 海报灯箱（内部可见，多面）
+- [x] 9.12 `assets/interior/backroom-shelving.js` 後場棚（段ボール・コンテナ・台車）
+- [x] 9.13 `assets/interior/ceiling-lights.js` 天井灯带 + 換気 + スプリンクラー + 梁 ※主控代建
+- [x] 9.14 `assets/interior/floor-guidance.js` 床ガイドライン + 矢印 + 注意ステッカー
+- [x] 9.15 `assets/interior/wall-and-floor.js` 内壁タイル・腰板・天井・床（无空白死角）※主控代建
+- [x] 9.16 `assets/interior/basket-and-cart.js` カゴ・台車・傘立て（店内）
+- [x] 9.17 `assets/products/price-tag.js` 店内価格表示・POP・新発売カード（棚札 / 床 POP / 新発売 / 100 円 / sale 全 variant）※ 実ファイル名に修正
+
+## 阶段 10 · 便利店内部（商品单体，全部独立文件）
+- [x] 10.1 `assets/products/onigiri.js` 饭团（3 种：鮭・コンブ・ツナマヨ + のり）
+- [x] 10.2 `assets/products/bento-box.js` 弁当（蓋・米饭・おかず・仕切り）
+- [x] 10.3 `assets/products/sushi-tray.js` 寿司托盘（握り 6 贯・シャリ・ネタ）
+- [x] 10.4 `assets/products/drink-bottle.js` PET 饮料瓶（キャップ・ラベル・収缩膜・中身）
+- [x] 10.5 `assets/products/drink-can.js` 铝罐（プルタブ・天面・condensation）
+- [x] 10.6 `assets/products/milk-carton.js` 牛乳パック
+- [x] 10.7 `assets/products/cup-noodle.js` カップ麺（蓋・スプーン・かやく）
+- [x] 10.8 `assets/products/chip-bag.js` 薯片袋（充气・印刷・クリップ）
+- [x] 10.9 `assets/products/candy-bar.js` 巧克力/糖果（箔・包装）
+- [x] 10.10 `assets/products/tissue-pack.js` ティッシュ・ウェットティッシュ
+- [x] 10.11 `assets/products/zen-sets.js` おでんの具（大根・卵・こんにゃく・さつまげ・海苔巻）
+- [x] 10.12 `assets/products/ice-cream.js` アイスクリーム（バー・カップ・パフェ）
+- [x] 10.13 `assets/products/coffee-cup.js` カップコーヒー（蓋・スリーブ・ストロー）
+- [x] 10.14 `assets/products/magazine-item.js` 雑誌・漫画単行本
+- [x] 10.15 `assets/products/daily-goods.js` 日用（電池・傘・タオル・文房具）
+- [x] 10.16 `assets/products/snack-shelf-pack.js` スナック棚パック（複数個の一括生成 but 每个独立 Mesh）
+- [x] 10.17 `assets/products/bread-set.js` 面包・サンドイッチ
+- [x] 10.18 `assets/products/deli-tray.js` デリ・総菜（サラダ・唐揚）
+- [x] 10.19 `assets/products/price-tag.js` 价格札・POP（多数独立小 Mesh）
+- [x] 10.20 `assets/products/trash-liner.js` ゴミ袋・空ペット（細物）
+
+## 阶段 11 · 民家与背景
+- [x] 11.1 `assets/buildings/minka.js` 日式民家（瓦屋根・塀・庭・物干し・エアコン室外機）
+- [x] 11.2 `assets/buildings/alley-houses.js` 巷内の隣家背面（勝手口・物置・自転車・植木鉢）
+- [x] 11.3 `assets/buildings/fence-set.js` 塀・ブロックフェンス・メッシュ・生垣門柱
+- [x] 11.4 `assets/buildings/utility-background.js` 背景（里山シルエット・送電鉄塔遠景・田んぼ）
+
+## 阶段 12 · 动效系统
+- [x] 12.1 `motion/petal-storm.js` 落樱（空中飘落 + 飞舞 + 地面堆积随风挪动）
+- [x] 12.2 `motion/branch-sway.js` 花枝微风
+- [x] 12.3 `motion/light-breath.js` 灯光呼吸
+- [x] 12.4 `motion/glass-shimmer.js` 玻璃光影浮动（流光/反射漂移）
+- [x] 12.5 `motion/traffic-signal.js` 交通信号缓慢渐变（含踏切赤色点灯）
+- [x] 12.6 `motion/air-haze.js` 春日空气光晕（体积光斑/浮遊花粉）
+- [x] 12.7 `motion/index.js` 汇总注册 + 与资产 userData 对接
+
+## 阶段 13 · 装配与打磨
+- [x] 13.1 `src/world/index.js` 全资产按 LAYOUT 落位（含 rot/scale/seed）
+- [x] 13.2 移除 `src/core/probe.js` 与 `?probe` 逻辑（连带删除 tools/diag.mjs、_probe_shader.mjs；src/ 内已无 console.log）
+- [x] 13.3 多机位实拍审查（hero / store / interior / corner / station / crossing / top / blossom / vending / bike / tight）
+  · 工具：`node tools/shoot.mjs --views=... --wait=2400`（无头 Chrome + ANGLE/D3D11，1600×900）
+  · 工具：`node tools/inspect.mjs`（逐资产世界包围盒 / 越界与错位检测）、`--in=x0,x1,z0,z1`（区域杂物体检）、`--deep=1`（单资产零件级定位）
+- [x] 13.4 修穿模 / 漏光 / z-fighting / 描边错误 / 色彩断层
+  · 电线蜘蛛网：每档断面轴统一为档距直交方向，角柱 P3 改为转角杆（rotY −45）并把线位移到丁字路口 → 档内 6 线不再交叉
+  · 花瓣糊镜头：空中/地面花瓣缩小到 ~2 cm 并按相机距离平滑收缩（1.1–2.6 m）
+  · corner 机位原先落在 sakura-a3 树冠内 → 树移到 (16.6,12.2)、机位移到 (11.8,16.8)
+  · 店内穿模：coin locker 原在 z=−1.6（建筑外，穿北壁）→ 移到东壁内侧；在庫ラック 穿东壁+北壁 → 移到收银前通道；杂志架与西壁棚冲突 → 西壁棚缩到 len 2.6
+  · 屋上看板 7 个文字盘全黑：TEX.signboard 是 1024×256 横长，贴到方形盘上被纵向拉爆 → 新增 ar 参数 + 实测字宽自适应，15 处方形/竖形标牌补齐 ar
+  · 玻璃：envMapIntensity 1.7/1.8 与整片 additive 反光带把橱窗变成镜子 → 改 glassLite 薄透 + 反光只留上部 1/3 带（opacity 0.07）
+  · 底座越界：utility-background 的远家/草丛越过 −20 板边 → 收进 z ≥ −19.6
+- [x] 13.5 光影与后期终调（对比、饱和、DOF、bloom、颗粒、暗角）
+  · 阴影冷染 #7f97c6×0.82 是全画面发青的根因（toon 的阴影是乘算）→ 改 #aeb8d4×0.90
+  · 花瓣阴影 #c99bb4×0.55 使花群压成赤紫 → 改 #f0c6d6×0.42，内层花色明度下限抬到 0.82
+  · 分级：饱和 1.07→1.13、对比 1.05→1.13、雾霭 0.055→0.036、gain 更暖
+  · 沥青基色从淡紫灰 #a9a5b2 系列改为晴日实测灰 #8b8892/#84818b/#7c7a84，补丁与龟甲裂纹降透明度、法线强度 1.5→0.8（消除路面「拉丝」）
+  · 白线 #f6f3ec→#eeeade（避免 bloom 过曝）、民家瓦 #6b6a72→#8b8a93（阴面不再黑成一块）
+- [x] 13.6a 频闪根因修复：EffectComposer 不在每帧开始复位 read/writeBuffer，只按 pass.needsSwap 交换。
+  本链交换次数为奇数（toonEdge/dof/grade/smaa/output = 5），故 readBuffer 起点逐帧翻转 →
+  RenderPass 一帧写进带 depthTexture 的 renderTarget2、下一帧写进没有深度贴图的 renderTarget1，
+  描边与景深隔帧采到上一帧深度，整画面逐帧明暗交替（实测平均亮度 134.8↔146.2，约 4.5% 频闪）。
+  修法：buildComposer 内包一层 composer.render，每帧把 readBuffer 钉回带深度贴图的那张。
+  回归工具：`node tools/flicker.mjs`（逐帧 readPixels 求相邻帧亮度差与亮度方向翻转率）。
+  修后：mean 帧差 18.38 → 4.30，翻转率 ~1.0 → 0.6，连续 7 帧亮度恒定。
+  附带：bloom 阈值 1.35 → 2.55（1.35 低于晴日白色漫反射面的线性值 2.1~2.6，会让所有受光面白茫茫地发光）。
+- [x] 13.60 启动响应性修复：装配原先用「每 3 个资产让出一帧」+ rAF 节拍。两个问题：
+  ① 单个重资产（drink-fridge 上万 Mesh）本身就是数百毫秒长任务，固定步长仍会把主线程连续锁死约 57 秒，
+     期间画面不动、OrbitControls 收不到指针事件（用户反馈「很卡，无法移动」的真相）；
+  ② rAF 在后台标签页完全不触发 → 页面一失焦，装配就永久停住。
+  改法：kit.yieldToBrowser() 用 MessageChannel 宏任务让出（前台让帧、后台不被节流），
+  placeAll 改为 12 ms 时间预算式让出，地图层每模块、动效每系统各让一次；
+  并新增 engine.built 标记（ready 只表示已渲染 >2 帧，不代表世界建完），三个工具改等 built。
+  实测：后台失焦状态下装配仍能跑完（built=true / 143 实例）；剩余最长单任务≈1 s（单个重资产，无法被抢占）。
+- [x] 13.6 性能与稳定性（帧率、显存、resize、无 console error）
+  · 1600×900 / 72 746 节点（60 259 Mesh + 11 996 描边壳）/ missing 0
+  · 实测：加载完成即采样 fps = 44；连续换机位后稳定采样 = 27（修复缓冲奇偶性前为 20，
+    一半帧在采样陈旧深度/错位的叠加目标，既闪又慢）
+  · 手段：pruneHulls（<0.16 m 不描边）+ autoInstance（同类零件 GPU 实例化，不合并几何）
+    + markStatic（静止子树停算矩阵）+ installLod（投影小于 9 px 的零件与 16 m 外的描边壳隐藏）
+    + 阴影贴图节流 0.45 s + 阴影类型 VSM→PCFSoft（见 14.3，顺带去掉 VSM 的两次 12 样本高斯）
+  · console：src/ 内已无 console.log；无 page error；唯一 warning 为 ANGLE 对 three 自带着色器的
+    X4122 双精度字面量提示（HLSL 翻译期注记，非本项目代码，无法在不 patch three 的情况下消除）
+- [x] 13.7 `README.md` 与交付检查表逐项核对
+
+## 阶段 14 · 红线取景后的「切剩杂物」收口
+- [x] 14.1 三道裁剪闸门补齐（见 LAYOUT 0.5）：`clipRect`（铺面）+ `clipRun`（长条跑位：侧沟・レール・標線・路缘）+ `pruneToClip`（地图层自由散件按世界位置兜底）
+  · 症状：台座已收窄，但 `ground.js` 的「縁の土こぼれ」26 块仍撒在 ±18.4、北法面 36 m 宽整幅斜面板、
+    南北道側溝铺到 z=17.6（出台座 4.7 m）、站台端石一根 19.4 m 长箱 → 顶视图里就是一堆悬在天空里的杂物
+- [x] 14.2 资产层改为**包围盒**判定（`placeAll` 内，越框 >6 cm 整件不落地并记入 `engine.overflow`）
+  · 台座是实心板，资产不允许「切一半」；据此重排 8 件、判 4 件不落位（民家 / hedge-2 / 鉄塔背景 / 北法面）
+  · 电线新增端杆落地校验（`poleOk`）：端杆被裁时该档电线一并去掉，杜绝悬空线头
+- [x] 14.3 真渲染复核（`peek.mjs` 近摄 + `crop-check.mjs` 度量）暴露并修掉的实物缺陷：
+  · **側溝落在车道上**：`drainRun` 的 `at` 用了车道侧 ±0.26，而沟是按步道天端 y=0.15 造的
+    → 路面之上浮着 15 cm 的暗渠黑板（hero 图里那些黑色矩形）。改到缘石的步道侧
+  · **路面梳齿纹**：土芯顶、最上层地層バンド、沥青三者都在 y=0 同一平面 → z-fighting。
+    按「谁盖谁」把地表层高排成严格递增（土芯 −0.004 … 駐輪場 0.016），并把丁字路/踏切引道抬 4 mm
+  · **VSM 漏光**：大平面接收者上出现软边椭圆亮斑（站台/屋顶看得到），且每帧两次 12 样本高斯
+    → 阴影改 PCFSoftShadowMap，条纹与亮斑同时消失，成本更低
+  · **站台上屋的 X 筋交**：跨 3 m 柱间的斜撑把站台切脚手架 → 撤掉（保留主梁/二重梁/柱頭金物/腕木）
+  · **停车位杂草**：圆锥株最大 0.46 m 高、42 株排成一行，路面上一列绿圆锥 → 几何缩到 0.13 m、
+    株数 30→16、大株 3→2，仍为独立立体株（不改合并）
+  · **station 机位在店内**（pos z=4.6 落在 store 轮廓 z −0.8..4.8）→ 移到店北侧空地；删除遗留的 `probe` 预设
+- [x] 14.4 沥青去紫：基色 #8b8892/#84818b/#7c7a84 → #8b8880/#83807a/#7a7772（含 speckle/blotch/补丁同调）
+- [x] 14.5 新增核对工具：`tools/crop-check.mjs`（逐模块包围盒 + 越框零件 + 被丢弃资产）、`tools/peek.mjs`（自定义机位近摄）
+  · 验证一律走无头页面：应用内浏览器会跑旧代码，其 `evaluate` 读数不可信
+  · 当前状态：`npm run check` 135/135、`missing: []`、越框模块 0、悬出台座散件 0、被丢弃资产 0、无 pageerror
+  · 交互帧率（`tools/perf.mjs` 真实拖拽 8 s）：中位 9.9 fps、draw calls 8.8 k、3.6 M tri、可见 Mesh 9.6 k/35.4 k
+    （SwiftShader/ANGLE 无头环境实测；LOD 修复前为 2.5 fps）
+
+## 阶段 15 · 交互流畅度（「一闪一闪的卡顿」）与动效幅度
+- [x] 15.1 新增 `tools/hitch.mjs`：逐帧记录 (帧耗时, 该帧真实 draw calls)。
+  `renderer.info.autoReset=false` + 累计值差分 → 阴影刷新帧会表现为 calls 尖峰，
+  于是能区分「整体帧率低」和「周期性硬卡」。探针必须**真的移动指针**：只按住不动时
+  相机是静止的，静止闸门会正常工作，测不出交互期表现。
+- [x] 15.2 根因 A：`shadowMap.autoUpdate=false` + 每 0.45 s 无条件重绘整场景阴影。
+  日光方向固定、正交视锥罩住整块台座，会动的只有花枝与吊幌子 → 拖动期间每 10 帧插入
+  一个 calls 9.5k→15k 的尖峰帧（+35 ms），肉眼就是「一顿一顿」。
+  改为**画面静止后才重绘**（相机位置/四元数带容差判定），静止 3 s 后刻线再放宽 5×；
+  `built` 时 `markShadowsDirty()` 兜一次，保证最终状态阴影贴图完整。
+  注：四元数判等必须用 `1-|dot|` 容差，阻尼是指数收敛，`equals()` 永远为 false。
+- [x] 15.3 根因 B：LOD 没有滞回。`interval 0.12 s` 且相机带惯性拖尾，临界距离上的零件
+  逐帧翻 visible → 画面持续闪烁 + visible 集合抖动。零件隐藏与描边壳开关都加了滞回带
+  （零件 1.14×，描边壳 ±6%），只切换 visible，不碰几何。
+- [x] 15.4 便利店广告乱动：`store/awning.js` 吊るし POP 的 `sway.amp = 0.9`（弧度 ≈ 51°，
+  全场其他 sway 都在 0.001–0.085）→ 改 0.045（≈2.6°，板梢位移约 1 cm）。
+- [x] 15.5 实测（无头 ANGLE，1600×900，持续拖拽 8 s）：
+  · 修前 帧耗时 p50 286 / p90 414 / p99 527 ms，尖峰帧每 10 帧一次
+  · 修后 帧耗时 p50 88.7 / p90 95.3 / p99 101.7 ms，**拖动期间尖峰帧 0**；静止时尖峰间隔 10 → 46 帧
+  · 即基线 3.2×、交互期帧耗时波动从 1.85× 收敛到 1.15×
+  · `npm run check` 135/135、`check:boot` 无 error、阴影仍正确（树影/柱影/屋影齐全）
+
+## 阶段 16 · 绘制调用削减（「还是卡卡的」的第二轮）
+- [x] 16.1 先定性再动手，新增三个探针：
+  · `tools/fill-test.mjs`：只改渲染分辨率看耗时怎么动 → 400×300 仍要 65 ms（1600×900 是 77 ms），
+    空场景 6.5 ms ⇒ **85% 是 CPU 提交，不是 GPU 填充**。所以优化目标是 draw call 数量，不是着色器。
+  · `tools/state-cost.mjs`：数材质/几何/程序与排序后的状态切换 ⇒ 1701 材质、5162 几何、
+    材质切换只占绘制的 20% ⇒ 不是状态抖动，就是**裸的 8.3 µs/次提交 × 8600 次**。
+  · `tools/frame-cost.mjs`：逐资产「视锥内可见对象」归属 + 消融（藏掉某层看时间怎么掉）。
+- [x] 16.2 实例化两处结构性缺陷：
+  · `autoInstance` 按**材质对象**分桶 → 商品类资产习惯给每件单独 `MAT.plastic('#xxxx')`，
+    同形状 40 个瓶子 = 40 个桶 = 40 次提交。改为按**材质配置签名**（`toJSON()` 去掉材质自身
+    uuid/name，保留贴图 uuid）分桶，仅颜色不同时克隆一份把底色刷白、颜色走 instanceColor。
+    min 4 → 2。
+  · 资产普遍「每个小群组 inst() 一次」（樱花每个花房一套花瓣/叶/梗），新增 `mergeInstances`：
+    把同一宿主下同几何+同材质的 InstancedMesh 再并一次。宿主取**最近的摆动祖先**，跨摆动根绝不并。
+    （踩坑：`instanceColor.getColor()` 不存在，应为 `mesh.getColorAt()`；它抛在 place() 里被
+    每资产的 try/catch 吞掉，表现为「改了没效果」—— 工具现在会打印 placement 警告。）
+- [x] 16.3 樱花：卡片几何按 10 mm/卷曲 0.2 量化共享、花梗改为「单位曲线 + 旋转+缩放」共享，
+  并取消花房与末端小枝的独立揺れノード（房自身 1–2° 的摆幅小于亚枝，风的表情保留）。
+  单棵 yaezeni 的可见对象 2137 → 963。三棵树原本占全场景可见绘制的 40%。
+- [x] 16.4 LOD：pxThreshold 18 → 26（`tools/lod-sweep.mjs` 实测曲线），
+  同时给 `interior/*`、`products/*`、贩卖机单独 `lodPx = 16` —— 店内饮料是需求点名要「每层看得见」的
+  内容，26 px 会在店门口视角把 20 cm 的瓶子整批剔掉。阈值改为可按资产实例覆盖（`userData.lodPx`）。
+- [x] 16.5 顺带修掉一个摆放错误：`bike-storefront` 的 z=4.5 在玻璃内侧（店铺 z −0.8..4.8），
+  等于把自行车停在店里 → 移到东北角人行道 (−1.25, 6.05)。
+- [x] 16.6 实测（无头 ANGLE + RTX 4060，1600×900，固定机位 renderer.render）：
+  · hero 8260 calls / 73.3 ms → 7904 / ~65 ms；store 9596 / 100.8 ms → 7977 / ~80 ms；
+    interior 10207 / 109 ms → 8456 / ~85 ms
+  · 持续拖拽（`tools/hitch.mjs`）：本轮起点 p50 88.7 ms → 61–89 ms（视角度而定），尖峰帧 0
+  · 场景 Mesh 35447 → 31633（InstancedMesh 5511），`npm run check` 135/135、`check:boot` 无 error
+- [ ] 16.7 遗留（下一轮）：店内视角从门口看过去**对比度不足** —— 内部材质几乎全白 + 玻璃轻微绿 tint，
+  使「透过大玻璃看清店内陈设」在 store 机位下读成一片灰绿。要动的是室内曝光/材质明度层次与玻璃色调，
+  不是继续削 draw call。
+
+## 阶段 17 · 体积与启动（「打开太慢也太卡了」）
+- [x] 17.1 把「启动耗时」变成可测指标：`main.js` 记录 `engine.timings`（engine / world / lod / motion），
+  `tools/boot-check.mjs` 打印到 built 的墙钟、页面内分段耗时、Mesh/几何/材质/贴图数量与 JS 堆。
+- [x] 17.2 货架商品改为**原型复用**：`kit.stockItem(key, factory)` —— 同「型号+变体」只 build 一次，
+  其余 `clone()`（three 的 clone 共享 geometry/material 引用）。逐件位移与转角抖动照旧施加在克隆体上。
+  真实货架本来就是同款重复摆放，所以这不是简化，是更准确的建模。
+  · shelf-gondola 单件 2630 ms → 353 ms、8880 → 6545 对象；drink-fridge / shelf-wall / bento / freezer 同步下降
+- [x] 17.3 **平涂模式不再生成会被剥掉的表面噪点贴图**：`flatShading()` 会把非 graphic 材质的
+  map/normalMap 整个丢掉，但 `TEX.*` 仍然照画 —— 每张 512² canvas 绘制 + 一次 heightToNormal，
+  位图还常驻缓存（一对 ≈ 2 MB）。`textures.js` 增加 SURFACE_NOISE 闸门，命中就返回共享的
+  「白底 + 平法线」1×1。内容类（lightPanel / poster / signboard / drinkLabel / adStrip /
+  wear / gradient / frost / paper / petal）照常生成，因为它们被 decal()/MeshBasicMaterial 真正采样。
+  · 贴图位图从 ~1.2 GB 降到 454 MB，JS 堆 1620 → 610 MB
+- [x] 17.4 实例批次纳入 LOD 判定（按**批次自身包围球**，不按单件尺寸 —— 按单件会把树冠和
+  整排饮料在中景剔掉），并修正 16.4 引入的回归：合并后批次不受剔除曾让货架 236 → 538 次提交。
+- [x] 17.5 修掉一个把需求核心堵死的建模错误：`store/glass-curtain-wall.js` 的「ガラス押さえゴム」
+  做成了与玻璃同尺寸的一整块不透明 box，贴在玻璃室内侧 → 橱窗被 9 块橡胶板糊死，店内完全看不见。
+  改成真正的四边压条。定位方法：`tools/peek.mjs --ray=x,y,z` 从相机向店内打射线，
+  列出沿途每个物体（含透明/不透明/α 值），一次就指出 6.66 m 处那块无名不透明面。
+  · 顺带把店内壳面从接近纯白压到中明度（storeWall / shelfBody / 壁・床タイル / 柱），
+    橱窗玻璃去掉青绿味（#d7ecef → #eaf3f4，opacity 0.19 → 0.13），平涂模式关闭玻璃流光加算带
+- [x] 17.6 实测（无头 ANGLE + RTX 4060）：
+  · 启动到 built：74.4 s → **24.0 s**（world 装配 66.6 → 16.9 s）
+  · JS 堆：1620 MB → **610 MB**；场景 Mesh 35447 → 27024；几何 11353；材质 3294；贴图位图 454 MB
+  · 持续拖拽：p50 88.7 → **76.7 ms**（13 fps），draw calls 中位 9520 → 7575，尖峰帧 0
+  · `npm run check` 135/135、`check:boot` 无 error、crop-check 全绿
+- [ ] 17.7 还能继续压的（按性价比排序）：
+  ① 内容贴图仍占 454 MB，可把只贴在 20 cm 面上的 poster/signboard 从 1024 降到 512；
+  ② 树冠的揺れ改成逐实例顶点着色器风动，这样 mergeInstances 能跨小枝合并（三棵树还剩 ~2100 提交）；
+  ③ 交互期把 LOD 阈值随相机角速度临时抬高（运动中少画、停下补全），可再要回 20-30% 帧时间。
+
+## 阶段 18 · 落樱本体（「落下来的换成粉色的樱花」）
+根因不在颜色，在**平涂剥贴图**：`flatShading()` 会把非 graphic 材质的 `map` 整个删掉，
+而花瓣/叶片/苔/磨损这些「靠 alpha 抠形」的面片一旦没了图，`alphaTest` 就无图可测 →
+每一片都退化成**粉白色小方块**，1500 片空中 + 5200 片地面 = 一把碎纸屑。
+- [x] 18.1 形状做进几何：`kit.sakuraPetalGeo()`（10 顶点 8 三角：基部收窄 → 中部最宽 →
+  先端樱花特有的缺口 + 横向反卷）、`sakuraPetalRestGeo()`（贴地躺平）、
+  `sakuraLeafGeo()`（椭圆尖头）、`tuftGeo()`（5 枚叶的草むら）。都走 `cachedGeo` 共享。
+  三角数反而下降：3×3 卡片 18 三角 → 花瓣 8 三角，全场景 5.1M → 4.8M/帧。
+- [x] 18.2 樱花树冠 / 落枝 / 地面落花 / 干元苔 全部改成按 `IS_FLAT` 分派：
+  平涂用实形轮廓，toon 仍用卡片＋贴图（两条路都不坏）。`FILL 1.35/1.25`：
+  实形只占外接框约 45%，直接替换会让花冠透过去看见街景，放大一弁把茂密度补回来。
+- [x] 18.3 颜色按**实际显示值**校准：`Color.setHSL` 在工作色空间（线性）里算，
+  旧值 S 0.20–0.40 / L 0.90–0.98 再乘上生成色 pale，落到屏幕是 `#f6e0e7` —— 就是白色。
+  现在空中 `#e5a0ba〜#f1b3c5`、地面 `#df95b1〜#f1b7c9`（= PAL.sakuraPetalDeep 附近）。
+  内层花瓣的 `tint`（乘算遮色）在实形下会一朵朵读出来，`#b9a1ad` 像枯瓣 → 平涂改 `#e7cdd9`。
+- [x] 18.4 修掉一个静默致命错误：材质 `vertexColors: true` 但几何没有 `color` 属性 →
+  three 的 `color_fragment` 只在 `USE_COLOR` 时乘 `vColor`，而顶点着色器里 `USE_COLOR`
+  需要 `material.vertexColors`，未绑定的 attribute 默认 (0,0,0,1) → 整片刷黑。
+  实例化着色统一走 `instanceColor`（不需要 vertexColors）。
+- [x] 18.5 撒花区域与裁剪框求交（`clipZones`），权重按剩余面积缩放；空中花瓣飘出台座立即回收。
+- [x] 18.6 **新增 `kit.groundYAt(x,z)`**：`surface()` 是所有地图铺面的唯一出口，顺手登记矩形，
+  于是「这一块地面多高」变成可查询的事实而不是各模块的猜测。落花落地高度、空中花瓣的地板
+  都改问它。修掉两类老 bug：店前歩道（y=0.15）上 0.012 的花瓣整片埋在沥青里；
+  「ホーム上」的 z 区间写错（−8.6..−3.4 根本不是站台 −12.2..−9.4），花瓣悬在 0.76 m 空中。
+- [x] 18.7 树基：盛土剖面提出为 `MOUND` + `moundSurfY(k)`，苔与落花按半径取表面高度
+  （原来内圈花瓣埋进土里 7 cm）。
+- [x] 18.8 顺手（实拍发现）：`store/pavement-frontage` 的装配 y 写成 0.152，而资产自身天端
+  已经是 0.158/0.162/0.222 → 整条店前铺面浮在歩道上 15 cm，接缝与段鼻条在画面里就是
+  「人行道上躺着的几根黑棒」；相邻道具（自販機 0.16 / ゴミ箱 0.222）本来就按 y=0 的原点写的，
+  等于全被埋进铺面。归零。定位工具：`tools/stray.mjs --in=... --y0= --y1=`（按形状反查杂物）。
+- [x] 18.9 同一带还发现车輪痕是 8 根 4 mm 厚、最高悬空 30 mm 的细长 box → 改成贴面的
+  `TEX.wear({kind:'streak'})` 新kind（单向擦痕），不再像钢筋。
+- [x] 18.10 `PCFSoftShadowMap` 在 r186 已被删除（设了会回退并每次启动警告一条）→ 明确写 PCFShadowMap。
+- [x] 18.11 实测：启动到 built 24.0 → **21.7 s**；几何 11353 → 11201；三角形 5.1M → 4.8M/帧；
+  draw calls 中位 ~7200（持平）；持续拖拽 fps 中位 16.8（持平）；`npm run check` 135/135、
+  `check:boot` 无 error。实拍核对：`shots/hero.png`、`petal-close4.png`、`frontage-fixed2.png`、
+  `canopy-close4.png`（近景花冠是一朵朵带缺口的花瓣，不再是纸片）。
+- [ ] 18.12 遗留：① 16.7 的店内对比度问题未动；② 其他用 `leafCluster`/`petal` 卡片做 alpha 抠形的
+  资产（绿篱、花坛、ivy）在平涂下同样是方块，本轮只处理了樱花与店前；
+  ③ 空中花瓣仍会从建筑屋顶「穿过去」再在地板出现（全局撒花层没有遮挡体概念）。

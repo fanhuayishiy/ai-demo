@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" href="data:," />
+    <title>樱花街角 · 电车与便利店</title>
+    <style>
+      :root {
+        --boot-bg: #dfeaf3;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--boot-bg);
+      }
+      body {
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+        cursor: grab;
+      }
+      body.is-grabbing {
+        cursor: grabbing;
+      }
+      #stage {
+        position: fixed;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        outline: none;
+      }
+      /* 画面纯净：不放置任何 DOM 覆盖层、文字、控件 */
+    </style>
+    <script type="module" crossorigin src="./assets/index-ClJCUYpw.js"></script>
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+  </body>
+</html>

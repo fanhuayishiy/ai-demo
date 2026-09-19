@@ -1,0 +1,5 @@
+node_modules/
+
+# dist/ 是**故意提交**的：合集用 GitHub Pages 直接托管静态产物，
+# 访问者（和 Pages）不执行构建。改完源码跑 `npm run build` 再一起提交。
+# 重新生成：npx vite build --minify   （产物 2.4 MB；默认不压缩约 4.9 MB）
