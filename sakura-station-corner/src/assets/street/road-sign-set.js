@@ -328,14 +328,18 @@ export function build(options = {}) {
   const plateY = S.postH + h / 2 + 0.12;
   const plateG = grp('sign-plate', { pos: [0, plateY, 0] });
   const plateGeo = extrude(sh, { depth: DP, bevelEnabled: true, bevelThickness: 0.0035, bevelSize: 0.006, bevelSegments: 2, curveSegments: 18, steps: 1 });
-  // 標板本体は両面にしておく：extrude 出来的这块板从正面看是**被剔掉的**（绕序问题），
-  // 于是背面那两根 w*0.72 的补强 rib 会透过 face 贴图的透明处显出来 ——
-  // 实拍里就是牌面上横着几条浅色杠。补强筋本来就该藏在板子后面。
-  const bodyMat = MAT.metalPaint(S.plate, { worn: 0.55, repeat: 2, base: shade(S.plate, 1.16), side: THREE.DoubleSide });
+  const bodyMat = MAT.metalPaint(S.plate, { worn: 0.55, repeat: 2, base: shade(S.plate, 1.16) });
   plateG.add(mesh(plateGeo, bodyMat, { name: 'plate', pos: [0, 0, -DP] }));
   // 裏側の補強リブ 2 本（板が一枚板に見えない為に必ず入れる）
+  // 必须标 noInstancing：这两根 22 mm 的筋会被 autoInstance 并成一个批次，而 LOD 对批次
+  // 是按「批次自身包围球的直径」判定的（core/lod.js 里那条规则是为了让一树花瓣、一排饮料
+  // 不被整批剔掉）。两根筋上下相距 0.24 m，合并后批次直径 ≈ 0.43 m，比牌面本身还“大”，
+  // 于是远景把牌板和牌面剔掉、却把这两根筋留下 —— 实拍里就是招牌上横着几条浅色杠，
+  // 还能透过消失的牌面看到后面的立柱与店招。逐件判定才会先剔筋、后剔板。
   for (const ry of [-h * 0.24, h * 0.24]) {
-    plateG.add(mesh(box(w * 0.72, 0.022, 0.018), MAT.metal('#98a09c', { worn: 0.8 }), { pos: [0, ry, -DP - 0.012] }));
+    const rib = mesh(box(w * 0.72, 0.022, 0.018), MAT.metal('#98a09c', { worn: 0.8 }), { pos: [0, ry, -DP - 0.012] });
+    rib.userData.noInstancing = true;
+    plateG.add(rib);
     for (const sx of [-1, 1]) plateG.add(mesh(cyl(0.006, 0.006, 0.012, 6), MAT.metal('#b1b6b8'), { pos: [sx * w * 0.3, ry, -DP - 0.006], rot: [90 * D2R, 0, 0] }));
   }
   // 面（反射シート）：板より 4 % 小的な canvas を 3 mm 前に浮かし
