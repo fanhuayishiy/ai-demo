@@ -476,7 +476,7 @@ voxel-ramen-stall/
 
 ### 运行方式
 
-- 在线演示：<https://fanhuayishiy.github.io/ai-demo/sakura-station-corner/dist/>（Pages 托管 `dist/`，无需构建，公网出画面 8.8 s）
+- 在线演示：<https://fanhuayishiy.github.io/ai-demo/sakura-station-corner/dist/>（Pages 托管 `dist/`，无需构建，公网出画面 8.8～9.4 s，按窗口大小）
 - 本地开发：
 
 ```bash
