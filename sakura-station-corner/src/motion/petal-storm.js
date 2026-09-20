@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { MAT } from '../core/materials.js';
 import { inst, grp, clipRect, insideClip, groundYAt, sakuraPetalGeo, sakuraPetalRestGeo } from '../core/kit.js';
+import { WX } from '../weather/index.js';
 
 export const NAME = 'petal-storm';
 
@@ -163,14 +164,24 @@ export function attach(engine, world, opts = {}) {
     return u * u * (3 - 2 * u);
   };
 
+  let airN = AIR, groundN = GROUND, petalK = -1;
   engine.onUpdate((dt) => {
     t += dt;
+    // 天气决定花瓣量：春雨会把樱花打得差不多，但清零会让树冠突然变味，留个尾量更连贯。
+    // 用 InstancedMesh.count 收，而不是少建实例 —— 切回晴天时要能立刻回到 1500/5200。
+    if (WX.petal !== petalK) {
+      petalK = WX.petal;
+      airN = Math.round(AIR * petalK);
+      groundN = Math.round(GROUND * petalK);
+      airMesh.count = airN;
+      groundMesh.count = groundN;
+    }
     const gust = 0.72 + 0.42 * Math.sin(t * 0.21) + 0.2 * Math.sin(t * 0.63 + 1.7);
     const wx = wind.x * gust, wz = wind.z * gust;
     camPos.copy(engine.camera.position);
 
     /* 空中：飘落 + 翻滚 + 横向风移，落地后回到树冠 */
-    for (let i = 0; i < AIR; i++) {
+    for (let i = 0; i < airN; i++) {
       const p = airState[i];
       p.y -= p.fall * dt * (0.75 + 0.5 * gust);
       p.x += (wx * p.drift + Math.sin(t * p.swayF + p.phase) * p.swayA * 0.42) * dt;
@@ -198,7 +209,7 @@ export function attach(engine, world, opts = {}) {
     airMesh.instanceMatrix.needsUpdate = true;
 
     /* 地面：随风轻微挪动与翻边（幅度极小，保持静谧） */
-    for (let i = 0; i < GROUND; i++) {
+    for (let i = 0; i < groundN; i++) {
       const p = gState[i];
       const s = Math.sin(t * p.wob * 0.55 + p.ph);
       dummy.position.set(

@@ -21,6 +21,8 @@ export const TRACE_ON = params?.get('trace') === '1';
  * 选 slow：两个指标都不比 freeze 差，又保留了装配过程中画面在动的反馈。
  */
 export const ASM = params?.get('asm') || 'slow';
+/** 起始天气（?weather=rain）；取值见 src/weather/index.js 的 NAMES。不是界面控件，只是入口参数。 */
+export const WEATHER_PARAM = params?.get('weather') || '';
 export const TRACE = { map: [], asset: [], motion: [], misc: [], tex: [] };
 /** 记一段耗时：traceMark('asset', name, t0) */
 export function traceMark(kind, label, t0) {

@@ -11,7 +11,7 @@ import { ASM } from './style.js';
  * 集中放在这里，是因为写进度的一方（world / placement / motion）分属不同模块，
  * 散着写字面量迟早会在某次调整阶段后对不上，表现为进度条跳变或卡在半路。
  */
-export const BOOT_PHASES = { map: [0.03, 0.30], assets: [0.30, 0.90], lod: 0.92, motion: [0.92, 0.98] };
+export const BOOT_PHASES = { map: [0.03, 0.30], assets: [0.30, 0.90], lod: 0.92, motion: [0.92, 0.98], weather: 0.99 };
 
 export const VIEWS = {
   hero: { pos: [13.6, 5.4, 15.8], target: [-3.6, 1.9, 1.2] },

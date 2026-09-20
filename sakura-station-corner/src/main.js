@@ -7,6 +7,7 @@ import { TRACE } from './core/kit.js';
 import { buildWorld } from './world/index.js';
 import { registerMotion } from './motion/index.js';
 import { installLod } from './core/lod.js';
+import { installWeather } from './weather/index.js';
 
 /**
  * 装配收进 async 函数，入口模块保持「同步完成求值」。
@@ -55,6 +56,12 @@ async function boot() {
   mark('lod');
   await registerMotion(engine, world);
   mark('motion');
+  // 天气装在动效之后：rain-shower / petal-storm / light-breath 都读 WX，
+  // 而 installWeather 会把 ?weather= 指定的起始天气立刻推一遍。
+  engine.weather = installWeather(engine);
+  engine.setWeather = (n) => engine.weather && engine.weather.set(n);
+  engine.markProgress(BOOT_PHASES.weather, '调好天光');
+  mark('weather');
 
   // 引擎从创建起就在跑（ready = 已渲染 >2 帧），所以 ready 只代表「画面活着」，
   // 不代表「世界建完」。装配是分批让出主线程的，工具必须等这个标记再截图。

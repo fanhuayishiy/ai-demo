@@ -17,6 +17,9 @@ const VIEWS = arg('views', 'hero').split(',').filter(Boolean);
 const WAIT = Number(arg('wait', 2600));
 const CHANNEL = arg('channel', 'chrome');
 const CONSOLE = arg('console', '1') === '1';
+// --weather=clear,rain 让同一次启动里逐个天气各拍一遍；留空 = 不动天气（拍一张当前默认）
+const WEATHERS = arg('weather', '').split(',').filter(Boolean);
+if (!WEATHERS.length) WEATHERS.push('');
 
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
 
@@ -89,12 +92,20 @@ const info = await page.evaluate(() => {
 });
 console.log('scene:', JSON.stringify(info));
 
-for (const v of VIEWS) {
-  await page.evaluate((name) => window.__DIORAMA__.setView(name), v);
-  await page.waitForTimeout(WAIT);
-  const file = `${OUT}/${v}.png`;
-  await page.screenshot({ path: file });
-  console.log('shot ->', file);
+for (const wx of WEATHERS) {
+  if (wx) {
+    await page.evaluate((n) => window.__DIORAMA__.setWeather(n), wx);
+    // 天气是指数收敛的过渡，等它真的停稳再拍，否则拍到的是过渡中间态而不是那个天气
+    await page.waitForFunction('window.__DIORAMA__.weather && !window.__DIORAMA__.weather.easing', { polling: 200, timeout: 30000 });
+    await page.waitForTimeout(700);
+  }
+  for (const v of VIEWS) {
+    await page.evaluate((name) => window.__DIORAMA__.setView(name), v);
+    await page.waitForTimeout(WAIT);
+    const file = `${OUT}/${wx ? v + '-' + wx : v}.png`;
+    await page.screenshot({ path: file });
+    console.log('shot ->', file);
+  }
 }
 
 const post = await page.evaluate(() => ({ fps: Math.round(window.__DIORAMA__.stats.fps), calls: window.__DIORAMA__.stats.calls, tris: window.__DIORAMA__.stats.tris }));

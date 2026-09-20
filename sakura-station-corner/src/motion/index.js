@@ -7,8 +7,9 @@ import * as LightBreath from './light-breath.js';
 import * as GlassShimmer from './glass-shimmer.js';
 import * as TrafficSignal from './traffic-signal.js';
 import * as AirHaze from './air-haze.js';
+import * as RainShower from './rain-shower.js';
 
-const SYSTEMS = [PetalStorm, BranchSway, LightBreath, GlassShimmer, TrafficSignal, AirHaze];
+const SYSTEMS = [PetalStorm, BranchSway, LightBreath, GlassShimmer, TrafficSignal, AirHaze, RainShower];
 
 
 /**

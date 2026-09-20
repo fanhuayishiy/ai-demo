@@ -1,6 +1,7 @@
 // 灯光呼吸：路灯 / 店铺灯箱 / 室内灯带 的极轻微明暗起伏
 import * as THREE from 'three';
 import { uniqueOf } from '../core/toon.js';
+import { WX } from '../weather/index.js';
 
 export const NAME = 'light-breath';
 
@@ -58,6 +59,9 @@ export function attach(engine, world) {
   if (!list.length) return null;
 
   engine.onUpdate((dt, t) => {
+    // 天气决定的整体亮度乘数：夜里灯具要自己把画面点亮，雨天白天也开灯。
+    // 乘在这里而不是去改每个材质的 baseEmissive，是为了让呼吸与天气两个系统互不知情。
+    const gain = WX.lampGain;
     for (const s of list) {
       const w = Math.sin(t * s.speed + s.phase) * 0.5 + 0.5;
       let k = 1 - s.amount + w * s.amount * 2 * 0.5;
@@ -67,11 +71,11 @@ export function attach(engine, world) {
       }
       for (const e of s.mats) {
         if (e.baseColor && e.m.color) e.m.color.copy(e.baseColor).multiplyScalar(THREE.MathUtils.lerp(1 - s.amount * 0.5, 1 + s.amount, w));
-        if (e.m.emissiveIntensity !== undefined) e.m.emissiveIntensity = e.baseEmissive * (0.94 + 0.12 * w) * e.gain;
+        if (e.m.emissiveIntensity !== undefined) e.m.emissiveIntensity = e.baseEmissive * (0.94 + 0.12 * w) * e.gain * gain;
       }
       for (const lo of s.lights) {
         if (lo.isLight) lo.intensity = lo.userData._baseI ?? (lo.userData._baseI = lo.intensity);
-        if (lo.isLight) lo.intensity = lo.userData._baseI * (0.88 + 0.24 * w);
+        if (lo.isLight) lo.intensity = lo.userData._baseI * (0.88 + 0.24 * w) * gain;
       }
     }
   });
