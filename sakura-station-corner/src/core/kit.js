@@ -512,6 +512,11 @@ export function clipBounds() { return CLIP; }
 // 「落花が歩道の下に埋もれる」「ホームの高さを間違えて空中に浮く」を構造的に防げる。
 // （petal-storm は地面_zones の高さを自前で持たず、必ずここへ聞きに来る）
 const GROUND_RECTS = [];
+/**
+ * 所有从 surface() 走过的铺面材质（去重后就是「地面」的全部材质对象）。
+ * 天气模块按 wet 值改它们的 toon uniform，见 src/weather/wet.js。
+ */
+export const WETTABLE = new Set();
 /** その座標にある铺面の最上天面。未覆盖なら 0（街道標高） */
 export function groundYAt(x, z) {
   let y = -Infinity;
@@ -552,6 +557,10 @@ export function surface(x0, x1, z0, z1, y, mat, { tile = 1.5, name = 'surface', 
   if (!c) return emptyGroup(name);
   [x0, x1, z0, z1] = c;
   GROUND_RECTS.push([x0, x1, z0, z1, y]);
+  // 铺面材质登记给天气：下雨要变深变饱和、反光滑一层。
+  // 这里登记的是**材质对象**而不是网格 —— 同一条 MAT.asphalt 铺了整张路网，
+  // 登记一次就全湿地面，不必遍历场景；没有 toon 注入（userData.u）的材质自动跳过。
+  if (mat && mat.userData && mat.userData.u) WETTABLE.add(mat);
   const w = Math.abs(x1 - x0), d = Math.abs(z1 - z0);
   const g = new THREE.PlaneGeometry(w, d, segs, segs);
   retile(g, w, d, tile);

@@ -4,6 +4,7 @@
 // emissiveIntensity 与其挂载的点光源，所以夜景区间的亮度是逐件灯具给的，不是整体提曝光。
 export default {
   NAME: 'night',
+  DARK: true,
   LABEL: '夜',
   sky: {
     stops: ['#0e1526', '#141d33', '#1b2740', '#233049', '#2a3750', '#31384a'],
@@ -27,5 +28,5 @@ export default {
     lift: [0.014, 0.02, 0.042], gamma: [0.98, 0.99, 1.04], gain: [0.94, 0.98, 1.1],
     haze: '#5f7ba8', hazeAmount: 0.055,
   },
-  wx: { breeze: 0.6, lampGain: 3.1, petal: 0.35, rain: 0 },
+  wx: { breeze: 0.6, lampGain: 3.1, petal: 0.35, rain: 0, wet: 0.22 },
 };

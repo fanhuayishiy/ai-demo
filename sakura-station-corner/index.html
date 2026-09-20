@@ -85,10 +85,70 @@
         letter-spacing: 0.12em;
         color: rgba(92, 107, 120, 0.72);
       }
+      /* 天气控件：常驻可见，指针离开时压到低对比度。
+         「成品画面零 UI」的第二次让步（第一次是上面的加载层），这次是用户明确要的。
+         配色分亮/暗两套，由当前天气的 DARK 标记切换 —— 夜景上顶着一个白药丸会很刺眼。 */
+      #wxbar {
+        position: fixed;
+        left: 50%;
+        bottom: 26px;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 2px;
+        padding: 3px;
+        border-radius: 999px;
+        background: rgba(252, 253, 255, 0.4);
+        border: 1px solid rgba(92, 107, 120, 0.16);
+        opacity: 0.42;
+        transition: opacity 0.35s ease, background 0.5s ease, border-color 0.5s ease;
+        -webkit-backdrop-filter: blur(7px);
+        backdrop-filter: blur(7px);
+      }
+      #wxbar:hover,
+      #wxbar:focus-within {
+        opacity: 1;
+      }
+      .wx {
+        appearance: none;
+        -webkit-appearance: none;
+        border: 0;
+        background: transparent;
+        border-radius: 999px;
+        padding: 7px 13px 6px;
+        font: 500 12px/1 "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+        letter-spacing: 0.1em;
+        color: #5c6b78;
+        cursor: pointer;
+        transition: color 0.25s ease, background 0.25s ease;
+      }
+      .wx:hover {
+        color: #2f3b46;
+        background: rgba(255, 255, 255, 0.6);
+      }
+      .wx.is-on {
+        color: #b8536f;
+        background: rgba(255, 255, 255, 0.75);
+      }
+      #wxbar.is-dark {
+        background: rgba(16, 22, 34, 0.5);
+        border-color: rgba(214, 226, 240, 0.16);
+      }
+      #wxbar.is-dark .wx {
+        color: #9fb0c4;
+      }
+      #wxbar.is-dark .wx:hover {
+        color: #e6eef6;
+        background: rgba(255, 255, 255, 0.1);
+      }
+      #wxbar.is-dark .wx.is-on {
+        color: #f2a9be;
+        background: rgba(255, 255, 255, 0.13);
+      }
     </style>
   </head>
   <body>
     <canvas id="stage"></canvas>
+    <div id="wxbar" aria-label="天气"></div>
     <div id="boot">
       <div class="boot-inner">
         <div class="boot-title">樱花街角</div>

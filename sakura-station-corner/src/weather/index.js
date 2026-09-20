@@ -13,6 +13,8 @@ import { U } from '../core/toon.js';
 import { SUN_DIR } from '../core/lighting.js';
 import { WEATHER_PARAM } from '../core/style.js';
 import { makeBackdrop, makeEnvironment, paintBackdrop } from './sky.js';
+import { applyWet } from './wet.js';
+import { attachWeatherUI } from './ui.js';
 import CLEAR from './clear.js';
 import CLOUDY from './cloudy.js';
 import RAIN from './rain.js';
@@ -27,7 +29,7 @@ export const NAMES = WEATHERS.map((w) => w.NAME);
  * light-breath 读 lampGain。放在这里而不是各自去查天气名，是为了让动效只依赖「量」，
  * 不必知道有几种天气存在。
  */
-export const WX = { rain: 0, petal: 1, lampGain: 1, breeze: 1 };
+export const WX = { rain: 0, petal: 1, lampGain: 1, breeze: 1, wet: 0 };
 
 function stateOf(p) {
   const L = p.lights;
@@ -63,7 +65,7 @@ function stateOf(p) {
     lampGain: p.wx.lampGain,
     petal: p.wx.petal,
     rain: p.wx.rain,
-    stops: p.sky.stops.map((s) => new THREE.Color(s)),
+    wet: p.wx.wet,
     back: p.sky.backdrop.map((s) => new THREE.Color(s)),
   };
 }
@@ -164,6 +166,8 @@ export function installWeather(engine) {
     WX.rain = cur.rain;
     WX.petal = cur.petal;
     WX.lampGain = cur.lampGain;
+    WX.wet = cur.wet;
+    applyWet(cur.wet);
     paintBackdrop(backdrop, cur.back);
   }
 
@@ -212,12 +216,18 @@ export function installWeather(engine) {
 
   useEnv(name);
   push();
+  const ui = attachWeatherUI(engine, {
+    set,
+    get current() { return name; },
+    get dark() { return !!(WEATHERS.find((w) => w.NAME === name) || CLEAR).DARK; },
+  }, WEATHERS);
   if (WEATHER_PARAM && WEATHER_PARAM !== name) set(WEATHER_PARAM);
 
   return {
     set,
     cycle,
     names: NAMES,
+    ui,
     get current() {
       return name;
     },

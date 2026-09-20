@@ -37,5 +37,19 @@ for (const k of ['2', '3', '4', '5', '1']) {
 await page.keyboard.press('w');
 await page.waitForFunction('!window.__DIORAMA__.weather.easing', { polling: 100 });
 console.log('按 w  →', JSON.stringify(await read()));
+
+// 屏幕控件这条路必须用真点击来验：按钮是 JS 生成的，光看截图不知道它连没连上。
+const bar = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('#wxbar .wx')];
+  return { n: b.length, labels: b.map((x) => x.textContent).join(''), on: (document.querySelector('#wxbar .wx.is-on') || {}).textContent || '' };
+});
+console.log('控件   ', JSON.stringify(bar));
+for (const i of [4, 0]) {
+  await page.click(`#wxbar .wx:nth-child(${i + 1})`);
+  await page.waitForFunction('!window.__DIORAMA__.weather.easing', { polling: 100 });
+  const r = await read();
+  const on = await page.evaluate(() => (document.querySelector('#wxbar .wx.is-on') || {}).textContent || '');
+  console.log(`点第 ${i + 1} 个 →`, JSON.stringify(r), '控件高亮 =', on);
+}
 console.log(errs.length ? 'ERRORS: ' + errs[0] : '无 pageerror ✓');
 await browser.close();

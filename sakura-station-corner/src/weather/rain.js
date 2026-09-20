@@ -26,5 +26,5 @@ export default {
     lift: [0.03, 0.038, 0.05], gamma: [0.985, 0.995, 1.02], gain: [0.94, 0.98, 1.04],
     haze: '#b9c8d6', hazeAmount: 0.11,
   },
-  wx: { breeze: 1.7, lampGain: 1.7, petal: 0.18, rain: 1 },
+  wx: { breeze: 1.7, lampGain: 1.7, petal: 0.18, rain: 1, wet: 1 },
 };

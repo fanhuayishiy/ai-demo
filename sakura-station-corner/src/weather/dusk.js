@@ -3,6 +3,7 @@
 // 太阳再低影子就会长出盒子被裁掉，所以取 y≈0.3 而不是真正的贴地平角。
 export default {
   NAME: 'dusk',
+  DARK: true,
   LABEL: '夕',
   sky: {
     stops: ['#3f5a86', '#6b6f96', '#a97a86', '#e0956a', '#f2b477', '#c98a63'],
@@ -26,5 +27,5 @@ export default {
     lift: [0.04, 0.024, 0.02], gamma: [1.02, 0.99, 0.95], gain: [1.1, 1.0, 0.9],
     haze: '#ffb888', hazeAmount: 0.08,
   },
-  wx: { breeze: 0.85, lampGain: 1.55, petal: 0.8, rain: 0 },
+  wx: { breeze: 0.85, lampGain: 1.55, petal: 0.8, rain: 0, wet: 0.06 },
 };
