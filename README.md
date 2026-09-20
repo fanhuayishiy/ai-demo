@@ -478,7 +478,7 @@ voxel-ramen-stall/
 
 ### 运行方式
 
-- 在线演示：<https://fanhuayishiy.github.io/ai-demo/sakura-station-corner/dist/>（Pages 托管 `dist/`，无需构建，公网出画面 8.8～9.4 s，按窗口大小）
+- 在线演示：<https://fanhuayishiy.github.io/ai-demo/sakura-station-corner/dist/>（Pages 托管 `dist/`，无需构建，公网成帧中位 9.7 s、区间 9.4～10.2 s，按窗口大小；2026-09-20 修平涂剥贴图后内容贴图从 835 张涨到 1110 张，比原先记的 8.8～9.4 s 慢约 0.4 s）
 - 本地开发：
 
 ```bash
