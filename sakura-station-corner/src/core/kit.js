@@ -339,6 +339,12 @@ export function weather(parent, {
 }
 /** 面贴花（任意贴图，自动多边形偏移，避免 z-fighting） */
 export function decal(parent, { map, w = 1, h = 1, pos = [0, 0, 0], rot = [0, 0, 0], color = '#ffffff', opacity = 1, order = 0, side = THREE.FrontSide }) {
+  // 贴花的形状来自**贴图的 alpha**。paper/fabric 是「表面贴图」，整张画布铺满底色、
+  // alpha 处处为 255，传进来只会得到一块实心矩形 —— 路边招牌上那几条白横杆就是这么来的。
+  // 要斑驳形状请用 TEX.wear()（背景是 clearRect 出来的，自带 alpha）。
+  if (map && map.userData && map.userData.opaqueSurface) {
+    console.warn(`[decal] 贴到 ${parent && parent.name ? parent.name : '物体'} 上的贴花收到不透明表面贴图，会渲染成实心方块：请改用 TEX.wear()`);
+  }
   const mat = new THREE.MeshBasicMaterial({
     map,
     color: new THREE.Color(color),

@@ -558,7 +558,7 @@ export const TEX = {
    *  以前按 base 分 key，140 个 MAT.paper 调用各要画一张 512² 再做一次 heightToNormal
    *  （≈ 39 ms/张、合计 6.3 s），而平涂模式还会把这些非 graphic 材质的 map 剥掉，等于全白做。 */
   paper(o = {}) {
-    return pack(`paper|${o.repeat || 1}`, (cv) => {
+    const p = pack(`paper|${o.repeat || 1}`, (cv) => {
       const { g, w, h, rnd } = cv;
       g.fillStyle = '#ffffff';
       g.fillRect(0, 0, w, h);
@@ -573,6 +573,10 @@ export const TEX = {
       speckle(g, w, h, { count: 3000, r: [0.3, 1], colors: ['#8c7c5c', '#fff'], alpha: [0.02, 0.1], rnd });
       g.globalAlpha = 1;
     }, { repeat: o.repeat || 1, normalStrength: 0.35 });
+    // 整张画布铺满底色 = 没有 alpha 形状。decal() 靠贴图 alpha 抠形，拿到它会画成实心方块，
+    // 所以打个标记让 kit.decal() 能拒绝（路边招牌上的白横杆就是这么来的）。
+    if (p.map) p.map.userData.opaqueSurface = true;
+    return p;
   },
 
   /** 织物 / 地垫（与底色无关，颜色交给材质 color）。
@@ -591,10 +595,12 @@ export const TEX = {
       }
       speckle(g, w, h, { count: 7000, r: [0.4, 1.4], colors: ['#fff', '#000'], alpha: [0.03, 0.14], rnd });
     }, { repeat: 4, normalStrength: 1.4 });
+    if (base.map) base.map.userData.opaqueSurface = true;   // 同 paper：整幅铺底，无 alpha 形状
     if (rep === 4 || !base.map?.clone) return base;
     return memo(`fabric@${rep}`, () => {
       const map = base.map.clone();
       map.repeat.set(rep, rep);
+      map.userData.opaqueSurface = true;   // clone() 不一定带 userData，显式补一次
       const normalMap = base.normalMap ? base.normalMap.clone() : null;
       if (normalMap) normalMap.repeat.set(rep, rep);
       return { map, normalMap };

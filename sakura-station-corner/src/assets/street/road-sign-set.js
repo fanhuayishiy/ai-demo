@@ -371,8 +371,10 @@ export function build(options = {}) {
     plateG.add(dent);
     decal(plateG, { map: TEX.wear({ kind: 'dirt', color: '#6d6558', seed: seed + 7, density: 1.6 }), w: 0.07, h: 0.07, pos: [dx, dy, 0.0046], order: 2 });
   }
-  // 貼紙剥がし跡（四角い残糊）
-  decal(plateG, { map: TEX.paper({ repeat: 1 }).map, color: '#efe6cf', w: w * 0.2, h: h * 0.14, pos: [w * 0.26, -h * 0.12, 0.0044], rot: [0, 0, 0.12], opacity: 0.72, order: 3 });
+  // 貼紙剝がし跡（残糊）：要斑驳形状就得用带 alpha 的 wear 贴图。
+  // 以前这里传的是 TEX.paper()，而 paper 整幅铺满底色、alpha 处处为 255，
+  // 贴花于是变成一块 72% 不透明的奶油色实心矩形 —— 每块路牌上那道「白横杆」就是它。
+  decal(plateG, { map: TEX.wear({ kind: 'dirt', color: '#efe6cf', seed: seed + 9, density: 1.1 }), w: w * 0.2, h: h * 0.14, pos: [w * 0.26, -h * 0.12, 0.0044], rot: [0, 0, 0.12], opacity: 0.5, order: 3 });
   decal(plateG, { map: TEX.wear({ kind: 'chip', color: '#d9d2bf', seed: seed + 8, density: 1.2 }), w: w * 0.24, h: h * 0.1, pos: [-w * 0.3, -h * 0.36, 0.0044], order: 4 });
   // 板の下端に小さな補助札（自転車補助・「ここから」等）
   if (kind === 'bicycle-only' || kind === 'crossing' || kind === 'children') {

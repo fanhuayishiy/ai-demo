@@ -552,7 +552,9 @@ export function build(options = {}) {
   g.add(gr);
   gr.add(mesh(box(1.210, 0.030, 0.830), MAT.concrete({ repeat: 2, cracked: true, base: PAL.concreteDark }), { pos: [0, 0.015, 0.020], name: 'curb-pad' }));
   gr.add(mesh(box(0.880, 0.014, 0.170), MAT.rubber('#3d3a34'), { pos: [-0.150, 0.037, 0.366], name: 'mat' }));
-  decal(gr, { map: TEX.fabric({ repeat: 6 }).map, color: '#4a463e', w: 0.84, h: 0.13, pos: [-0.150, 0.0455, 0.366], rot: [-PI / 2, 0, 0], opacity: 0.5 });
+  // 原来这里在橡胶垫上又铺了一层 TEX.fabric() 贴花做织纹。fabric 是不透明表面贴图，
+  // 贴花拿不到 alpha，于是整块画布变成一块 50% 不透明的实心矩形盖在垫子上 ——
+  // 平涂下织纹本来也读不出来，直接去掉，垫子由上面那块 MAT.rubber 负责。
   [[-0.49, -0.28], [-0.49, 0.30], [0.49, -0.28], [0.49, 0.30]].forEach(([ax, az]) => {
     gr.add(mesh(cyl(0.0090, 0.0090, 0.048, 8), zinc, { pos: [ax, 0.056, az] }));
     gr.add(mesh(cyl(0.0150, 0.0150, 0.014, 6), MAT.metal('#999ea1', { worn: 0.9 }), { pos: [ax, 0.080, az] }));
