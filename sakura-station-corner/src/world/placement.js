@@ -15,6 +15,21 @@ try {
 }
 
 const resolved = new Map();
+
+/**
+ * 一次性并发预热所有资产 chunk。
+ * 本地 localhost 察觉不到问题，但构建产物把资产切成 ~100 个 lazy chunk，
+ * 而下面的清单循环是 `await resolveModule(file)` 逐个取 —— 放到 GitHub Pages 上
+ * 就是 100 次串行往返：同一份产物，世界阶段从 4.2 s 涨到 31.4 s（tools/net-lag.mjs
+ * 给每个 chunk 加 120 ms 即可在本地复现，加前 13.9 s / 加后见下）。
+ * 这里提前把 import() 全部发起，循环里的 await 就只是查表；
+ * 同一 URL 的第二次 import() 走 ES 模块注册表，不会再发一次请求。
+ * 单个文件失败仍只丢它自己（吞掉 rejection，让 resolveModule 那边照常告警）。
+ */
+try {
+  for (const key of Object.keys(FILES)) Promise.resolve().then(() => FILES[key]()).catch(() => {});
+} catch { /* Node（tools/check-assets.mjs）下没有 glob */ }
+
 export async function resolveModule(file) {
   if (resolved.has(file)) return resolved.get(file);
   const fn = FILES[`../assets/${file}.js`];

@@ -450,9 +450,23 @@
     `tools/flicker.mjs` 相邻帧亮度差 max 0.06、方向翻转率 0（无频闪）。
   · 新增常驻工具 `tools/boot-time.mjs`：连续 N 次冷启动，同时报「到 built」与「成帧」
     两个中位数，并打印各阶段耗时 + 装配期帧数/帧毫秒。以后判断启动优化只看后者。
-- [ ] 19.13 还能再压（这次没做）：① signboard 一族 44.7 MB / 159 张仍是最大贴图户，
+- [x] 19.13 **本地 7.9 s 是假的**：把同一份 `dist/` 推到 GitHub Pages 再测，成帧时间 **35.95 s**。
+  差值全在 `world` 阶段（4.2 s → 31.4 s）：`placement.js` 用 `import.meta.glob` 收集资产，
+  Vite 把它编译成 **~100 个 lazy chunk**，而清单循环是 `await resolveModule(file)` 逐个取 ——
+  localhost 上往返 ≈ 0 ms 所以完全看不出来，公网就是 100 次**串行**往返。
+  新增 `tools/net-lag.mjs`：本地静态服务给每个 `.js` 人为加 120 ms 往返，于是能在本地复现。
+- [x] 19.14 修法：`placement.js` 求值时就把所有 `import()` 一次性并发发起（吞掉单个失败），
+  循环里的 `await` 退化成查表；同一 URL 的第二次 `import()` 走 ES 模块注册表，不会重复请求。
+  · 同一台机器、同样 120 ms/chunk：到 built **17.48 s → 7.63 s**（世界阶段 **13.88 → 5.44 s**）
+  · 代价：localhost 成帧 7.94 → 8.32 s（+0.4 s，103 个模块集中求值与装配抢主线程）。
+    公网省 28 s、本地贵 0.4 s，这笔账显然该做。
+  · 复核：`npm run check` 135/135、`npm run build` 正常、JS 请求数 100 → 103（并发后仍是一次一图，
+    没有重复下载）。
+- [ ] 19.15 还能再压（这次没做）：① signboard 一族 44.7 MB / 159 张仍是最大贴图户，
   可按「招牌实际占屏」分两档尺寸；② 去重后位图仍有 **1167 份 / 239 MB**
   （`texCacheInfo` 现在按 `source.uuid` 去重，之前按缓存条目累加会虚报），
   `wear` 一家就占 352 张 —— 把 `color` 也量化到少数几个做旧色调，可塌到 ~60 张；
-  ③ `materialSignature` 目前不含 `userData.spec`（toon 自定义着色参数），与旧行为一致，
+  ③ 公网侧还能再收：主 chunk 2.57 MB（gzip 575 KB）是单张最贵的请求，
+  要么让 Pages 走 brotli，要么把 `three` 拆成可并行的第二张；
+  ④ `materialSignature` 目前不含 `userData.spec`（toon 自定义着色参数），与旧行为一致，
   但严格说同标准配置、不同 `steps/tint` 的两个材质仍会被并到一张 —— 要收紧就得同时接受 draw call 回升。
