@@ -462,7 +462,7 @@ voxel-ramen-stall/
 - 启动 8.3 s 出画面（本地 1600×900）、公网约 9 s：慢的原因几乎全在贴图的生成与 GPU 上传，不在模型精度——
   平涂会剥掉的贴图不再画、印刷内容按屏上 texel 密度定尺寸、几何缓存键量化到 0.5 mm；装配期渲染限到
   ~8 fps（`?asm=`），到 `built` 从 7.9 s 压到 4.8 s，成帧时间方差从 ±0.9 s 收到 ±0.06 s；资产 chunk 改为
-  启动即并发预热，公网从 36 s 降到 9 s（本地 7.9 s 时完全看不出那 28 s 是 100 次串行往返）
+  启动即并发预热，公网实测从 35.95 s 降到 8.75 s（本地 7.9 s 时完全看不出那 27 s 是 100 次串行往返）
 - LOD 带滞回（1.14 带宽）+ 阴影贴图按需刷新，消除「一闪一闪」的边界闪烁与周期性硬卡
 
 ### 技术栈
@@ -476,7 +476,7 @@ voxel-ramen-stall/
 
 ### 运行方式
 
-- 在线演示：<https://fanhuayishiy.github.io/ai-demo/sakura-station-corner/dist/>（Pages 托管 `dist/`，无需构建，公网出画面约 9 s）
+- 在线演示：<https://fanhuayishiy.github.io/ai-demo/sakura-station-corner/dist/>（Pages 托管 `dist/`，无需构建，公网出画面 8.8 s）
 - 本地开发：
 
 ```bash
