@@ -1,18 +1,15 @@
+import { g as grp, M as MAT, m as mesh, b as box, c as cyl, h as decal, T as TEX, H as plane, w as weather, n as range, r as rbox, q as finish, z as rand } from './index-BqvI026L.js';
+
 //  assets/store/auto-door.js —— 自動ドア（2 葉・開いた状態）
 //  局所：+Z が外（歩道側）、原点 = 開口中心（地面 y=0）。装配：世界 (STORE.doorX, 0, STORE.z1 + 0.02)。
-import * as THREE from 'three';
-import { grp, mesh, box, rbox, cyl, plane, finish, rand, range, weather, decal } from '../../core/kit.js';
-import { MAT } from '../../core/materials.js';
-import { TEX } from '../../core/textures.js';
-import { PAL } from '../../core/palette.js';
 
-export const meta = {
+const meta = {
   id: 'auto-door',
   real: [1.9, 2.4, 0.22],
   origin: 'center-ground',
 };
 
-export function build(options = {}) {
+function build(options = {}) {
   const { seed = 207, width = 1.9, height = 2.32, open = 0.35, y0 = 0.12 } = options;
   const rnd = rand(seed);
   const g = grp('auto-door');
@@ -130,4 +127,4 @@ export function build(options = {}) {
   return finish(g, { outline: 'thin', minSize: 0.06 });
 }
 
-export default build;
+export { build, build as default, meta };

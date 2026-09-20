@@ -1,13 +1,10 @@
+import { g as grp, M as MAT, P as PAL, T as TEX, m as mesh, b as box, w as weather, c as cyl, t as tor, n as range, r as rbox, h as decal, q as finish, z as rand } from './index-BqvI026L.js';
+
 //  assets/store/convenience-store.js —— 便利店外壳（基礎・外壁・陸屋根・女墙・雨樋・屋根上設備・外部配管）
 //  轮廓 9.4(X) × 5.6(Z)，原点 = 轮廓中心 = 地面 y=0，正面（ガラス面）朝 +Z。
 //  室内地坪 y=0.12、净高 2.85、屋版 0.22、女墙顶 3.42。内壁/床/柱は interior/wall-and-floor.js が担当。
-import * as THREE from 'three';
-import { grp, mesh, box, rbox, cyl, tor, finish  , rand, range, weather, decal } from '../../core/kit.js';
-import { MAT } from '../../core/materials.js';
-import { TEX } from '../../core/textures.js';
-import { PAL } from '../../core/palette.js';
 
-export const meta = {
+const meta = {
   id: 'convenience-store',
   real: [9.4, 3.42, 5.6],
   origin: 'footprint-center-ground',
@@ -19,11 +16,10 @@ const FY = 0.12;          // 室内地坪
 const CH = 2.85;          // 内法
 const SLAB = 0.22;        // 屋面板厚
 const PARA = 0.45;        // 女墙高
-const TOP = CH + SLAB + PARA; // 3.42
 const WT = 0.24;          // 外壁厚
-const DOOR_W = 1.9, DOOR_H = 2.32;
+const DOOR_H = 2.32;
 
-export function build(options = {}) {
+function build(options = {}) {
   const { seed = 201, name = 'サクラ・マート' } = options;
   const rnd = rand(seed);
   const g = grp('convenience-store');
@@ -71,7 +67,7 @@ export function build(options = {}) {
     fnd.add(mesh(box(0.016, 0.42, D + 0.08), MAT.paint('#8d8779', { spec: 0.04, steps: 2 }), { pos: [-HX + 1.1 + i * 2.1, -0.08, 0], cast: false }));
   }
   weather(fnd, { w: W * 0.9, h: 0.34, pos: [0, 0.02, HZ + 0.055], kind: 'moss', color: '#63804e', opacity: 0.42, seed: seed + 3, density: 1.8, count: 3, spread: 0.2 });
-  weather(fnd, { w: D * 0.9, h: 0.3, pos: [-(HX + 0.055), 0.02, 0], rot: [0, Math.PI / 2, 0], kind: 'dirt', color: '#4f4a3e', opacity: 0.4, seed: seed + 5, density: 1.6, count: 2, spread: 0.18 });
+  weather(fnd, { w: D * 0.9, h: 0.3, pos: [-4.755, 0.02, 0], rot: [0, Math.PI / 2, 0], kind: 'dirt', color: '#4f4a3e', opacity: 0.4, seed: seed + 5, density: 1.6, count: 2, spread: 0.18 });
   g.add(fnd);
 
   /* ---------------- 2. 床スラブ + 室内地坪 ---------------- */
@@ -285,4 +281,4 @@ export function build(options = {}) {
   return finish(g, { outline: 'normal', minSize: 0.06 });
 }
 
-export default build;
+export { build, build as default, meta };

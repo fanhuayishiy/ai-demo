@@ -1,19 +1,16 @@
+import { g as grp, M as MAT, m as mesh, b as box, H as plane, h as decal, T as TEX, c as cyl, w as weather, n as range, r as rbox, q as finish, z as rand } from './index-BqvI026L.js';
+
 //  assets/store/glass-curtain-wall.js —— 正面大面積ガラスカーテンウォール
 //  局所：+Z が外側（歩道側）、原点 = 幕墙中心（地面 y=0、内部で y を上げる）。
 //  装配：世界 (STORE.cx, 0, STORE.z1)、rotY=0。
-import * as THREE from 'three';
-import { grp, mesh, box, rbox, cyl, plane, finish, rand, range, weather, decal } from '../../core/kit.js';
-import { MAT } from '../../core/materials.js';
-import { TEX } from '../../core/textures.js';
-import { PAL } from '../../core/palette.js';
 
-export const meta = {
+const meta = {
   id: 'glass-curtain-wall',
   real: [9.4, 2.85, 0.2],
   origin: 'center-ground',
 };
 
-export function build(options = {}) {
+function build(options = {}) {
   const {
     seed = 203,
     width = 9.4,
@@ -157,4 +154,4 @@ export function build(options = {}) {
   return finish(g, { outline: 'thin', minSize: 0.08, includePlanes: false });
 }
 
-export default build;
+export { build, build as default, meta };

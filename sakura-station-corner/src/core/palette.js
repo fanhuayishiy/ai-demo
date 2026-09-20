@@ -32,8 +32,11 @@ export const PAL = {
   storeWallTrim: '#c9c2b3',
   storePillar: '#d2cbbe',
   awningGreen: '#3f7a52',
-  interiorFloor: '#efe9dd',
-  shelfBody: '#e0d9c9',
+  // 店内床：它是「商品和棚的底色」，flat 又把阴影压到 0.5，所以它必须**明显暗于**
+  // 货架白与商品色，否则整间店挤在 200-240 一档里（实测均值 204、标准差只有 25），
+  // 隔着大玻璃看就是一片没有层次的白。往下压一档，让棚板与商品的边缘读得出来。
+  interiorFloor: '#d9d2c2',
+  shelfBody: '#efe9db',
   shelfEdge: '#f0b93a',
   register: '#4c5a63',
   glassTint: '#d7ecef',

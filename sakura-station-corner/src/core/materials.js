@@ -129,6 +129,11 @@ export const MAT = {
       reflectivity: 0.4,
       attenuation: o.attenuation ?? '#c9e6e4',
       attenuationDistance: o.attenuationDistance ?? 3.2,
+      // flat 模式会把 physical 退化成「一块纯色半透明板」（toon.js physicalFlat）。
+      // 那里默认 0.34 是给 PET 瓶那种小件用的；陳列ケースのガラスに同じ値を当てると
+      // 一枚で 34%、向こう側が 37.8% しか透けない（实测 `shots/y1/glass-ray.png`）。
+      // 展示ガラスは薄く立てる、という既定をここに書く。
+      flatOpacity: o.flatOpacity ?? 0.13,
       uv: o.uv,
     }),
   /** 卡通化薄玻璃（货架门小窗、展示罩）：省开销 */
