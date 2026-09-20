@@ -751,7 +751,8 @@ export const TEX = {
 
   /** 车侧广告带 / 时刻表 / 报纸 */
   adStrip(o = {}) {
-    return memo(`ad|${o.text || ''}|${o.bg}|${o.seed || 1}`, () => {
+    // fg 要进 key：否则「同一句文案、不同底色」会命中同一张贴图，深色底配深色字。
+    return memo(`ad|${o.text || ''}|${o.bg}|${o.fg || ''}|${o.seed || 1}`, () => {
       if (!HAS_DOM) return blank();
       const cv = makeCanvas(512, 128);
       const { g, w, h, rnd } = cv;
@@ -762,7 +763,7 @@ export const TEX = {
         rr(g, 20 + i * 160, 40, 130, 100, 8); g.fill();
       }
       g.globalAlpha = 1;
-      jpText(g, o.text || '春のセール', { x: w / 2, y: h * 0.78, size: h * 0.2, color: '#3a3a3a', weight: 800, spacing: 4 });
+      jpText(g, o.text || '春のセール', { x: w / 2, y: h * 0.78, size: h * 0.2, color: o.fg || '#3a3a3a', weight: 800, spacing: 4 });
       return toTexture(cv, { repeat: 1 });
     });
   },

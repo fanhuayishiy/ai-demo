@@ -1,21 +1,15 @@
+import { P as PAL, g as grp, m as mesh, M as MAT, r as rbox, c as cyl, w as weather, b as box, s as shade, K as extrude, D as DoubleSide, N as makeCanvas, Q as toTexture, ap as FrontSide, H as plane, aq as ShapeGeometry, J as shape, h as decal, T as TEX, ah as ConeGeometry, p as shadowBlob, q as finish, O as jpText, z as rand, a6 as rr } from './index-CNQWoZB0.js';
+
 //  assets/street/road-sign-set.js —— 道路標識群（一時停止・注意信号・速度制限・自転車専用・駐停車禁止・踏切注意・儿童注意・一方通行）
 //  Each kind is its OWN geometry (octagon / diamond / triangle / circle / rectangle extrusion) —
 //  板 face は TEX 風の自作 canvas（日本語文字・図記）で描き、反射材の退色／剥がれ／角の凹み／貼紙剥がし跡を盛る。
-import * as THREE from 'three';
-import {
-  grp, mesh, box, cyl, rbox, extrude, shape, plane, finish, rand,
-  weather, decal, shadowBlob,
-} from '../../core/kit.js';
-import { MAT } from '../../core/materials.js';
-import { TEX, makeCanvas, toTexture, jpText, rr, shade } from '../../core/textures.js';
-import { PAL } from '../../core/palette.js';
 
-export const meta = {
+const meta = {
   id: 'road-sign-set',
   real: [0.5, 2.16, 0.1],          // kind により変わる（sizeOf() を参照）
   origin: 'ground-center',
 };
-export const DEFAULT_OPTIONS = { kind: 'stop', seed: 21 };
+const DEFAULT_OPTIONS = { kind: 'stop', seed: 21 };
 
 const D2R = Math.PI / 180;
 
@@ -237,8 +231,8 @@ const SIGNS = {
     },
   },
 };
-export const SIGN_KINDS = Object.keys(SIGNS);
-export function sizeOf(kind) {
+const SIGN_KINDS = Object.keys(SIGNS);
+function sizeOf(kind) {
   const s = SIGNS[kind] || SIGNS.stop;
   const { w, h } = s.geo();
   return [w, s.postH + h / 2 + 0.16, 0.14];
@@ -292,7 +286,7 @@ function fadeWear(g, w, h, rnd) {
 const postMat = () => MAT.metalPaint('#8f9793', { worn: 0.9, repeat: 3, base: '#adb5b1' });
 const bandMat = () => MAT.metal('#9aa0a3', { worn: 0.85 });
 
-export function build(options = {}) {
+function build(options = {}) {
   const kind = SIGNS[options.kind] ? options.kind : 'stop';
   const seed = options.seed ?? 21;
   const rnd = rand(seed);
@@ -321,7 +315,7 @@ export function build(options = {}) {
   g.add(mesh(rbox(pw + 0.014, 0.04, 0.062, 0.008, 2), MAT.metal('#7f8a86', { worn: 0.6 }), { pos: [0, PH + 0.018, -0.028] }));
   // 柱の再塗装跡・錆・泥
   weather(g, { w: 0.1, h: 0.5, pos: [0.01, 0.35, 0.005], kind: 'rust', color: '#7d4a2c', opacity: 0.5, seed: seed + 21, density: 1.8, count: 3, spread: 0.16 });
-  weather(g, { w: 0.12, h: 0.22, pos: [-0.005, 0.14, 0.02], kind: 'dirt', color: '#7b7361', opacity: 0.5, seed: seed + 22, count: 2 });
+  weather(g, { w: 0.12, h: 0.22, pos: [-5e-3, 0.14, 0.02], kind: 'dirt', color: '#7b7361', opacity: 0.5, seed: seed + 22, count: 2 });
   weather(g, { w: 0.06, h: 0.3, pos: [0.03, PH * 0.62, 0.005], kind: 'chip', color: shade('#8f9793', 1.5), opacity: 0.45, seed: seed + 23, count: 3, spread: 0.22 });
 
   /* ------------------------------ 標板（押出形状） ------------------------------ */
@@ -331,7 +325,7 @@ export function build(options = {}) {
   // 標板本体は両面にしておく：extrude 出来的这块板从正面看是**被剔掉的**（绕序问题），
   // 于是背面那两根 w*0.72 的补强 rib 会透过 face 贴图的透明处显出来 ——
   // 实拍里就是牌面上横着几条浅色杠。补强筋本来就该藏在板子后面。
-  const bodyMat = MAT.metalPaint(S.plate, { worn: 0.55, repeat: 2, base: shade(S.plate, 1.16), side: THREE.DoubleSide });
+  const bodyMat = MAT.metalPaint(S.plate, { worn: 0.55, repeat: 2, base: shade(S.plate, 1.16), side: DoubleSide });
   plateG.add(mesh(plateGeo, bodyMat, { name: 'plate', pos: [0, 0, -DP] }));
   // 裏側の補強リブ 2 本（板が一枚板に見えない為に必ず入れる）
   for (const ry of [-h * 0.24, h * 0.24]) {
@@ -343,7 +337,7 @@ export function build(options = {}) {
   const cv = makeCanvas(px, Math.round(px / (w / h)));
   if (cv) S.face(cv.g, cv.w, cv.h, rnd);
   const faceMap = cv ? toTexture(cv, { repeat: 1 }) : null;
-  const facePlane = mesh(plane(w * 0.96, h * 0.96), MAT.decal({ map: faceMap, opacity: 1, color: '#ffffff', order: 0, side: THREE.FrontSide }), {
+  const facePlane = mesh(plane(w * 0.96, h * 0.96), MAT.decal({ map: faceMap, opacity: 1, color: '#ffffff', order: 0, side: FrontSide }), {
     name: 'sign-face', pos: [0, 0, 0.0042], cast: false, receive: false,
   });
   facePlane.userData.noOutline = true;
@@ -368,8 +362,8 @@ export function build(options = {}) {
   // 反射材の剥がれ（めくれた三角片＋下地むき出し）
   {
     const cx = w * 0.3, cy = -h * 0.34;
-    const peel = mesh(new THREE.ShapeGeometry(shape((s) => { s.moveTo(0, 0); s.lineTo(0.09, 0.012); s.lineTo(0.032, 0.075); s.closePath(); }), 8),
-      MAT.paint('#cfc9b8', { side: THREE.DoubleSide, steps: 2, spec: 0.2, shadowAmt: 0.75 }), { pos: [cx, cy, 0.008], rot: [-0.5, 0.25, 0.6] });
+    const peel = mesh(new ShapeGeometry(shape((s) => { s.moveTo(0, 0); s.lineTo(0.09, 0.012); s.lineTo(0.032, 0.075); s.closePath(); }), 8),
+      MAT.paint('#cfc9b8', { side: DoubleSide, steps: 2, spec: 0.2, shadowAmt: 0.75 }), { pos: [cx, cy, 0.008], rot: [-0.5, 0.25, 0.6] });
     plateG.add(peel);
     decal(plateG, { map: TEX.wear({ kind: 'chip', color: '#8a8172', seed: seed + 5, density: 2 }), w: 0.1, h: 0.09, pos: [cx + 0.01, cy - 0.01, 0.0046], order: 1 });
     weather(plateG, { w: w * 0.5, h: h * 0.4, pos: [-w * 0.18, h * 0.2, 0.0048], kind: 'scratch', color: '#f3efe2', opacity: 0.28, seed: seed + 6, count: 2 });
@@ -377,7 +371,7 @@ export function build(options = {}) {
   // 角の凹み（めくれた角とは対角側）：浅い円錐を押し当てた見え方＋打痕
   {
     const dx = -w * 0.36, dy = h * 0.3;
-    const dent = mesh(new THREE.ConeGeometry(0.035, 0.022, 12), MAT.metal(shade(S.plate, 0.78), { worn: 0.6, side: THREE.DoubleSide }), { pos: [dx, dy, -0.004], rot: [Math.PI / 2 + 0.35, 0, 0.5] });
+    const dent = mesh(new ConeGeometry(0.035, 0.022, 12), MAT.metal(shade(S.plate, 0.78), { worn: 0.6, side: DoubleSide }), { pos: [dx, dy, -4e-3], rot: [Math.PI / 2 + 0.35, 0, 0.5] });
     plateG.add(dent);
     decal(plateG, { map: TEX.wear({ kind: 'dirt', color: '#6d6558', seed: seed + 7, density: 1.6 }), w: 0.07, h: 0.07, pos: [dx, dy, 0.0046], order: 2 });
   }
@@ -402,4 +396,5 @@ export function build(options = {}) {
   shadowBlob(g, { r: 0.22, pos: [0, 0.004, -0.01], opacity: 0.28 });
   return finish(g, { outline: 'normal', minSize: 0.03 });
 }
-export default build;
+
+export { DEFAULT_OPTIONS, SIGN_KINDS, build, build as default, meta, sizeOf };

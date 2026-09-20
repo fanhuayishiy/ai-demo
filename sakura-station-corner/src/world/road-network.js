@@ -1,11 +1,11 @@
 // 丁字路口柏油路网：車道・縁石・路面标线・補修跡
 import * as THREE from 'three';
-import { grp, mesh, box, rbox, finish, rand, range, weather, decal, inst } from '../core/kit.js';
+import { grp, mesh, box, rbox, plane, finish, rand, range, weather, decal, inst } from '../core/kit.js';
 import { MAT } from '../core/materials.js';
 import { TEX } from '../core/textures.js';
 import { PAL } from '../core/palette.js';
 import { slab, surface, wallX, wallZ, curbRun, repeats, Y, insideClip, clipRun } from './common.js';
-import { PLOT, SEG, STORE } from './plan.js';
+import { PLOT, SEG, STORE, CROSSWALK } from './plan.js';
 
 export function build(options = {}) {
   const rnd = rand(options.seed ?? 4242);
@@ -35,6 +35,17 @@ export function build(options = {}) {
   }
 
   /* ---------- 補修パッチ・アスファルト継ぎ目 ---------- */
+  // 補修パッチ是「刨掉一层再重新铺平」，不是往路面上搁砖。三处改掉的毛病：
+  // ① 原来是有 14 mm 厚度的圆角盒：侧壁在低机位下描出一条边、还会投影，
+  //    于是路面读起来像掉了几块深灰瓷砖（顶视 `shots/audit/top.png` 尤其明显）。
+  //    改成贴地的平面，没有侧壁也没有影子。
+  // ② 原来 yaw 随机 ±0.5 rad，矩形像随手撒的纸片；真实切割会顺着车行道方向。
+  // ③ 原来不看路面标线，补丁会直接压在斑马线上，两边都不像真的。
+  const patchAvoid = [CROSSWALK.ew, CROSSWALK.nsNorth, CROSSWALK.southApproach, SEG.crossing];
+  const onMarking = (x, z, w, d) => patchAvoid.some((r) =>
+    Math.abs(x - (r.x0 + r.x1) / 2) < (r.x1 - r.x0 + w) / 2 &&
+    Math.abs(z - (r.z0 + r.z1) / 2) < (r.z1 - r.z0 + d) / 2);
+  const patchMat = [MAT.asphalt({ tone: 2, repeat: 1 }), MAT.asphalt({ tone: 0, repeat: 1 })];
   for (let i = 0; i < 16; i++) {
     const onNS = rnd() > 0.45;
     const x = onNS ? range(rnd, SEG.roadNS.x0 + 0.4, SEG.roadNS.x1 - 0.4) : range(rnd, -18, 3.4);
@@ -42,14 +53,16 @@ export function build(options = {}) {
     const w = range(rnd, 0.5, 2.4), d = range(rnd, 0.4, 1.6);
     // 補修パッチは中心だけでなく四つ隅まで見る：枠をまたぐ_patch は台座の外に一枚はみ出す
     if (!insideClip(x - w / 2, z - d / 2) || !insideClip(x + w / 2, z + d / 2)) continue;
-    g.add(
-      mesh(rbox(w, 0.014, d, 0.06, 2), MAT.asphalt({ tone: rnd() > 0.5 ? 2 : 0, repeat: 1 }), {
-        pos: [x, Y.road + 0.004, z],
-        rot: [0, range(rnd, -0.5, 0.5), 0],
-        cast: false,
-        receive: true,
-      }),
-    );
+    if (onMarking(x, z, w, d)) continue;
+    const p = mesh(plane(w, d), patchMat[i % 2], {
+      pos: [x, Y.road + 0.008, z],
+      rot: [-Math.PI / 2, 0, (onNS ? Math.PI / 2 : 0) + range(rnd, -0.06, 0.06)],
+      cast: false,
+      receive: true,
+      name: 'asphalt-patch',
+    });
+    p.userData.noOutline = true;
+    g.add(p);
   }
   // 継ぎ目（_cut-back アスファルトの溝）
   for (const j of [

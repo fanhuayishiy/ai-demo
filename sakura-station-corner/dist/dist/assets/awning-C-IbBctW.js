@@ -1,21 +1,15 @@
+import { g as grp, M as MAT, D as DoubleSide, P as PAL, m as mesh, r as rbox, n as range, b as box, c as cyl, w as weather, t as tor, K as extrude, J as shape, h as decal, T as TEX, k as tubeOf, q as finish, B as BufferGeometry, F as Float32BufferAttribute, z as rand, o as lathe } from './index-CNQWoZB0.js';
+
 //  assets/store/awning.js —— 便利店正面雨棚（FRP 波板の屋根＋アルミ支持アーム＋看板帯＋帯下照明＋吊り看板）
 //  原点 = 雨棚の壁面取付点中心：局所 z=0 が壁面（+Z = 道路側）、局所 y=0 が床面（安装高度 y は build 内で織り込み）
-import * as THREE from 'three';
-import {
-  grp, mesh, box, cyl, rbox, tor, lathe, tubeOf, shape, extrude,
-  finish, rand, range, weather, decal,
-} from '../../core/kit.js';
-import { MAT } from '../../core/materials.js';
-import { TEX } from '../../core/textures.js';
-import { PAL } from '../../core/palette.js';
 
-export const meta = {
+const meta = {
   id: 'awning',
   real: [9.18, 1.18, 1.21],      // width=9.0 / depth=1.15 / y=2.92 のとき（看板帯・照明・吊り看板込み／局所 y 2.11〜3.28）
   origin: 'wall-face-center（局所 z=0 = 壁面, 局所 y=0 = 店舗前床面, y=2.92 は内部で加算済み）',
 };
 
-export const DEFAULT_OPTIONS = { width: 9.0, depth: 1.15, y: 2.92, seed: 71 };
+const DEFAULT_OPTIONS = { width: 9.0, depth: 1.15, y: 2.92, seed: 71 };
 
 const noOut = (o) => { o.userData.noOutline = true; return o; };
 const D2R = Math.PI / 180;
@@ -35,9 +29,9 @@ function surfaceGeo(x0, x1, z0, z1, nx, nz, hFn) {
     const a = j * (nx + 1) + i, b = a + 1, c = a + nx + 1, e = c + 1;
     idx.push(a, c, b, b, c, e);
   }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  const geo = new BufferGeometry();
+  geo.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new Float32BufferAttribute(uv, 2));
   geo.setIndex(idx);
   geo.computeVertexNormals();
   return geo;
@@ -57,9 +51,9 @@ function edgeStripGeo(x0, x1, z, topFn, drop, nx, back = false) {
     if (back) idx.push(a, c, b, c, d, b);
     else idx.push(a, b, c, c, b, d);
   }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  const geo = new BufferGeometry();
+  geo.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new Float32BufferAttribute(uv, 2));
   geo.setIndex(idx);
   geo.computeVertexNormals();
   return geo;
@@ -68,7 +62,7 @@ function edgeStripGeo(x0, x1, z, topFn, drop, nx, back = false) {
 /** 落ち葉 1 枚 */
 const leafGeo = (s) => lathe([[0, 0], [s * 0.40, s * 0.09], [s * 0.82, s * 0.05], [s, 0], [s * 0.68, -s * 0.05]], 7);
 
-export function build(options = {}) {
+function build(options = {}) {
   const W = options.width ?? 9.0;
   const D = options.depth ?? 1.15;
   const MB = options.y ?? 2.92;                 // 看板帯の上端＝壁面の安装基準高（局所 y）
@@ -104,7 +98,7 @@ export function build(options = {}) {
   /* ---------------- 材質 ---------------- */
   const frp = MAT.corrugated({
     base: '#d3d5c2', tintBase: '#fffaf0', tint: '#f8e6bd', sat: 0.94, steps: 3,
-    spec: 0.26, specPower: 38, sheen: 0.06, side: THREE.DoubleSide, uv: { repeat: [nRib / 16, 1] },
+    spec: 0.26, specPower: 38, sheen: 0.06, side: DoubleSide, uv: { repeat: [nRib / 16, 1] },
   });
   const alu = MAT.metal('#c6cac6', { worn: 0.5, repeat: 3 });        // アルミ押出
   const aluDk = MAT.metal('#a7acae', { worn: 0.8, repeat: 4 });
@@ -134,7 +128,7 @@ export function build(options = {}) {
     for (let k = 0; k < 10; k++) {
       const z = range(rnd, zBack + 0.03, zFront - 0.03);
       roof.add(noOut(mesh(box(0.030, 0.0018, 0.0034), MAT.plastic('#ded9c4', { steps: 2, tint: '#f4e6c4' }), {
-        pos: [sx * (PW + 0.013), roofH(sx * PW, z) + range(rnd, -0.008, 0.012), z],
+        pos: [sx * (PW + 0.013), roofH(sx * PW, z) + range(rnd, -8e-3, 0.012), z],
         rot: [range(rnd, -0.5, 0.5), range(rnd, -0.5, 0.5), range(rnd, -0.35, 0.35)], cast: false,
       })));
     }
@@ -233,12 +227,12 @@ export function build(options = {}) {
     g.add(arm);
     // 壁取付 Plate＋アンカーボルト 4 本
     arm.add(mesh(rbox(0.112, 0.172, 0.012, 0.005, 2), iron, { pos: [0, -0.024, 0.006] }));
-    for (const [bx, by] of [[-0.034, 0.040], [0.034, 0.040], [-0.034, -0.080], [0.034, -0.080]]) {
+    for (const [bx, by] of [[-0.034, 0.040], [0.034, 0.040], [-0.034, -0.08], [0.034, -0.08]]) {
       arm.add(noOut(mesh(cyl(0.0125, 0.0125, 0.005, 10), screwSt, { pos: [bx, by, 0.015], rot: [Math.PI / 2, 0, 0], cast: false })));
       arm.add(noOut(mesh(cyl(0.0068, 0.0068, 0.026, 6), iron, { pos: [bx, by, 0.024], rot: [Math.PI / 2, 0, 0], cast: false })));
     }
     // 補強ガセット（三角座金）
-    const gus = mesh(extrude(shape((s) => { s.moveTo(0, 0); s.lineTo(0.24, 0); s.lineTo(0, -0.165); s.closePath(); }), { depth: 0.006, bevelEnabled: false }), iron, { pos: [0.003, -0.010, 0.020], rot: [0, -Math.PI / 2, 0] });
+    const gus = mesh(extrude(shape((s) => { s.moveTo(0, 0); s.lineTo(0.24, 0); s.lineTo(0, -0.165); s.closePath(); }), { depth: 0.006, bevelEnabled: false }), iron, { pos: [0.003, -0.01, 0.020], rot: [0, -Math.PI / 2, 0] });
     arm.add(gus);
     // 傾斜アングル（ウェブ＋上下フラジ）
     const raf = grp('rafter');
@@ -250,7 +244,7 @@ export function build(options = {}) {
     for (let k = 0; k < 3; k++) {
       const zz = 0.16 + k * ((armL - 0.32) / 2);
       raf.add(noOut(mesh(box(0.060, 0.006, 0.018), aluDk, { pos: [0, -0.017, zz], cast: false })));
-      raf.add(noOut(mesh(cyl(0.0062, 0.0062, 0.052, 6), screwSt, { pos: [0, -0.006, zz + 0.052], rot: [Math.PI / 2, 0, 0], cast: false })));
+      raf.add(noOut(mesh(cyl(0.0062, 0.0062, 0.052, 6), screwSt, { pos: [0, -6e-3, zz + 0.052], rot: [Math.PI / 2, 0, 0], cast: false })));
     }
     // 前端：帯の野縁レールを受ける金物
     const br = grp('front-bracket');
@@ -258,7 +252,7 @@ export function build(options = {}) {
     g.add(br);
     br.add(mesh(rbox(0.092, 0.150, 0.010, 0.005, 2), iron, { pos: [0, 0.026, 0.014] }));
     br.add(mesh(box(0.072, 0.010, 0.092), iron, { pos: [0, -0.046, 0.056] }));
-    for (const [bx, by] of [[-0.028, 0.066], [0.028, 0.066], [0, -0.010]]) {
+    for (const [bx, by] of [[-0.028, 0.066], [0.028, 0.066], [0, -0.01]]) {
       br.add(noOut(mesh(cyl(0.0075, 0.0075, 0.020, 6), screwSt, { pos: [bx, by, 0.024], rot: [Math.PI / 2, 0, 0], cast: false })));
       br.add(noOut(mesh(cyl(0.0115, 0.0115, 0.0045, 8), aluDk, { pos: [bx, by, 0.017], rot: [Math.PI / 2, 0, 0], cast: false })));
     }
@@ -267,7 +261,7 @@ export function build(options = {}) {
     br.add(mesh(cyl(0.0095, 0.0095, tieLen, 8), iron, { pos: [0, tieLen / 2 - 0.012, 0.066] }));
     br.add(noOut(mesh(cyl(0.016, 0.016, 0.009, 8), MAT.rubber('#2f3238'), { pos: [0, tieLen - 0.014, 0.066], cast: false })));
     // 経年：塗装剥がれ・下端の錆
-    weather(arm, { w: 0.17, h: 0.14, pos: [0, -0.030, 0.021], kind: 'chip', color: '#8f8b80', opacity: 0.6, seed: seed + 31 + i, density: 1.8, spread: 0.012 });
+    weather(arm, { w: 0.17, h: 0.14, pos: [0, -0.03, 0.021], kind: 'chip', color: '#8f8b80', opacity: 0.6, seed: seed + 31 + i, density: 1.8, spread: 0.012 });
     weather(raf, { w: armL * 0.42, h: 0.07, pos: [0, -0.032, armL * 0.62], kind: 'rust', color: PAL.rust, opacity: 0.6, seed: seed + 37 + i, density: 1.8, spread: 0.014 });
     weather(br, { w: 0.10, h: 0.11, pos: [0, -0.052, 0.022], kind: 'rust', color: '#7d5a3a', opacity: 0.55, seed: seed + 43 + i, density: 1.6, spread: 0.01 });
   });
@@ -361,7 +355,7 @@ export function build(options = {}) {
   hb.rotation.z = -1.6 * D2R;
   hang.add(hb);
   hb.add(mesh(rbox(hangW, hangH, 0.012, 0.004, 2), board, { pos: [0, 0, 0.008] }));
-  hb.add(mesh(rbox(hangW, hangH, 0.012, 0.004, 2), MAT.hardPlastic('#ded9cb', { repeat: 3 }), { pos: [0, 0, -0.008] }));
+  hb.add(mesh(rbox(hangW, hangH, 0.012, 0.004, 2), MAT.hardPlastic('#ded9cb', { repeat: 3 }), { pos: [0, 0, -8e-3] }));
   decal(hb, { map: TEX.poster({ title: '春の味覚市', sub: '4/1 〜 4/14 新発売', bg: '#fdf3e2', accent: PAL.storeBand3, seed: seed + 61 }), w: hangW - 0.030, h: hangH - 0.030, pos: [0, 0, 0.0148] });
   decal(hb, { map: TEX.poster({ title: 'さくらだんご', sub: '店内調理・つぶあん', bg: '#f4efe3', accent: PAL.storeBand, seed: seed + 62 }), w: hangW - 0.040, h: hangH - 0.040, pos: [0, 0, -0.0148], rot: [0, Math.PI, 0], opacity: 0.94 });
   for (const sx of [-1, 1]) {
@@ -422,4 +416,4 @@ export function build(options = {}) {
   return finish(g, { outline: 'normal', minSize: 0.030 });
 }
 
-export default build;
+export { DEFAULT_OPTIONS, build, build as default, meta };
