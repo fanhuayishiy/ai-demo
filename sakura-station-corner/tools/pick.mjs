@@ -17,7 +17,7 @@ const b = await chromium.launch({ channel: 'chrome', headless: true, args: ['--u
 const ctx = await b.newContext({ viewport: { width: W, height: H } });
 const p = await ctx.newPage();
 p.setDefaultTimeout(300000);
-await p.goto(arg('url', 'http://127.0.0.1:5173/'), { waitUntil: 'commit' });
+await p.goto(arg('url', 'http://127.0.0.1:5173/?sample'), { waitUntil: 'commit' });
 await p.waitForFunction('window.__DIORAMA__ && window.__DIORAMA__.built === true', { timeout: 300000, polling: 500 });
 await p.waitForFunction('!document.getElementById("boot")', { timeout: 60000, polling: 100 });
 

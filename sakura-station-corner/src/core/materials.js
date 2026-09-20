@@ -68,7 +68,7 @@ export const MAT = {
   /** 喷漆金属（车身、栏杆、铁皮）：细颗粒 + 磨损 */
   metalPaint: (color, o = {}) => {
     const wear = TEX.metal({ base: color, worn: o.worn ?? 0.5, repeat: o.repeat ?? 2 });
-    return MAT.paint(o.base ?? "#ffffff", {
+    return MAT.paint(o.base ?? color, {
       spec: 0.34,
       specPower: 58,
       specCut: 0.22,
@@ -85,7 +85,7 @@ export const MAT = {
   /** 裸露金属 / 不锈钢（拉丝） */
   metal: (color = '#b9bcc0', o = {}) => {
     const t = TEX.metal({ base: color, dir: o.dir ?? 'v', worn: o.worn ?? 0.35, repeat: o.repeat ?? 1 });
-    return MAT.paint(o.base ?? "#ffffff", {
+    return MAT.paint(o.base ?? color, {
       spec: o.spec ?? 0.62,
       specPower: o.specPower ?? 120,
       specCut: o.specCut ?? 0.12,

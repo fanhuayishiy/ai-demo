@@ -34,7 +34,11 @@ export function build(options = {}) {
     steps: 3,
     sat: 0.99,
   });
-  const wallMat = MAT.paint('#ded7c6', {
+  // 内装ライニングは「商品が映る背景」で、主役ではない。ここが #ded7c6 だと
+  // 蛍光灯（PAL.fluorescent #eaf6ff・強度 2.1）+ ヘミ + 寒色 fill を全部受けて
+  // 大ガラスの上半分が 213-226 の青白い帯に飛んでいた（`tools/pick.mjs --px=600,300`）。
+  // 外壁（PAL.storeWall）はヒーロー画の構成要素なので触らず、内側だけ落とす。
+  const wallMat = MAT.paint('#c6bfae', {
     map: TEX.paper({ base: '#f2ecdf' }).map,
     spec: 0.06,
     sheen: 0.01,

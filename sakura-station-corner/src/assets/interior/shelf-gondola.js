@@ -366,7 +366,11 @@ export function build(options = {}) {
     steel: MAT.metal('#b4b1aa', { worn: 0.65, repeat: 2 }),
     alu: MAT.metal('#cfd2d1', { worn: 0.3, dir: 'h', spec: 0.68, repeat: 3 }),
     chrome: MAT.chrome({}),
-    punch: MAT.paint('#ffffff', {
+    // 決め色を '#ffffff' にすると flat で map（穴あきパンチボード）が剥がれた瞬間、
+    // 棚の背板が**純白の大きな板**になる。それが大ガラス上半分の亮部を支配していた
+    // （`tools/pick.mjs --px=600,380` が打つ in-gondola-1/back-punch）。
+    // 穴の明暗は贴图任せ、決め色は棚本体の色から寄越す。
+    punch: MAT.paint(PAL.shelfBody, {
       map: pm.map, normalMap: pm.normalMap, normalScaleX: 1.2, normalScaleY: 1.2,
       tint: PAL.shelfBody, spec: 0.17, shadowAmt: 0.86, steps: 3, sat: 0.96, uv: { repeat: [10, 4] },
     }),

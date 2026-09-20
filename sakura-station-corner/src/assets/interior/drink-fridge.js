@@ -111,7 +111,9 @@ export function build(options = {}) {
   const yTopBox = h;              // 広告箱上端
 
   /* ---------- マテリアル ---------- */
-  const skin = MAT.metalPaint('#e8e3d6', { worn: 0.55, repeat: 3 });
+  // 天面は蛍光灯を真正面から受ける「見せるためでない面」。#e8e3d6 の侭だと
+  // ケース越しの亮部として目立つ（pick.mjs が shell/skin-top を拾っていた）。
+  const skin = MAT.metalPaint('#d5cfc0', { worn: 0.55, repeat: 3 });
   const skinDark = MAT.metalPaint('#b9b4a8', { worn: 0.8, repeat: 2 });
   const alu = MAT.metal('#c9cdcf', { worn: 0.32, dir: 'v', spec: 0.66, repeat: 3 });
   const aluDim = MAT.metal('#aeb3b5', { worn: 0.6, dir: 'h', spec: 0.5, repeat: 2 });
