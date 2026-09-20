@@ -1,7 +1,45 @@
 // 地图层共用工具：有厚度的地块 / 路缘 / 条带
 import * as THREE from 'three';
 import { grp, mesh, box, rbox, insideClip, clipRun, clipRect, clipBounds } from '../core/kit.js';
+import { TEX } from '../core/textures.js';
 export { retile, surface, wallX, wallZ, slab, insideClip, clipRun, clipRect, clipBounds } from '../core/kit.js';
+
+/**
+ * 路面ひらがな文字。1 文字 1 枚の透明プレートを車道に寝かせる。
+ *
+ * 進行方向を向いた運転手が下から上へ読めるよう、文字の「上」を車の進行向きに
+ * 回す。ここをサボると（以前は全文字 -Z 向きに固定だった）東西道路の文字が
+ * 横倒しに並んで、路上のただの模様に見えていた。
+ *
+ * @param {THREE.Group} g 追加先
+ * @param {string} chars 読む順に並べた文字列
+ * @param {object} o { axis:'x'|'z', at, from, step, size, y, travel, fg }
+ */
+export function roadWord(g, chars, { axis = 'x', at, from, step = 0.72, size = 0.62, y = 0.008, travel = -1, fg = 'rgba(246,243,236,0.86)' }) {
+  const ux = axis === 'x' ? travel : 0;
+  const uz = axis === 'z' ? travel : 0;
+  const phi = Math.atan2(-ux, -uz);
+  const geo = new THREE.PlaneGeometry(size, size);
+  for (let i = 0; i < chars.length; i++) {
+    const c = from + i * step;
+    const x = axis === 'x' ? c : at;
+    const z = axis === 'x' ? at : c;
+    if (!insideClip(x, z)) continue;
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+      map: TEX.signboard({ text: chars[i], bg: 'rgba(0,0,0,0)', fg, size: 200 }),
+      transparent: true,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -3,
+      polygonOffsetUnits: -3,
+    }));
+    m.rotation.set(-Math.PI / 2, 0, phi);
+    m.position.set(x, y, z);
+    m.renderOrder = 4;
+    g.add(m);
+  }
+  return g;
+}
 
 /** 轴对齐地块：由两个角点定义，顶面在 yTop，厚度 th */
 

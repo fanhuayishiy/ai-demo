@@ -134,7 +134,7 @@ export function build(options = {}) {
   const plasticClear = MAT.glassLite({ color: '#e8f0f0', opacity: 0.3 });
   const tankGlass = MAT.glassLite({ color: '#dfeef0', opacity: 0.26 });
   const rubberMat = MAT.rubber('#3b3e42');
-  const boardFace = MAT.paint('#ffffff', { map: menuTex(seed), spec: 0.16, specPower: 40, shadowAmt: 0.62, steps: 2 });
+  const boardFace = MAT.paint('#ffffff', { graphic: true, map: menuTex(seed), spec: 0.16, specPower: 40, shadowAmt: 0.62, steps: 2 });
   const lampMat = MAT.lampShade({ color: '#fff6e0', emissive: '#ffe2ad', emissiveIntensity: 0.6 });
   const woodTrim = MAT.wood({ light: '#b98f5e', dark: '#7d5f3c', repeat: 2 });
 

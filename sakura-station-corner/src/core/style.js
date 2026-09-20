@@ -39,7 +39,10 @@ export function flatShading(o = {}) {
   if (!IS_FLAT) return o;
   // 只剥「表面噪点」贴图（沥青/混凝土/木/布/瓷砖…）。
   // 带 graphic 标记的是**内容**贴图（海报、看板字、商品标签、屏幕），剥了会把所有招牌刷白。
-  const drop = !o.graphic;
+  // 标记可以来自材质（o.graphic），也可以贴在贴图上（TEX.signboard 等内容贴图自带
+  // userData.graphic）—— 后者是必需的：全场景有十几处把看板贴图直接塞进
+  // MAT.paint({map})，逐点补 o.graphic 迟早会漏，漏一处就是一块无字白牌。
+  const drop = !o.graphic && !(o.map && o.map.userData && o.map.userData.graphic);
   const { map, normalMap, normalScaleX, normalScaleY, ...rest } = drop ? o : { ...o };
   if (!drop) return { ...o, shadowTint: '#fff6ec', shadowAmt: 0.5, rim: 0, sheen: 0, sat: 1.0, contrast: 1.0, dither: 0, steps: 6 };
   return {

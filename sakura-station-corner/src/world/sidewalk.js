@@ -90,10 +90,12 @@ export function build(options = {}) {
   /* ---------- 点字ブロック（店舗前帯は store/pavement-frontage 側が担当＝重複回避） ---------- */
   // 角から横断歩道へ（南北道西歩道）
   tactileRun(g, { axis: 'z', from: 5.0, to: 6.9, at: 2.62, y, kind: 'dot', seed: 32 });
-  // 南北道西側の歩道（駅方面へ続く誘導線）
-  tactileRun(g, { axis: 'z', from: -8.6, to: 5.0, at: 2.62, y, kind: 'line', seed: 42 });
-  // 踏切前の横断誘導
-  tactileRun(g, { axis: 'x', from: 4.1, to: 8.9, at: -8.9, y, kind: 'dot', seed: 44 });
+  // 南北道西側の歩道（駅方面・踏切へ続く誘導線）
+  tactileRun(g, { axis: 'z', from: -11.9, to: 5.0, at: 2.62, y, kind: 'line', seed: 42 });
+  // 踏切口の警告ブロック：歩道幅を横断する一列を縁石際（踏切側）に打つ。
+  // 以前は x 4.1..8.9 / z -8.9、つまり車道の上に y=0.157 で置いていたため、
+  // アスファルトから 15 cm 浮いた黄色い帯になっていた。
+  tactileRun(g, { axis: 'x', from: 1.9, to: 3.4, at: -12.05, y, kind: 'dot', seed: 44 });
   // 南側歩道
   tactileRun(g, { axis: 'x', from: -17, to: 3.0, at: 14.42, y, kind: 'dot', seed: 52 });
   // 広場から駅階段へ

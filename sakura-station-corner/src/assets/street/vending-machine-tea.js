@@ -83,7 +83,7 @@ function productTemplate(e) {
     p.add(noOut(mesh(latheOf(pts, 16), MAT.plastic(e.body, { spec: 0.60, specPower: 128, specCut: 0.10, sheen: 0.22, tint: '#f8efe4', sat: 0.94 }), { name: 'glass-body' })));
     const bs = H * 0.10, be = H * 0.56;
     p.add(noOut(mesh(latheOf([[R * 1.036, bs], [R * 1.022, bs + 0.006], [R * 1.036, (bs + be) * 0.5], [R * 1.022, be - 0.005], [R * 1.036, be]], 16),
-      MAT.plastic('#ffffff', { map: labelTex(e), side: THREE.DoubleSide, spec: 0.24, sheen: 0.06, shadowAmt: 0.72 }))));
+      MAT.plastic('#ffffff', { graphic: true, map: labelTex(e), side: THREE.DoubleSide, spec: 0.24, sheen: 0.06, shadowAmt: 0.72 }))));
     p.add(noOut(mesh(cyl(0.0148, 0.0130, 0.011, 12), MAT.metal(e.cap, { spec: 0.72, specPower: 140 }), { pos: [0, neckTop + 0.003, 0], name: 'crown' })));
     p.add(noOut(mesh(tor(0.0140, 0.0016), MAT.metal('#b0b4b6', {}), { pos: [0, neckTop - 0.001, 0], rot: [PI / 2, 0, 0] })));
   } else if (e.kind === 'pack') {

@@ -23,6 +23,9 @@ export const MAT = {
         shadowTint: o.shadowTint ?? '#7f97c6',
         shadowAmt: o.shadowAmt ?? 0.82,
         map: o.map,
+        // 白名单里漏了这一项，MAT.paint({graphic:true}) 就会被静默丢弃，
+        // 于是 flat 把内容贴图剥掉、牌子全刷成无字白板（月台の駅名標が空枠に見えた原因）。
+        graphic: o.graphic,
         normalMap: o.normalMap,
         normalScaleX: o.normalScaleX,
         normalScaleY: o.normalScaleY,
@@ -267,7 +270,10 @@ export const MAT = {
   },
   tactile: (o = {}) => {
     const t = TEX.tactile({ kind: o.kind ?? 'dot', base: PAL.tactile });
-    return MAT.paint(o.base ?? "#ffffff", { map: t.map, normalMap: t.normalMap, normalScaleX: 2.4, normalScaleY: 2.4, spec: 0.16, ...o });
+    // 決め色は PAL.tactile（黄色）側から寄越す。'#ffffff' を既定にすると、
+    // flat モードは map を剥ぐので点字がただの白い四角になる
+    // （`shots/y1/v-crossing.png` の踏切口の一列がそれだった）。
+    return MAT.paint(o.base ?? PAL.tactile, { map: t.map, normalMap: t.normalMap, normalScaleX: 2.4, normalScaleY: 2.4, spec: 0.16, ...o });
   },
   grass: (o = {}) => {
     const base = o.base ?? PAL.grass;
@@ -398,6 +404,10 @@ export const MAT = {
       opacity: o.opacity,
       side: o.side,
       map: o.map,
+      // 印刷された行先表示器・自動販売機の FACE は「内容」贴图。
+      // graphic を立てないと flat が map を剥いで、白い無地の板になる
+      // （`shots/y1/trench.png` の上部 FACE、列車の行先表示が全部これで飛んだ）。
+      graphic: o.graphic ?? !!o.map,
       uv: o.uv,
       ...clean(o),
     }),

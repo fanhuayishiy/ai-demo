@@ -121,7 +121,7 @@ export function build(options = {}) {
   const orangeDk = MAT.metal('#8b5a30', { worn: 0.9, spec: 0.4 });
   const steelDk = MAT.metal('#8f9598', { worn: 0.7, spec: 0.5 });
   const galv = MAT.galvanized({ worn: 0.75, spec: 0.35 });
-  const carton = (mark, s) => MAT.paint('#ffffff', { map: cartonTex(seed + mark.length, mark), spec: 0.06, sheen: 0.0, shadowAmt: 0.86, steps: 2, uv: { repeat: [s ?? 1, s ?? 1] } });
+  const carton = (mark, s) => MAT.paint('#ffffff', { graphic: true, map: cartonTex(seed + mark.length, mark), spec: 0.06, sheen: 0.0, shadowAmt: 0.86, steps: 2, uv: { repeat: [s ?? 1, s ?? 1] } });
   const crateBlue = MAT.plastic('#4b6f8f', { worn: 0.7, spec: 0.3 });
   const crateGray = MAT.plastic('#8b958f', { worn: 0.8, spec: 0.26 });
   const rubberMat = MAT.rubber('#3a3d40');

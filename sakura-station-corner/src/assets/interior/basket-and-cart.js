@@ -84,7 +84,7 @@ function basket(seed, tone = 0) {
   const BW = 0.30, BH = 0.175, BD = 0.215, T = 0.005;         // 実測：幅 300 高さ 175 奥 215
   const cols = ['#e0574c', '#3d7fb5', '#e6e1d2', '#5aa469'];
   const col = cols[tone % cols.length];
-  const mat = MAT.plastic('#ffffff', { map: basketTex(seed, col), spec: 0.34, specPower: 44, worn: 0.5, shadowAmt: 0.7 });
+  const mat = MAT.plastic('#ffffff', { graphic: true, map: basketTex(seed, col), spec: 0.34, specPower: 44, worn: 0.5, shadowAmt: 0.7 });
   const b = grp(`basket:${col}`);
   // 底（厚みあり・四隅面取り）
   b.add(mesh(rbox(BW - 0.03, T, BD - 0.03, 0.008, 2), mat, { pos: [0, T / 2, 0], name: 'basket-bottom' }));
@@ -101,7 +101,7 @@ function basket(seed, tone = 0) {
   b.add(wall(BD, inx + T / 2, 0, Math.PI / 2, 0.1));
   b.add(wall(BD, -inx - T / 2, 0, Math.PI / 2, -0.1));
   // 縁（4 本の丸バー）＋角のリベット
-  const rimMat = MAT.plastic('#ffffff', { map: basketTex(seed + 3, col), spec: 0.4, worn: 0.45 });
+  const rimMat = MAT.plastic('#ffffff', { graphic: true, map: basketTex(seed + 3, col), spec: 0.4, worn: 0.45 });
   for (const [len, x, z, along] of [[BW + 0.03, 0, inz + T, 'x'], [BW + 0.03, 0, -inz - T, 'x'], [BD + 0.03, inx + T, 0, 'z'], [BD + 0.03, -inx - T, 0, 'z']]) {
     b.add(noHull(mesh(cyl(0.006, 0.006, len, 8), rimMat, { pos: [x, BH + 0.002, z], rot: along === 'x' ? [0, 0, Math.PI / 2] : [Math.PI / 2, 0, 0], cast: false })));
   }
@@ -201,7 +201,7 @@ export function build(options = {}) {
   const aluDk = MAT.metal('#989da0', { worn: 0.8, spec: 0.45 });
   const steel = MAT.stainless({ worn: 0.65 });
   const rubberMat = MAT.rubber('#3d4146');
-  const kraft = MAT.paint('#ffffff', { map: bagTex(seed), spec: 0.08, sheen: 0.02, shadowAmt: 0.84, steps: 2 });
+  const kraft = MAT.paint('#ffffff', { graphic: true, map: bagTex(seed), spec: 0.08, sheen: 0.02, shadowAmt: 0.84, steps: 2 });
 
   /* ---------- 1. カゴ置き場（アルミパイプスタンド） ---------- */
   const stand = grp('basket-stand', { pos: [-0.34, 0, -0.02] });

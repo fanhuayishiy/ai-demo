@@ -19,7 +19,7 @@ export const DEFAULT_OPTIONS = { kind: 'manhole', size: 0.6, seed: 71 };
 
 const D2R = Math.PI / 180;
 
-const iron = (o = {}) => MAT.metalPaint('#646a6b', { worn: 0.95, repeat: 3, base: '#8d9392', ...o });
+const iron = (o = {}) => MAT.metalPaint('#7d8384', { worn: 0.95, repeat: 3, base: '#8d9392', ...o });
 const ironNew = MAT.metalPaint('#7f8580', { worn: 0.3, repeat: 2, base: '#a5aca6' });
 
 /** 蓋表面の文様（同心円＋滑り止め筋＋浮き文字） */
@@ -111,6 +111,12 @@ export function build(options = {}) {
       const half = Math.sqrt(Math.max(0, (R * 0.9) ** 2 - x * x));
       const bar = mesh(box(0.012, 0.007, half * 2), iron({ repeat: 1, base: '#9aa09c' }), { pos: [x, coverY + 0.0035, 0], rot: [0, 0, 0.06] });
       g.add(bar);
+    }
+    // 同心円も実体で立てる。flat モードは map を剥ぐので、文様をテクスチャに
+    // 頼った蓋はただの黒い円盤になり、路面に開いた穴に読えていた
+    // （`shots/y1/v-hatch.png` 右上）。
+    for (const k of [0.34, 0.56, 0.78]) {
+      g.add(hoop(R * k, 0.004, iron({ repeat: 1, base: '#8f9596' }), { pos: [0, coverY + 0.004, 0], rot: [90 * D2R, 0, 0], cast: false }));
     }
     // 中央ボス＋浮き文字盤＋鍵穴
     g.add(mesh(cyl(R * 0.3, R * 0.32, 0.012, 24), iron({ repeat: 1, base: '#a2a8a4' }), { pos: [0, coverY + 0.006, 0] }));

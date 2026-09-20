@@ -17,11 +17,27 @@ export function mulberry32(seed = 1) {
   };
 }
 
+/**
+ * 内容贴图（看板字・商品标签・行先表示・海报）的 memo 前缀。
+ * 平涂模式下 core/style.js 的 flatShading 只保留带 graphic 标记的贴图，
+ * 而全场景有十几处把 TEX.signboard() 直接塞进 MAT.paint({ map }) 而没有传
+ * o.graphic —— 结果每一块那样的牌子都刷成无素地的白牌（自动贩卖机的 FACE、
+ * 月台的空看板枠、列车行先表示器，全部同一个原因）。
+ * 所以在唯一的收口 memo() 上贴标记，而不是逐个调用点补。
+ */
+const CONTENT = new Set(['label', 'sign', 'poster', 'ad', 'panel']);
+function markGraphic(v) {
+  if (!v) return;
+  if (v.isTexture) v.userData.graphic = true;
+  else if (v.map && v.map.isTexture) v.map.userData.graphic = true;
+}
+
 export function memo(key, factory) {
   if (cache.has(key)) return cache.get(key);
   const t0 = performance.now();
   const v = factory();
   traceMark('tex', key, t0);
+  if (CONTENT.has(key.split('|')[0])) markGraphic(v);
   cache.set(key, v);
   return v;
 }
@@ -752,18 +768,39 @@ export const TEX = {
   /** 车侧广告带 / 时刻表 / 报纸 */
   adStrip(o = {}) {
     // fg 要进 key：否则「同一句文案、不同底色」会命中同一张贴图，深色底配深色字。
-    return memo(`ad|${o.text || ''}|${o.bg}|${o.fg || ''}|${o.seed || 1}`, () => {
+    return memo(`ad|${o.text || ''}|${o.bg}|${o.fg || ''}|${o.sub || ''}|${o.seed || 1}`, () => {
       if (!HAS_DOM) return blank();
       const cv = makeCanvas(512, 128);
       const { g, w, h, rnd } = cv;
-      fillGrad(g, w, h, [[0, o.bg || '#e9eef3'], [1, shade(o.bg || '#e9eef3', 0.85)]]);
-      for (let i = 0; i < 6; i++) {
-        g.globalAlpha = 0.6;
-        g.fillStyle = ['#e2574c', '#3d7fb5', '#f0b23c', '#5aa469', '#8d6fb0', '#f5f5f5'][i % 6];
-        rr(g, 20 + i * 160, 40, 130, 100, 8); g.fill();
+      const bg = o.bg || '#e9eef3';
+      fillGrad(g, w, h, [[0, bg], [1, shade(bg, 0.85)]]);
+      /* 以前这里画的是 6 张 130×100 的不透明角丸矩形（x = 20 + i*160）：
+         ① 第 4 张起就跑到 512 px 画布外面被丢掉；
+         ② 画布只有 128 px 高，y=40 起 100 px 高的板子下缘被切掉 12 px；
+         ③ 每张之间留 30 px 地色，于是车身上看到的是一排互不相连的色纸块
+         （`shots/y1/w-train.png`）。
+         真实的車体広告是一张通栏印刷：上下压色带、地纹重复、一条主文案。 */
+      const band = o.accent || shade(bg, 0.62);
+      g.fillStyle = band;
+      g.fillRect(0, 0, w, 10);
+      g.fillRect(0, h - 10, w, 10);
+      // 地纹：低透明度的花輪。alpha 低到不会读成独立色块，只让底色不显平。
+      g.globalAlpha = 0.14;
+      g.fillStyle = o.motif || shade(bg, 1.25);
+      for (let i = 0; i < 12; i++) {
+        const cx = 24 + i * 42 + (rnd() - 0.5) * 12;
+        const cy = 26 + rnd() * (h - 52);
+        for (let k = 0; k < 5; k++) {
+          const a = (k / 5) * 6.283 + 0.4;
+          g.beginPath();
+          g.arc(cx + Math.cos(a) * 7, cy + Math.sin(a) * 7, 5.2, 0, 7);
+          g.fill();
+        }
+        g.beginPath(); g.arc(cx, cy, 3.4, 0, 7); g.fill();
       }
       g.globalAlpha = 1;
-      jpText(g, o.text || '春のセール', { x: w / 2, y: h * 0.78, size: h * 0.2, color: o.fg || '#3a3a3a', weight: 800, spacing: 4 });
+      jpText(g, o.text || '春のセール', { x: w / 2, y: o.sub ? h * 0.44 : h * 0.56, size: h * 0.3, color: o.fg || '#3a3a3a', weight: 800, spacing: 4 });
+      if (o.sub) jpText(g, o.sub, { x: w / 2, y: h * 0.78, size: h * 0.16, color: o.fg || '#3a3a3a', weight: 600, spacing: 2 });
       return toTexture(cv, { repeat: 1 });
     });
   },

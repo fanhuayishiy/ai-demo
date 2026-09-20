@@ -212,7 +212,7 @@ export function build(options = {}) {
   }
   // 束の口（断面）＝別メッシュで厚み感
   for (let i = 0; i < 2; i++) {
-    news.add(noHull(mesh(box(0.19, 0.05, 0.26), MAT.paint('#ffffff', { map: newsEdgeTex(seed + i), spec: 0.08, shadowAmt: 0.86, steps: 2 }), {
+    news.add(noHull(mesh(box(0.19, 0.05, 0.26), MAT.paint('#ffffff', { graphic: true, map: newsEdgeTex(seed + i), spec: 0.08, shadowAmt: 0.86, steps: 2 }), {
       pos: [-0.12 + i * 0.13, 0.026, i * 0.02], rot: [0, range(rnd, -0.06, 0.06), 0],
     })));
   }

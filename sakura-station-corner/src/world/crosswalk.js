@@ -4,7 +4,7 @@ import { grp, mesh, box, rbox, finish, rand, range } from '../core/kit.js';
 import { MAT } from '../core/materials.js';
 import { TEX } from '../core/textures.js';
 import { PAL } from '../core/palette.js';
-import { surface, Y, insideClip, clipRect, clipRun } from './common.js';
+import { Y, clipRect, clipRun } from './common.js';
 import { CROSSWALK, SEG } from './plan.js';
 
 /**
@@ -41,21 +41,24 @@ function crosswalk(g, { x0, x1, z0, z1, axis, bars = 11, worn = 0.5, seed = 1 })
     off += w + gap;
   }
   // 端の欠け・タイヤ擦れ
+  // 白帯の上に出る「擦れてアスファルトが覗く」斑なので、帯の天面より上・
+  // かつ厚みのない平面で置かないと、帯の合間に黒い四角タイルが浮いて
+  // 路面に何枚も板を貼ったように見えていた（`shots/y1/v-ewdash.png` 下部）。
   for (let i = 0; i < 5; i++) {
     const t = range(rnd, -0.45, 0.45);
-    const sc = mesh(rbox(len * range(rnd, 0.06, 0.16), 0.006, wide * range(rnd, 0.05, 0.14), 0.05, 2), MAT.asphalt({ tone: 2, repeat: 1 }), {
-      pos: [axis === 'x' ? (x0 + x1) / 2 + range(rnd, -0.2, 0.2) : (x0 + x1) / 2 + t * wide, Y.road + 0.0075, axis === 'x' ? (z0 + z1) / 2 + t * wide : (z0 + z1) / 2 + range(rnd, -0.2, 0.2) * len],
+    const sc = mesh(rbox(len * range(rnd, 0.06, 0.16), 0.004, wide * range(rnd, 0.05, 0.14), 0.05, 2), MAT.asphalt({ tone: 2, repeat: 1 }), {
+      pos: [axis === 'x' ? (x0 + x1) / 2 + range(rnd, -0.2, 0.2) : (x0 + x1) / 2 + t * wide, Y.road + 0.0138, axis === 'x' ? (z0 + z1) / 2 + t * wide : (z0 + z1) / 2 + range(rnd, -0.2, 0.2) * len],
       rot: [0, range(rnd, -0.4, 0.4), 0],
       cast: false,
       receive: true,
     });
+    sc.userData.noOutline = true;
     g.add(sc);
   }
 }
 
 export function build(options = {}) {
   const g = grp('crosswalk');
-  const rnd = rand(options.seed ?? 909);
 
   // ① 東西道路の横断歩道（店舗前 → 角地）
   crosswalk(g, { ...CROSSWALK.ew, axis: 'z', bars: 11, worn: 0.55, seed: 11 });
@@ -82,33 +85,11 @@ export function build(options = {}) {
     );
   }
 
-  // 安全導流帯（黄色のハッチ、角地側）
-  for (let i = 0; i < 7; i++) {
-    const t = i / 6;
-    const hx = 4.1 + t * 1.5, hz = 6.4 - t * 0.5;
-    if (!insideClip(hx, hz)) continue;
-    g.add(
-      mesh(box(0.1, 0.007, 1.5 + t * 1.2), MAT.marking('#eac85f', { repeat: 1 }), {
-        pos: [hx, Y.road + 0.0085, hz],
-        rot: [0, 0.42, 0],
-        cast: false,
-        receive: true,
-      }),
-    );
-  }
-
-  // 踏切内の黄色線（歩行者誘導）
-  for (let i = 0; i < 5; i++) {
-    const cx = SEG.crossing.x0 + 0.5 + i * 0.28, cz = SEG.crossing.z1 + 0.6;
-    if (!insideClip(cx, cz)) continue;
-    g.add(
-      mesh(box(0.09, 0.007, 0.62), MAT.marking('#eac85f', { repeat: 1 }), {
-        pos: [cx, Y.road + 0.0085, cz],
-        cast: false,
-        receive: true,
-      }),
-    );
-  }
+  // 導流帯と踏切口の黄色線はここで描かなかった。描き先は level-crossing.js の
+  // 「踏切前」処理に一本化して、ここは横断歩道・停止線だけに絞る。
+  // 元の 7 本（x 4.1..5.6 / z 5.9..6.4）は枠線のない黄色い平行棒が車道の真ん中に
+  // 浮いて「黄色い横断歩道」に見えていた。5 本の方も level-crossing.js の黄色帯と
+  // 同じ z=-11.6 に重なり、櫛の歯のように見えていた（`shots/y1/hatch.png`）。
 
   return finish(g, { outline: false });
 }

@@ -4,7 +4,7 @@ import { grp, mesh, box, rbox, cyl, finish, rand, range, weather } from '../core
 import { MAT } from '../core/materials.js';
 import { TEX } from '../core/textures.js';
 import { PAL } from '../core/palette.js';
-import { surface, slab, Y, clipRun, insideClip } from './common.js';
+import { surface, slab, Y, clipRun, insideClip, roadWord } from './common.js';
 import { SEG, RAIL, PLOT } from './plan.js';
 
 export function build(options = {}) {
@@ -25,28 +25,44 @@ export function build(options = {}) {
   g.add(surface(C.x0, C.x1, C.z0, C.z1, Y.road, MAT.asphalt({ tone: 1, repeat: 1 }), { tile: 2.0, name: 'crossing-asphalt', segs: 3 }));
 
   /* ---------- 踏切パネル（レール間の滑り止めコンクリート板） ---------- */
-  const panelMat = MAT.concrete({ base: '#c4beb2', repeat: 1, joints: 2 });
+  // プレキャストの踏切板は 0.6 m 級。以前は 1.15 m 板 4 枚に 5 mm 盛りの
+  // 滑り止め帯を 5 本ずつ載せていたが、「横に長い別色のリブ」を等間隔に積むと
+  // ローアングルで波板屋根に読えてしまった（`shots/y1/rib-no-track.png` で
+  // 軌道側を消しても瓦楞だけが残った＝犯人は level-crossing 側の帯）。
+  // 目地は盛らない。板と板の隙間から下のアスファルトを見せて立てる。
+  const panelMat = [
+    MAT.concrete({ base: '#c4beb2', repeat: 1, joints: 2 }),
+    MAT.concrete({ base: '#bbb5a9', repeat: 1, joints: 2 }),
+    MAT.concrete({ base: '#c9c3b7', repeat: 1, joints: 2 }),
+  ];
   const railsZ = [zc - half, zc + half];
   const zones = [
     [C.z0, railsZ[0] - 0.09],
     [railsZ[0] + 0.09, railsZ[1] - 0.09],
     [railsZ[1] + 0.09, C.z1],
   ];
+  let pn = 0;
   for (const [z0, z1] of zones) {
     if (z1 - z0 < 0.05) continue;
-    const n = Math.max(1, Math.round((z1 - z0) / 1.15));
+    const n = Math.max(1, Math.round((z1 - z0) / 0.62));
     for (let i = 0; i < n; i++) {
       const zz = z0 + ((i + 0.5) / n) * (z1 - z0);
-      const d = ((z1 - z0) / n) - 0.03;
-      const p = mesh(rbox(C.x1 - C.x0 - 0.02, 0.03, d, 0.012, 2), panelMat, {
+      const d = ((z1 - z0) / n) - 0.026;
+      const p = mesh(rbox(C.x1 - C.x0 - 0.02, 0.03, d, 0.012, 2), panelMat[pn++ % panelMat.length], {
         pos: [(C.x0 + C.x1) / 2, Y.road + 0.012, zz],
         cast: false,
         receive: true,
+        name: 'crossing-panel',
       });
       g.add(p);
-      // 滑り止め溝
-      for (let k = 0; k < 5; k++) {
-        g.add(mesh(box(C.x1 - C.x0 - 0.16, 0.008, 0.026), MAT.paint('#a49e93', { spec: 0.06, steps: 2 }), { pos: [(C.x0 + C.x1) / 2, Y.road + 0.028, zz - d / 2 + (k + 0.5) * (d / 5)], cast: false, receive: true }));
+      // 吊り下げ穴の樹脂プラグ。板の両端に「点」で立つのでリブには見えない。
+      for (const sx of [-1, 1]) {
+        g.add(mesh(cyl(0.028, 0.028, 0.003, 10), MAT.paint('#a59f94', { spec: 0.05, steps: 2 }), {
+          pos: [(C.x0 + C.x1) / 2 + sx * (C.x1 - C.x0) * 0.33, Y.road + 0.0275, zz],
+          cast: false,
+          receive: true,
+          name: 'lift-plug',
+        }));
       }
     }
   }
@@ -87,20 +103,32 @@ export function build(options = {}) {
     g.add(b);
   }
 
-  /* ---------- 踏切内の安全誘導（黄色線・点字・矢羽根） ---------- */
-  for (const x of [C.x0 + 0.34, C.x1 - 0.34]) {
-    for (let i = 0; i < 9; i++) {
-      g.add(mesh(box(0.1, 0.007, 0.4), MAT.marking('#eac85f', { repeat: 1 }), { pos: [x, Y.road + 0.009, C.z1 - 0.5 - i * 0.55], cast: false, receive: true }));
+  /* ---------- 踏切前停止線（白実線）＋「ふみきりまえ／いちじていし」 ---------- */
+  // 以前はここへ黄色い破線を 2 列、crosswalk.js が同じ z に黄色い帯と歯を 5 本、
+  // と二つのモジュールが別々に塗っていた。重なりが櫛の歯に見えていた原因
+  // （`shots/y1/crossing-wide.png`）。黄色は全部やめて、実物どおり白の停止線にする。
+  // 点字ブロックは車道の上に載せるものではないので sidewalk.js の歩道側へ移した。
+  // 踏切手前の停止線は道路法上の必須標示。南側（+z）から踏切へ向かう車は
+  // -z へ進むので、文字の「上」は -z 向き。
+  {
+    const lane = clipRun('x', SEG.roadNS.x0 + 0.42, SEG.roadNS.x1 - 0.42, C.z1 + 0.78);
+    if (lane) {
+      g.add(
+        mesh(box(lane[1] - lane[0], 0.007, 0.34), MAT.marking('#f3efe4', { repeat: 1 }), {
+          pos: [(lane[0] + lane[1]) / 2, Y.road + 0.009, C.z1 + 0.78],
+          cast: false,
+          receive: true,
+          name: 'crossing-stop-line',
+        }),
+      );
     }
+    const row = (chars, z, from) => roadWord(g, chars, { axis: 'x', at: z, from, step: 0.66, size: 0.56, y: Y.road + 0.011, travel: -1 });
+    // 停止線の南側に二行。-z へ進む運転手は先に手前の一行を読むので、
+    // 「ふみきりまえ」を南（+z 側）、「いちじていし」を停止線の際に置く。
+    // 車線中心 x=6.5 に対し、5 文字は張出し 1.32、6 文字は 1.65。
+    row('ふみきりまえ', C.z1 + 2.42, 6.5 - 1.32);
+    row('いちじていし', C.z1 + 1.62, 6.5 - 1.65);
   }
-  for (let i = 0; i < 7; i++) {
-    g.add(mesh(rbox(0.29, 0.014, 0.29, 0.01, 2), MAT.tactile({ kind: 'dot', repeat: 1 }), { pos: [C.x0 + 0.5 + i * 0.3, Y.road + 0.01, C.z1 + 0.34], cast: false, receive: true }));
-    // 南端は C.z0-0.34 に置くと踏切の外（掘り込みの擁壁の上）に出て、台座際からはみ出す。
-    // 点字は踏切床版の上に載せるのが正しいので +0.34 側へ寄せる。
-    g.add(mesh(rbox(0.29, 0.014, 0.29, 0.01, 2), MAT.tactile({ kind: 'dot', repeat: 1 }), { pos: [C.x1 - 0.5 - i * 0.3, Y.road + 0.01, C.z0 + 0.34], cast: false, receive: true }));
-  }
-  // 事故防止の「とびら」黄帯（横断歩道側）
-  g.add(mesh(box(C.x1 - C.x0 - 0.2, 0.007, 0.28), MAT.marking('#eac85f', { repeat: 1 }), { pos: [(C.x0 + C.x1) / 2, Y.road + 0.0085, C.z1 + 0.62], cast: false, receive: true }));
 
   /* ---------- 側溝の踏切横断（蓋） ---------- */
   for (const z of [C.z0 + 0.02, C.z1 - 0.02]) {

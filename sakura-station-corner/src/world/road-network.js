@@ -1,11 +1,9 @@
 // 丁字路口柏油路网：車道・縁石・路面标线・補修跡
-import * as THREE from 'three';
-import { grp, mesh, box, rbox, plane, finish, rand, range, weather, decal, inst } from '../core/kit.js';
+import { grp, mesh, box, rbox, plane, finish, rand, range, weather } from '../core/kit.js';
 import { MAT } from '../core/materials.js';
-import { TEX } from '../core/textures.js';
 import { PAL } from '../core/palette.js';
-import { slab, surface, wallX, wallZ, curbRun, repeats, Y, insideClip, clipRun } from './common.js';
-import { PLOT, SEG, STORE, CROSSWALK } from './plan.js';
+import { slab, surface, curbRun, Y, insideClip, clipRun, roadWord } from './common.js';
+import { SEG, CROSSWALK } from './plan.js';
 
 export function build(options = {}) {
   const rnd = rand(options.seed ?? 4242);
@@ -13,8 +11,6 @@ export function build(options = {}) {
 
   const asphalt = MAT.asphalt({ tone: 1, repeat: 1 });
   const asphaltOld = MAT.asphalt({ tone: 0, repeat: 1 });
-  const marking = MAT.marking(PAL.marking, { repeat: 1 });
-  const markingY = MAT.marking(PAL.markingYellow, { repeat: 1 });
   const curbMat = MAT.concrete({ base: PAL.curb, repeat: 1, joints: 3 });
 
   /* ---------- 車道面 ---------- */
@@ -41,21 +37,25 @@ export function build(options = {}) {
   //    改成贴地的平面，没有侧壁也没有影子。
   // ② 原来 yaw 随机 ±0.5 rad，矩形像随手撒的纸片；真实切割会顺着车行道方向。
   // ③ 原来不看路面标线，补丁会直接压在斑马线上，两边都不像真的。
+  // ④ tone 0（#8b8880）より明るい補修は、路面に貼ったカードに読えた
+  //    （`shots/y1/w-manhole.png` 左上）。新しいアスファルトは元の路面より
+  //    「黒い」ので、濃侧に振るのが正しい。高さも 8 mm → 2 mm に落として
+  //    縁の影を出さない。
   const patchAvoid = [CROSSWALK.ew, CROSSWALK.nsNorth, CROSSWALK.southApproach, SEG.crossing];
   const onMarking = (x, z, w, d) => patchAvoid.some((r) =>
     Math.abs(x - (r.x0 + r.x1) / 2) < (r.x1 - r.x0 + w) / 2 &&
     Math.abs(z - (r.z0 + r.z1) / 2) < (r.z1 - r.z0 + d) / 2);
-  const patchMat = [MAT.asphalt({ tone: 2, repeat: 1 }), MAT.asphalt({ tone: 0, repeat: 1 })];
+  const patchMat = [MAT.asphalt({ tone: 2, base: '#7a7772', repeat: 1 }), MAT.asphalt({ tone: 2, base: '#7f7c77', repeat: 1 })];
   for (let i = 0; i < 16; i++) {
     const onNS = rnd() > 0.45;
     const x = onNS ? range(rnd, SEG.roadNS.x0 + 0.4, SEG.roadNS.x1 - 0.4) : range(rnd, -18, 3.4);
     const z = onNS ? range(rnd, SEG.roadNS.z0, 17.4) : range(rnd, SEG.roadEW.z0 + 0.3, SEG.roadEW.z1 - 0.3);
-    const w = range(rnd, 0.5, 2.4), d = range(rnd, 0.4, 1.6);
+    const w = range(rnd, 0.5, 1.9), d = range(rnd, 0.4, 1.2);
     // 補修パッチは中心だけでなく四つ隅まで見る：枠をまたぐ_patch は台座の外に一枚はみ出す
     if (!insideClip(x - w / 2, z - d / 2) || !insideClip(x + w / 2, z + d / 2)) continue;
     if (onMarking(x, z, w, d)) continue;
     const p = mesh(plane(w, d), patchMat[i % 2], {
-      pos: [x, Y.road + 0.008, z],
+      pos: [x, Y.road + 0.002, z],
       rot: [-Math.PI / 2, 0, (onNS ? Math.PI / 2 : 0) + range(rnd, -0.06, 0.06)],
       cast: false,
       receive: true,
@@ -64,21 +64,26 @@ export function build(options = {}) {
     p.userData.noOutline = true;
     g.add(p);
   }
-  // 継ぎ目（_cut-back アスファルトの溝）
+  // 継ぎ目（_cut-back アスファルトの溝）。铺設パスが合う所に入る実線の継ぎ目なので、
+  // ① 車道中央（6.5）に通す、② ゴム（#3b3941）で作らない。黒いゴムで 8 mm
+  // 盛ると「路面を走っている黒いホース」に読えた（`shots/y1/v-hatch.png`）。
+  // 実物は舗装の打継ぎ＝路面よりひと階調濃い帯なので、アスファルト材で立てる。
+  const seamMat = MAT.asphalt({ tone: 2, base: '#75726d', repeat: 1 });
   for (const j of [
     { axis: 'x', at: 9.1, from: -18, to: 3.4 },
     { axis: 'x', at: 11.9, from: -18, to: 3.4 },
-    { axis: 'z', at: 5.0, from: SEG.roadNS.z0 + 0.3, to: 17.4 },
+    { axis: 'z', at: 6.5, from: SEG.roadNS.z0 + 0.3, to: 17.4 },
     { axis: 'z', at: 7.9, from: 14.0, to: 17.4 },
   ]) {
     const run = clipRun(j.axis, j.from, j.to, j.at);
     if (!run) continue;
     const len = run[1] - run[0], c = (run[0] + run[1]) / 2;
-    g.add(
+    const s =
       j.axis === 'x'
-        ? mesh(box(len, 0.008, 0.05), MAT.rubber('#3b3941'), { pos: [c, Y.road + 0.004, j.at], cast: false, receive: true })
-        : mesh(box(0.05, 0.008, len), MAT.rubber('#3b3941'), { pos: [j.at, Y.road + 0.004, c], cast: false, receive: true }),
-    );
+        ? mesh(box(len, 0.002, 0.03), seamMat, { pos: [c, Y.road + 0.0015, j.at], cast: false, receive: true })
+        : mesh(box(0.03, 0.002, len), seamMat, { pos: [j.at, Y.road + 0.0015, c], cast: false, receive: true });
+    s.userData.noOutline = true;
+    g.add(s);
   }
 
   /* ---------- 縁石 ---------- */
@@ -144,13 +149,17 @@ export function build(options = {}) {
       );
     }
   }
-  // 黄色の安全地帯線（学校・駅への動線、色褪せ）
-  for (let i = 0; i < 9; i++) {
-    const x = -2.2 + i * 0.52;
-    const z = SEG.roadEW.z0 + 0.5;
+  // 駐車禁止の黄色破線（北側歩道際、学校・駅への動線、色褪せ）
+  // 元の 0.42 m 線 / 0.10 m 切れ目ではほぼ一本の黄実線で、なおかつ東端が
+  // 横断歩道（x -0.6..2.0）の中にまで入っていた → 白帯の合い間に黄色が覗く
+  // 「黄色い横断歩道」に見えていた（`shots/y1/ewdash.png`）。
+  // 実物の駐車禁止線は 線 0.8 m / 切れ目 0.7 m、そして横断歩道の 1.5 m 手前で切る。
+  for (let i = 0; i < 11; i++) {
+    const x = -1.5 - i * 1.5;
+    const z = SEG.roadEW.z0 + 0.35;
     if (!insideClip(x, z)) continue;
     g.add(
-      mesh(box(0.42, 0.006, 0.1), MAT.marking('#e9c25c', { repeat: 1 }), {
+      mesh(box(0.8, 0.006, 0.12), MAT.marking('#e9c25c', { repeat: 1 }), {
         pos: [x, Y.road + 0.006, z],
         cast: false,
         receive: true,
@@ -158,17 +167,8 @@ export function build(options = {}) {
     );
   }
   // 「ゆずりあい」風ひらがな路面文字（白・薄れかけ）
-  const moji = ['ゆ', 'ず', 'り', 'あ', 'い'];
-  for (let i = 0; i < moji.length; i++) {
-    const mx = -13.6 + i * 0.72;
-    if (!insideClip(mx, 11.7)) continue;
-    const cv = TEX.signboard({ text: moji[i], bg: 'rgba(0,0,0,0)', fg: 'rgba(246,243,236,0.86)', size: 200 });
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62), new THREE.MeshBasicMaterial({ map: cv, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
-    m.rotation.x = -Math.PI / 2;
-    m.position.set(mx, Y.road + 0.008, 11.7);
-    m.renderOrder = 4;
-    g.add(m);
-  }
+  // 文字の「上」はその車線の進行向きへ。南車線（z>10.2）は左側通行で +x へ行く。
+  roadWord(g, 'ゆずりあい', { axis: 'x', at: 11.7, from: -13.6, step: 0.72, size: 0.62, y: Y.road + 0.008, travel: 1 });
 
   /* ---------- 経年：汚れ・油染み・落書き除去 ---------- */
   for (let i = 0; i < 10; i++) {

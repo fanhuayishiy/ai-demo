@@ -135,10 +135,10 @@ function lightCase(w, h, seed, opts, dbl) {
   c.add(leds);
   // ポスター面（紙・角めくれ）とアクリル板（黄変）
   const faceZ = -depth / 2 + 0.034;
-  const posterMat = MAT.paint('#ffffff', { map: springPosterTex(seed, opts.variant ?? 0), spec: 0.14, specPower: 30, shadowAmt: 0.55, steps: 2 });
+  const posterMat = MAT.paint('#ffffff', { graphic: true, map: springPosterTex(seed, opts.variant ?? 0), spec: 0.14, specPower: 30, shadowAmt: 0.55, steps: 2 });
   c.add(noHull(mesh(plane(w - fw * 1.4, h - fw * 1.4), posterMat, { pos: [0, 0, faceZ], cast: false, receive: false })));
   if (dbl) {
-    c.add(noHull(mesh(plane(w - fw * 1.4, h - fw * 1.4), MAT.paint('#ffffff', { map: springPosterTex(seed + 3, (opts.variant ?? 0) + 1), spec: 0.14, shadowAmt: 0.55, steps: 2 }), { pos: [0, 0, -faceZ - 0.006], rot: [0, Math.PI, 0], cast: false, receive: false })));
+    c.add(noHull(mesh(plane(w - fw * 1.4, h - fw * 1.4), MAT.paint('#ffffff', { graphic: true, map: springPosterTex(seed + 3, (opts.variant ?? 0) + 1), spec: 0.14, shadowAmt: 0.55, steps: 2 }), { pos: [0, 0, -faceZ - 0.006], rot: [0, Math.PI, 0], cast: false, receive: false })));
     c.add(noHull(mesh(plane(w - fw * 1.2, h - fw * 1.2), acrylic, { pos: [0, 0, -depth / 2 - 0.004], rot: [0, Math.PI, 0], cast: false, receive: false })));
   }
   const ac = noHull(mesh(rbox(w - fw * 1.2, h - fw * 1.2, 0.005, 0.003, 2), acrylic, { pos: [0, 0, depth / 2 - 0.006], cast: false, receive: false }));
@@ -149,7 +149,7 @@ function lightCase(w, h, seed, opts, dbl) {
     c.add(noHull(mesh(box(0.02, 0.028, 0.008), aluDark, { pos: [cx * (w / 2 - fw - 0.016), cy * (h / 2 - fw - 0.02), depth / 2 - 0.012], cast: false })));
   }
   // 角めくれ（紙 1 枚浮く）
-  const curl = noHull(mesh(plane(0.05, 0.05), MAT.paint('#ffffff', { map: springPosterTex(seed, opts.variant ?? 0), spec: 0.14, side: THREE.DoubleSide }), { pos: [(w - fw * 1.4) / 2 - 0.02, -(h - fw * 1.4) / 2 + 0.02, faceZ + 0.004], rot: [0.3, -0.4, 0.7], cast: false, receive: false }));
+  const curl = noHull(mesh(plane(0.05, 0.05), MAT.paint('#ffffff', { graphic: true, map: springPosterTex(seed, opts.variant ?? 0), spec: 0.14, side: THREE.DoubleSide }), { pos: [(w - fw * 1.4) / 2 - 0.02, -(h - fw * 1.4) / 2 + 0.02, faceZ + 0.004], rot: [0.3, -0.4, 0.7], cast: false, receive: false }));
   c.add(curl);
   // 天側の排熱スリットとホコリ
   for (let i = 0; i < 4; i++) c.add(noHull(mesh(box(0.05, 0.004, depth - 0.02), MAT.paint('#5d6265', { spec: 0.1 }), { pos: [-w / 4 + i * (w / 6), h / 2 - 0.004, 0], cast: false })));

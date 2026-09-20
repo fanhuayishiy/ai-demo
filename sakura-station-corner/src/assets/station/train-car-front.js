@@ -239,15 +239,15 @@ export function build(options = {}) {
   }
   // 車体広告帯（窓下、6mm 張り出し）
   {
-    const adW = 3.5;
+    const adW = 3.5, adH = 0.30;
     for (const sz of [-1, 1]) {
       const p = grp('ad-panel', { pos: [0.9 * K16, 1.86, sz * (SO + 0.006)] });
-      p.add(mesh(box(adW, 0.24, 0.012), mBody, { name: 'ad-base' }));
+      p.add(mesh(box(adW, adH, 0.012), mBody, { name: 'ad-base' }));
       decal(p, {
-        map: TEX.adStrip({ text: '春の桜まつり 4/5  桜ヶ丘駅 徒歩3分', bg: '#eef1e6', seed: seed + 3 }),
-        w: adW - 0.05, h: 0.2, pos: [0, 0, sz * 0.009], rot: [0, sz > 0 ? 0 : Math.PI, 0], order: 1,
+        map: TEX.adStrip({ text: '春の桜まつり 4/5', sub: '桜ヶ丘駅 徒歩3分', bg: '#f2efe2', fg: '#4a4033', seed: seed + 3 }),
+        w: adW - 0.05, h: adH - 0.04, pos: [0, 0, sz * 0.009], rot: [0, sz > 0 ? 0 : Math.PI, 0], order: 1,
       });
-      weather(p, { w: adW * 0.5, h: 0.2, pos: [-0.95, 0, sz * 0.01], kind: 'chip', color: '#e8e3d2', opacity: 0.55, seed: seed + 41, density: 1.6, spread: 0.004 });
+      weather(p, { w: adW * 0.5, h: adH * 0.8, pos: [-0.95, 0, sz * 0.01], kind: 'chip', color: '#e8e3d2', opacity: 0.55, seed: seed + 41, density: 1.6, spread: 0.004 });
       g.add(p);
     }
   }

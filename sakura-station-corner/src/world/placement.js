@@ -155,17 +155,26 @@ export const PLACEMENT = [
   ['street/traffic-cone', [-2.9, 0.15, 5.9], 0, 1, { kind: 'stand', seed: 499 }, 'stand-board'],
 
   /* ---------------- 駐輪場 ---------------- */
+  // 自転車の向き：bicycle-*.js は meta.origin='ground-center'・车头 +Z、
+  // 実寸 1.80(x)×0.60(z)… ではなく **長さ 1.80 m = Z 方向、幅 0.60 m = X 方向**。
+  // ラックの区画ピッチ DX は 0.62 m なので、列方向（X）に 0.9 m 間隔で
+  // rotY=90 で並べると車体 1.80 m が互いに 2 台分重なって、
+  // ホイールとバスケットが絡まった（`shots/y1/bikes.png`）。
+  // → rotY=0（ラックに直角、前輪を差し込む実際の駐輪）＋区画中心に打つ。
   ['bike/bike-parking-rack', [-5.9, 0, -6.9], 0, 1, { bays: 6, seed: 501 }, 'rack-row-1'],
   ['bike/bike-parking-rack', [-5.9, 0, -4.9], 0, 1, { bays: 6, seed: 503 }, 'rack-row-2'],
-  ['bike/bicycle-commuter-a', [-8.5, 0, -6.9], 90, 1, { seed: 511, lean: 3 }, 'bike-a1'],
-  ['bike/bicycle-commuter-b', [-7.6, 0, -6.9], 90, 1, { seed: 513, lean: -2 }, 'bike-b1'],
-  ['bike/bicycle-old-c', [-6.7, 0, -6.9], 90, 1, { seed: 517, lean: 5 }, 'bike-c1'],
-  ['bike/bicycle-parent-d', [-5.8, 0, -6.9], 90, 1, { seed: 521, lean: -3 }, 'bike-d1'],
-  ['bike/bicycle-commuter-a', [-8.5, 0, -4.9], 90, 1, { seed: 523, lean: -4, frame: '#4a7f6a' }, 'bike-a2'],
-  ['bike/bicycle-commuter-b', [-6.7, 0, -4.9], 90, 1, { seed: 527, lean: 2 }, 'bike-b2'],
+  ['bike/bicycle-commuter-a', [-7.45, 0, -6.9], 0, 1, { seed: 511, lean: 1.2 }, 'bike-a1'],
+  ['bike/bicycle-commuter-b', [-6.83, 0, -6.9], 0, 1, { seed: 513, lean: -1.0 }, 'bike-b1'],
+  ['bike/bicycle-old-c', [-6.21, 0, -6.9], 0, 1, { seed: 517, lean: 1.5 }, 'bike-c1'],
+  ['bike/bicycle-parent-d', [-5.59, 0, -6.9], 0, 1, { seed: 521, lean: -1.2 }, 'bike-d1'],
+  ['bike/bicycle-commuter-a', [-6.83, 0, -4.9], 0, 1, { seed: 523, lean: -1.4, frame: '#4a7f6a' }, 'bike-a2'],
+  ['bike/bicycle-commuter-b', [-5.59, 0, -4.9], 0, 1, { seed: 527, lean: 1.1 }, 'bike-b2'],
+  ['bike/bicycle-old-c', [-4.97, 0, -4.9], 0, 1, { seed: 529, lean: -0.8 }, 'bike-c2'],
   // 店前駐輪：z=4.5 在玻璃内侧（店铺 z -0.8..4.8），等于把自行车停在店里。
   // 移到东北角的人行道上（walkFront z 4.8..7.0），避开自动门 x -7.5..-5.7 与既有道具。
-  ['bike/bicycle-commuter-a', [-1.25, 0.16, 6.05], 74, 1, { seed: 531, lean: 6, basket: true }, 'bike-storefront'],
+  // rotY 74 だと車体が X 方向に 1.87 m 寝て、ゴミ箱（x -3.34..-2.18）と
+  // カラーコーン（x -2.4）を貫通していた。ラックと同じく直角駐輪にする。
+  ['bike/bicycle-commuter-a', [-1.15, 0.16, 6.0], 8, 1, { seed: 531, lean: 2.5, basket: true }, 'bike-storefront'],
   ['bike/bike-park-sign', [-2.9, 0, -3.4], 0, 1, { seed: 537 }, 'bike-sign'],
   ['bike/bike-pump', [-3.6, 0, -3.6], 0, 1, { seed: 541 }, 'bike-pump'],
   ['bike/bike-lock-post', [-10.2, 0, -5.6], 0, 1, { kind: 'post', seed: 543 }, 'lock-post'],

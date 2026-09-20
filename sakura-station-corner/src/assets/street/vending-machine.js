@@ -106,7 +106,7 @@ function productTemplate(e) {
     // 収缩膜（ボトル径より 1mm 大きく、上下エンドは巻き込み）
     const bs = H * 0.055, be = H * 0.60;
     const sl = [[R * 1.032, bs], [R * 1.018, bs + 0.006], [R * 1.032, (bs + be) * 0.5], [R * 1.016, be - 0.006], [R * 1.032, be]];
-    p.add(noOut(mesh(latheOf(sl, 18), MAT.plastic('#ffffff', { map: labelTex(e), side: THREE.DoubleSide, spec: 0.34, specPower: 70, sheen: 0.1, shadowAmt: 0.72, steps: 3 }), { pos: [0, 0, 0], name: 'pet-sleeve' })));
+    p.add(noOut(mesh(latheOf(sl, 18), MAT.plastic('#ffffff', { graphic: true, map: labelTex(e), side: THREE.DoubleSide, spec: 0.34, specPower: 70, sheen: 0.1, shadowAmt: 0.72, steps: 3 }), { pos: [0, 0, 0], name: 'pet-sleeve' })));
     p.add(noOut(mesh(cyl(0.0148, 0.0146, 0.020, 14), MAT.plastic(e.cap, { spec: 0.42, specPower: 66, steps: 2 }), { pos: [0, neckTop + 0.004, 0], name: 'pet-cap' })));
     p.add(noOut(mesh(tor(0.0132, 0.0016), MAT.plastic(e.cap, { spec: 0.4 }), { pos: [0, neckTop + 0.012, 0], rot: [PI / 2, 0, 0] })));
   } else if (e.kind === 'petsquat') {
@@ -119,7 +119,7 @@ function productTemplate(e) {
     p.add(noOut(mesh(latheOf(pts, 18), MAT.plastic(e.body, { spec: 0.5, specPower: 90, sheen: 0.14, tint: '#f6fbff', sat: 0.86 }))));
     const bs = H * 0.06, be = H * 0.70;
     p.add(noOut(mesh(latheOf([[R * 1.03, bs], [R * 1.02, bs + 0.008], [R * 1.032, (bs + be) * 0.5], [R * 1.02, be - 0.006], [R * 1.03, be]], 18),
-      MAT.plastic('#ffffff', { map: labelTex(e), side: THREE.DoubleSide, spec: 0.32, sheen: 0.1, shadowAmt: 0.72 }))));
+      MAT.plastic('#ffffff', { graphic: true, map: labelTex(e), side: THREE.DoubleSide, spec: 0.32, sheen: 0.1, shadowAmt: 0.72 }))));
     p.add(noOut(mesh(cyl(0.0172, 0.0170, 0.019, 14), MAT.plastic(e.cap, { spec: 0.42, steps: 2 }), { pos: [0, neckTop + 0.001, 0], name: 'cap' })));
     p.add(noOut(mesh(tor(0.0152, 0.0018), MAT.plastic(e.cap, { spec: 0.4 }), { pos: [0, neckTop + 0.010, 0], rot: [PI / 2, 0, 0] })));
   } else if (e.kind === 'can' || e.kind === 'tallcan') {
@@ -157,7 +157,7 @@ function productTemplate(e) {
     p.add(noOut(mesh(latheOf(pts, 16), MAT.plastic(e.body, { spec: 0.62, specPower: 130, specCut: 0.10, sheen: 0.22, tint: '#f7ece0', sat: 0.92 }), { name: 'bottle-glass' })));
     const bs = H * 0.10, be = H * 0.56;
     p.add(noOut(mesh(latheOf([[R * 1.035, bs], [R * 1.022, bs + 0.007], [R * 1.035, (bs + be) * 0.5], [R * 1.022, be - 0.005], [R * 1.035, be]], 16),
-      MAT.plastic('#ffffff', { map: labelTex(e), side: THREE.DoubleSide, spec: 0.24, sheen: 0.06, shadowAmt: 0.72 }))));
+      MAT.plastic('#ffffff', { graphic: true, map: labelTex(e), side: THREE.DoubleSide, spec: 0.24, sheen: 0.06, shadowAmt: 0.72 }))));
     p.add(noOut(mesh(cyl(0.0146, 0.0132, 0.011, 12), MAT.metal(e.cap, { spec: 0.72, specPower: 140 }), { pos: [0, neckTop + 0.002, 0], name: 'bottle-crown' })));
   }
   _tpl.set(e.key, p);

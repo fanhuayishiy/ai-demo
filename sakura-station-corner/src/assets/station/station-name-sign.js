@@ -110,8 +110,8 @@ export function build(options = {}) {
 
   const mFrame = MAT.wood({ light: '#9d7a4f', dark: '#5f482c', knots: true, uv: { repeat: [0.45, 0.45] }, shadowAmt: 0.9 });
   const mFrame2 = MAT.wood({ light: '#8b6c46', dark: '#54402a', uv: { repeat: [0.4, 0.4] } });
-  const mFace = MAT.paint('#ffffff', { map: faceTex(name, prev, next, false), spec: 0.14, specPower: 34, sheen: 0.02, shadowAmt: 0.62, steps: 3 });
-  const mFaceBack = MAT.paint('#ffffff', { map: faceTex(name, prev, next, true), spec: 0.14, specPower: 34, sheen: 0.02, shadowAmt: 0.62, steps: 3 });
+  const mFace = MAT.paint('#ffffff', { graphic: true, map: faceTex(name, prev, next, false), spec: 0.14, specPower: 34, sheen: 0.02, shadowAmt: 0.62, steps: 3 });
+  const mFaceBack = MAT.paint('#ffffff', { graphic: true, map: faceTex(name, prev, next, true), spec: 0.14, specPower: 34, sheen: 0.02, shadowAmt: 0.62, steps: 3 });
   const mIron = MAT.darkIron({ uv: { repeat: [0.5, 0.5] } });
   const mCollar = MAT.galvanized({ uv: { repeat: [0.6, 0.6] } });
   const mSteel = MAT.metal('#9d9f9c', { worn: 0.8, uv: { repeat: [0.5, 0.5] } });
