@@ -26,14 +26,26 @@ export function memo(key, factory) {
   return v;
 }
 
-/** 贴图缓存的字节账（按家族）：启动慢到后来基本都是「往 GPU 灌位图」，先看清谁占的。 */
+/**
+ * 贴图缓存的字节账（按家族）：启动慢到后来基本都是「往 GPU 灌位图」，先看清谁占的。
+ * 按 source.uuid 去重 —— 一份位图 clone 出 20 张贴图只上传一次，
+ * 按缓存条目累加会把这块虚报好几倍（曾经据此误判 sign/paper 是头号大户）。
+ */
 export function texCacheInfo() {
   const by = new Map();
+  const seen = new Set();
   let bytes = 0;
+  let dupes = 0;
   for (const [key, v] of cache) {
     const list = v && v.isTexture ? [v] : [v && v.map, v && v.normalMap, v && v.alphaMap, v && v.roughnessMap];
     let b = 0;
-    for (const t of list) if (t && t.image && t.image.width) b += t.image.width * t.image.height * 4;
+    for (const t of list) {
+      if (!t || !t.image || !t.image.width) continue;
+      const id = t.source ? t.source.uuid : t.uuid;
+      if (seen.has(id)) { dupes++; continue; }
+      seen.add(id);
+      b += t.image.width * t.image.height * 4;
+    }
     bytes += b;
     const fam = key.split('|')[0];
     const e = by.get(fam) || [0, 0];
@@ -41,7 +53,7 @@ export function texCacheInfo() {
     e[1]++;
     by.set(fam, e);
   }
-  return { entries: cache.size, bytes, by: [...by].map(([k, v]) => [k, v[0], v[1]]).sort((a, b) => b[1] - a[1]) };
+  return { entries: cache.size, sources: seen.size, dupes, bytes, by: [...by].map(([k, v]) => [k, v[0], v[1]]).sort((a, b) => b[1] - a[1]) };
 }
 
 function blank(rgba = 'rgba(0,0,0,0)') {

@@ -12,6 +12,15 @@ export const IS_FLAT = MODE === 'flat';
    （tools/boot-trace.mjs）。放在 style.js 是因为它是最底层的叶子模块：
    kit / textures / world / motion 都能引它而不会成环。默认关闭，开启时也只 push 字符串和数字。 */
 export const TRACE_ON = params?.get('trace') === '1';
+/**
+ * 装配期的渲染节流档位（?asm=slow|full|freeze），只影响「世界建完之前」：
+ * slow = 最多 ~8 fps（默认）；full = 每次让出主线程都渲染；freeze = 只出天空底图。
+ * 实测（800×500，丢弃冷启动后中位）：full 到 built 7.89 s / 成帧 8.13 s，
+ * slow 4.82 / 7.81，freeze 4.88 / 7.85 —— 那 3 s 并不是浪费，而是「把 26.5k Mesh、
+ * 10.2k 几何、831 张贴图分批灌进 GPU」，节流只是把它从装配期挪到首帧。
+ * 选 slow：两个指标都不比 freeze 差，又保留了装配过程中画面在动的反馈。
+ */
+export const ASM = params?.get('asm') || 'slow';
 export const TRACE = { map: [], asset: [], motion: [], misc: [], tex: [] };
 /** 记一段耗时：traceMark('asset', name, t0) */
 export function traceMark(kind, label, t0) {

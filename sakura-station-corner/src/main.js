@@ -18,16 +18,25 @@ async function boot() {
   // 页面上仍然不出现任何东西，零 UI 不变。
   const T0 = performance.now();
   const timings = {};
+  /**
+   * 装配期引擎的 rAF 循环照跑：每次 await 让出主线程都可能插进一整帧。
+   * 分不清「代码慢」还是「被渲染挤占」时，看 phaseMs 旁边的 renderMs 增量。
+   */
+  const mark = (key) => {
+    timings[key] = Math.round(performance.now() - T0);
+    timings[key + '_render'] = engine.renderMs;
+    timings[key + '_frames'] = engine.frames;
+  };
 
   const engine = createEngine({ canvas });
   // 尽早暴露：装配分批让出主线程，工具（以及调试者）需要能在建图过程中就轮询状态
   window.__DIORAMA__ = engine;
   engine.trace = TRACE;   // ?trace=1 时才有内容，零 UI 场景下耗时剖析的唯一出口
-  timings.engine = Math.round(performance.now() - T0);
+  mark('engine');
 
   const world = await buildWorld(engine);
   engine.add(world);
-  timings.world = Math.round(performance.now() - T0);
+  mark('world');
 
   // LOD 阈值：本场景有 ~3.2 万个独立 Mesh（每件道具单独建模、不合并几何），
   // 实测 Chrome/ANGLE 下每个 draw call 约 8.3 µs 的 CPU 提交成本，且 85% 的帧时间就是提交
@@ -36,9 +45,9 @@ async function boot() {
   // 实测 store 100.8→79.8 ms、interior 109→85.2 ms、hero 73.3→64.4 ms。
   // 隐藏的是「屏幕上已经小于 26 像素」的零件，拉近即逐件回归 —— 模型本身没有被简化。
   engine.lod = installLod(engine, world, { pxThreshold: 26, hullRange: 10, interval: 0.12 });
-  timings.lod = Math.round(performance.now() - T0);
+  mark('lod');
   await registerMotion(engine, world);
-  timings.motion = Math.round(performance.now() - T0);
+  mark('motion');
 
   // 引擎从创建起就在跑（ready = 已渲染 >2 帧），所以 ready 只代表「画面活着」，
   // 不代表「世界建完」。装配是分批让出主线程的，工具必须等这个标记再截图。

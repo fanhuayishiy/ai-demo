@@ -36,7 +36,7 @@ const out = await page.evaluate(() => {
 });
 if (out.tex) {
   const mb = (b) => (b / 1048576).toFixed(1) + ' MB';
-  console.log(`贴图缓存 ${out.tex.entries} 项 / ${mb(out.tex.bytes)} 位图（上传给 GPU 的量就是启动等待的大头）`);
+  console.log(`贴图缓存 ${out.tex.entries} 项 → 去重后 ${out.tex.sources} 份位图 / ${mb(out.tex.bytes)}（另有 ${out.tex.dupes} 项与别人共用同一份位图，只上传一次）`);
   for (const [fam, b, n] of out.tex.by.slice(0, 12)) console.log(`  ${mb(b).padStart(9)}  ×${String(n).padStart(4)}  ${fam}`);
 }
 const total = Object.values(out.trace).reduce((a, l) => a + l.reduce((s, x) => s + x[1], 0), 0);

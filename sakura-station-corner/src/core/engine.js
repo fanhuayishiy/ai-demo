@@ -4,6 +4,7 @@ import { U } from './toon.js';
 import { buildComposer } from './postfx.js';
 import { createCameraRig } from './camera-rig.js';
 import { setupLighting, skyEnvironment, backgroundTexture, syncSunToView, SUN_DIR } from './lighting.js';
+import { ASM } from './style.js';
 
 export const VIEWS = {
   hero: { pos: [13.6, 5.4, 15.8], target: [-3.6, 1.9, 1.2] },
@@ -74,6 +75,7 @@ export function createEngine({ canvas, quality = {} } = {}) {
   let framesTotal = 0;
   let shadowTick = 999;
   let camStill = 0;
+  let renderMs = 0;     // 累计花在 renderFrame() 里的毫秒（含 updaters）
   let booted = false;   // 世界装配完成后才允许重绘阴影（见 renderFrame 的闸门）
   const _camPos = new THREE.Vector3();
   const _camQuat = new THREE.Quaternion();
@@ -96,6 +98,9 @@ export function createEngine({ canvas, quality = {} } = {}) {
   onResize();
 
   function renderFrame(dt) {
+    // 累计「花在渲染上的墙钟时间」：装配期每次让出主线程，rAF 都可能插进一整帧，
+    // 没有这个计数器就分不清「装配代码慢」还是「被渲染挤掉了」。
+    const _t = performance.now();
     U.time.value += dt;
     rig.update(dt);
     syncSunToView(camera);
@@ -142,6 +147,7 @@ export function createEngine({ canvas, quality = {} } = {}) {
 
     frame++;
     framesTotal++;
+    renderMs += performance.now() - _t;
     acc += dt;
     if (acc > 0.5) {
       stats.fps = frame / acc;
@@ -155,10 +161,19 @@ export function createEngine({ canvas, quality = {} } = {}) {
 
   let raf = 0;
   let last = performance.now();
+  // 装配期节流（?asm=）：见 style.js 的 ASM。世界建完之前每次 await 让出主线程，rAF 都会
+  // 插进一整帧（实测 192 帧 / 3.1 s）。限到 ~8 fps 后 to built 从 7.9 s 降到 4.8 s，
+  // 但「看到成品」的时间几乎没变（8.13 → 7.81 s）—— 那 3 s 是在分批灌 GPU，省不掉，只能挪。
+  const bootGap = ASM === 'freeze' ? Infinity : ASM === 'full' ? 0 : 125;
+  let lastBoot = 0;
   function loop() {
     raf = requestAnimationFrame(loop);
     if (!running) return;
     const now = performance.now();
+    // 前 2 帧照常渲染：那是天空底图，也是 ready 判据的来源，不能因为节流变成黑屏。
+    // 注意不要更新 last：跳过帧不该把时间差算进下一帧的 dt
+    if (!booted && bootGap && framesTotal >= 2 && now - lastBoot < bootGap) return;
+    lastBoot = now;
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     renderFrame(dt);
@@ -211,6 +226,13 @@ export function createEngine({ canvas, quality = {} } = {}) {
     },
     get ready() {
       return framesTotal > 2;
+    },
+    /** 到目前为止跑过多少帧、在帧上花了多少毫秒：区分「装配慢」与「被渲染挤占」 */
+    get frames() {
+      return framesTotal;
+    },
+    get renderMs() {
+      return Math.round(renderMs);
     },
     step(dt = 1 / 60, n = 1) {
       for (let i = 0; i < n; i++) renderFrame(dt);
