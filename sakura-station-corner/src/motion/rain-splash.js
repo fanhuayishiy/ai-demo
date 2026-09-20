@@ -17,15 +17,15 @@ const R = 7;   // 水花跟着注视点走：整块 40 m 台座上均摊的话�
 export function attach(engine, world) {
   const box = clipRect(-20, 20, -20, 20) || [-20, 20, -20, 20];
   const [x0, x1, z0, z1] = box;
-  const spanX = x1 - x0;
-  const spanZ = z1 - z0;
 
-  const geo = new THREE.RingGeometry(0.82, 1, 18);
+  const geo = new THREE.RingGeometry(0.88, 1, 20);
   geo.rotateX(-Math.PI / 2);
+  // 环厚 = (1-0.88) = 半径的 12%。原来是 0.82 → 18%，配上近白色和 0.4 的不透明度，
+  // 在湿沥青上读起来像打孔出来的白圈，而不是水花。
   const mat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color('#e3edf6'),
+    color: new THREE.Color('#cfe0ee'),
     transparent: true,
-    opacity: 0.4,
+    opacity: 0.24,
     depthWrite: false,
     side: THREE.DoubleSide,
     fog: true,
@@ -38,13 +38,31 @@ export function attach(engine, world) {
   mesh.renderOrder = 7;
   mesh.count = 0;
 
+  // 水花落在「注视点周围 r=7 的圆盘」里。原来用 clamp 把出界的样本压回裁剪框，
+  // 于是注视点靠近台座边缘时，一排水花被整齐地钉在边界线上 —— 就是路缘那条
+  // 「气泡带」（`shots/readme/crossing-rain.png`）。改成拒绝采样：出界就重掷，
+  // 连续 8 次都不合格才退回圆心附近，分布因此保持均匀。
+  const spawn = (r, cx, cz) => {
+    for (let k = 0; k < 8; k++) {
+      const a = r() * 6.283;
+      const rr = Math.sqrt(r()) * R;
+      const x = cx + Math.cos(a) * rr;
+      const z = cz + Math.sin(a) * rr;
+      if (x >= x0 && x <= x1 && z >= z0 && z <= z1) return [x, z];
+    }
+    const a = r() * 6.283;
+    const rr = Math.sqrt(r()) * 1.2;
+    return [cx + Math.cos(a) * rr, cz + Math.sin(a) * rr];
+  };
+
   const parts = [];
   for (let i = 0; i < N; i++) {
     const r = mulberry32(i * 6151 + 7);
-    const x = x0 + r() * spanX;
-    const z = z0 + r() * spanZ;
-    const life = 0.42 + r() * 0.3;
-    parts.push({ x, z, y: groundYAt(x, z) + 0.004, t: r() * life, life, s: 0.05 + r() * 0.055 });
+    const [x, z] = spawn(r, 0, 0);
+    const life = 0.34 + r() * 0.26;
+    // 半径 0.026..0.052 m，配合下面的生长倍率，最大直径约 15 cm。
+    // 原来是 0.05..0.105 × 生长 1.45 → 直径最大 30 cm，比真实水花大了一倍。
+    parts.push({ x, z, y: groundYAt(x, z) + 0.004, t: r() * life, life, s: 0.026 + r() * 0.026 });
   }
   const group = grp('rain-splash');
   group.add(mesh);
@@ -67,13 +85,10 @@ export function attach(engine, world) {
       if (p.t >= p.life) {
         p.t = 0;
         const c = engine.rig.controls.target;
-        const a = rnd() * 6.283;
-        const rr = Math.sqrt(rnd()) * R;
-        p.x = Math.min(x1, Math.max(x0, c.x + Math.cos(a) * rr));
-        p.z = Math.min(z1, Math.max(z0, c.z + Math.sin(a) * rr));
+        [p.x, p.z] = spawn(rnd, c.x, c.z);
         p.y = groundYAt(p.x, p.z) + 0.004;
-        p.life = 0.42 + rnd() * 0.3;
-        p.s = 0.05 + rnd() * 0.055;
+        p.life = 0.34 + rnd() * 0.26;
+        p.s = 0.026 + rnd() * 0.026;
       }
       const k = p.t / p.life;
       const grow = 1 - (1 - k) * (1 - k) * (1 - k);
