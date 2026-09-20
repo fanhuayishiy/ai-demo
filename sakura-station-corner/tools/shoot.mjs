@@ -58,6 +58,9 @@ for (let attempt = 0; attempt < 4; attempt++) {
   try {
     await page.goto(BASE, { waitUntil: 'commit', timeout: 60000 });
     await page.waitForFunction('window.__DIORAMA__ && window.__DIORAMA__.built === true', { timeout: 150000, polling: 500 });
+    // built 只代表装配完，加载层还要等首帧 + 0.55 s 淡出才从 DOM 摘掉。
+    // page.screenshot() 拍的是合成后的画面，会把它一起拍进去。
+    await page.waitForFunction('!document.getElementById("boot")', { timeout: 60000, polling: 100 });
     break;
   } catch (e) {
     console.log('  retry', attempt, String(e.message).split('\n')[0]);

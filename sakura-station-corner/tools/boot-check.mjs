@@ -24,6 +24,10 @@ try {
   await page.goto(BASE, { waitUntil: 'commit', timeout: 60000 });
   await page.waitForFunction('!!window.__DIORAMA__', null, { timeout: 60000, polling: 250 });
   await page.waitForFunction('window.__DIORAMA__.built === true', null, { timeout: DEADLINE, polling: 250 });
+  // 加载层必须在首帧之后从 DOM 里彻底消失：「成品画面零 UI」要能被断言，不能只是意图。
+  await page.waitForFunction('!document.getElementById("boot")', null, { timeout: 60000, polling: 100 });
+  const bootProgress = await page.evaluate(() => window.__DIORAMA__.progress.v);
+  if (bootProgress < 1) fail = `装配进度只走到 ${bootProgress}，说明有阶段没报到`;
   const wall = Date.now() - t0;
   const st = await page.evaluate(() => {
     const e = window.__DIORAMA__;

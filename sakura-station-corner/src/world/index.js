@@ -17,6 +17,7 @@ import * as LevelCrossing from './level-crossing.js';
 import { placeAll } from './placement.js';
 import { CROP } from './plan.js';
 import { markStatic } from '../core/lod.js';
+import { BOOT_PHASES } from '../core/engine.js';
 
 /** 落位工具 */
 export function place(parent, mod, { pos = [0, 0, 0], rotY: ry = 0, scale = 1, options = {}, name } = {}) {
@@ -49,10 +50,14 @@ export async function buildWorld(engine) {
   const map = grp('map');
   // 每个地图模块后真正让出一帧（rAF，不是微任务——微任务不会让浏览器绘制/派发指针事件）：
   // 底座/路网/站台各自要建上万图元，串起来就是十几秒主线程死锁，期间画面拖不动。
+  const MAP_LAYERS = 10;
+  let mapDone = 0;
+  const [m0, m1] = BOOT_PHASES.map;
   const mk = async (n, f) => {
     const t0 = performance.now();
     map.add(f());
     traceMark('map', n, t0);
+    engine?.markProgress(m0 + (m1 - m0) * (++mapDone) / MAP_LAYERS, '铺设地基与路网');
     await yieldToBrowser();
   };
   await mk('baseplate', Baseplate.build);
@@ -75,7 +80,12 @@ export async function buildWorld(engine) {
 
   /* ---------- 资产层（按 docs/LAYOUT.md 落位） ---------- */
   const assets = grp('assets');
-  await placeAll(assets, engine);
+  await placeAll(assets, engine, {
+    onProgress(done, total) {
+      const [a0, a1] = BOOT_PHASES.assets;
+      engine?.markProgress(a0 + (a1 - a0) * (total ? done / total : 0), '摆放店铺与道具');
+    },
+  });
   const post1 = performance.now();
   markStatic(assets);
   markStatic(map);

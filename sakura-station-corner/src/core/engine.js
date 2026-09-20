@@ -6,6 +6,13 @@ import { createCameraRig } from './camera-rig.js';
 import { setupLighting, skyEnvironment, backgroundTexture, syncSunToView, SUN_DIR } from './lighting.js';
 import { ASM } from './style.js';
 
+/**
+ * 装配进度的分段权重（0..1 的绝对区间）：地图 → 资产 → LOD → 动效 → 首帧。
+ * 集中放在这里，是因为写进度的一方（world / placement / motion）分属不同模块，
+ * 散着写字面量迟早会在某次调整阶段后对不上，表现为进度条跳变或卡在半路。
+ */
+export const BOOT_PHASES = { map: [0.03, 0.30], assets: [0.30, 0.90], lod: 0.92, motion: [0.92, 0.98] };
+
 export const VIEWS = {
   hero: { pos: [13.6, 5.4, 15.8], target: [-3.6, 1.9, 1.2] },
   store: { pos: [-4.4, 2.4, 13.6], target: [-6.8, 1.7, 2.2] },
@@ -190,6 +197,18 @@ export function createEngine({ canvas, quality = {} } = {}) {
     fx,
     stats,
     sunDir: SUN_DIR,
+    /**
+     * 装配进度（0..1）：由 world / placement / motion 逐段写入，加载画面只读它。
+     * 刻意做成真进度而不是假动画 —— 装配本身有 122 个资产、10 个地图层，
+     * 每一段结束都能报一次，用户看到的推进是实际发生的推进。
+     */
+    progress: { v: 0, label: '启动引擎' },
+    /** 记一段装配进度。单调不回退：各阶段并发推进时，进度条倒退比不走更刺眼。 */
+    markProgress(v, label) {
+      const p = api.progress;
+      if (v != null) p.v = Math.max(p.v, Math.min(1, v));
+      if (label) p.label = label;
+    },
     onUpdate(fn) {
       updaters.push(fn);
       return fn;

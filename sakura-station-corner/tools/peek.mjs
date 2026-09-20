@@ -25,6 +25,8 @@ const page = await ctx.newPage();
 page.setDefaultTimeout(300000);
 await page.goto(arg('url', 'http://127.0.0.1:5173/'), { waitUntil: 'commit' });
 await page.waitForFunction('window.__DIORAMA__ && window.__DIORAMA__.built === true', { timeout: 300000, polling: 500 });
+// 加载层是 DOM 覆盖层，会被 page.screenshot() 合成进图里，等它摘掉再拍
+await page.waitForFunction('!document.getElementById("boot")', { timeout: 60000, polling: 100 });
 await page.evaluate(({ pos, tgt, hide, fov }) => {
   const e = window.__DIORAMA__;
   e.rig.place(pos, tgt);

@@ -1,5 +1,7 @@
-// 入口引导：引擎 + 世界组装 + 动效系统（无任何 UI / 文字 / 控件）
-import { createEngine } from './core/engine.js';
+// 入口引导：引擎 + 世界组装 + 动效系统。
+// 成品画面零 UI / 零文字 / 零控件；唯一的例外是装配期的加载状态，它在首帧画出来后即摘除。
+import { createEngine, BOOT_PHASES } from './core/engine.js';
+import { attachBootScreen } from './core/boot-screen.js';
 import { texCacheInfo } from './core/textures.js';
 import { TRACE } from './core/kit.js';
 import { buildWorld } from './world/index.js';
@@ -32,6 +34,10 @@ async function boot() {
   // 尽早暴露：装配分批让出主线程，工具（以及调试者）需要能在建图过程中就轮询状态
   window.__DIORAMA__ = engine;
   engine.trace = TRACE;   // ?trace=1 时才有内容，零 UI 场景下耗时剖析的唯一出口
+  // 加载状态：包住 markProgress，装配代码照常报进度，画面外那一层跟着走。
+  // 它是整个页面里唯一一处 DOM 覆盖层，首帧画出来就摘掉。
+  const bootScreen = attachBootScreen(engine);
+  engine.markProgress(0.02, '起画布');
   mark('engine');
 
   const world = await buildWorld(engine);
@@ -45,6 +51,7 @@ async function boot() {
   // 实测 store 100.8→79.8 ms、interior 109→85.2 ms、hero 73.3→64.4 ms。
   // 隐藏的是「屏幕上已经小于 26 像素」的零件，拉近即逐件回归 —— 模型本身没有被简化。
   engine.lod = installLod(engine, world, { pxThreshold: 26, hullRange: 10, interval: 0.12 });
+  engine.markProgress(BOOT_PHASES.lod, '整理可见性');
   mark('lod');
   await registerMotion(engine, world);
   mark('motion');
@@ -57,6 +64,13 @@ async function boot() {
   // 阴影贴图现在只在画面静止时重绘，装配期间的若干次重绘可能都发生在世界建完之前，
   // 所以建完后再点一次脏，确保最终状态有一张完整的阴影贴图。
   engine.markShadowsDirty();
+  engine.markProgress(1, '就绪');
+  // 加载层要等「首帧真的画上屏幕」才撤：built 之后仍有约 3 s 的 GPU 首触
+  // （分批上传 1 万份几何 + 831 张贴图，外加一次全场景阴影 bake）。
+  // 在 built 那一刻就撤掉，用户会看到「进度条满了、画面还是空的」。
+  requestAnimationFrame(() => requestAnimationFrame(() => bootScreen.hide()));
+  // 兜底：后台标签页里 rAF 挂起，不摘掉的话无头工具等「加载层消失」会一直等到超时。
+  setTimeout(() => bootScreen.hide(), 6000);
 }
 
 boot();

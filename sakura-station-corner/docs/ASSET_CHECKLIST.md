@@ -472,3 +472,28 @@
   要么让 Pages 走 brotli，要么把 `three` 拆成可并行的第二张；
   ④ `materialSignature` 目前不含 `userData.spec`（toon 自定义着色参数），与旧行为一致，
   但严格说同标准配置、不同 `steps/tint` 的两个材质仍会被并到一张 —— 要收紧就得同时接受 draw call 回升。
+
+## 阶段 20 · 加载状态（用户追加：「前面加载增加一个加载状态」）
+
+原需求的「无 UI、无文字、无控件」在**成品画面**上继续成立；装配期那一层是用户后来明确要的，
+算对原条款的一次有意例外。做法是把例外压到最小：唯一一处 DOM 覆盖层，首帧画出来就摘掉。
+
+- [x] 20.1 进度是真的，不是假动画：`engine.progress = {v,label}` + `engine.markProgress()`
+  （`core/engine.js`），分段权重集中在 `BOOT_PHASES`（地图 0.03–0.30 / 资产 0.30–0.90 /
+  LOD 0.92 / 动效 0.92–0.98）。写进 `world/index.js` 的 `mk()`、`placement.js` 的清单循环、
+  `motion/index.js` 的注册循环 —— 10 + 122 + 6 次上报，屏幕上推进多少就是真做了多少。
+  `markProgress` 单调不回退：阶段并发时进度条倒退比不走更难看。
+- [x] 20.2 `core/boot-screen.js` 包住 `markProgress` 顺手写 DOM，而不是另开一个 rAF 刷新循环：
+  后台标签页里 rAF 是挂起的，靠 rAF 刷新的进度条会冻在 0%，而装配用的是让出宏任务、照常推进。
+- [x] 20.3 撤除时机是「首帧真的画上屏幕」，不是 `built`：built 之后还有约 3 s 的 GPU 首触，
+  在那一刻撤会变成「进度条满了、画面还是空的」。用双 rAF 等两帧 + 6 s 定时器兜底
+  （兜底是给无头工具/挂机场景的：那种标签页 rAF 不回来，加载层就永远摘不掉）。
+- [x] 20.4 视觉：天空底色上「樱花街角」+ 1 px 细线（樱色 #d9879f 填充）+ 阶段名与百分比，
+  240 px 一栏居中。`pointer-events:none`，不抢画布操作。
+- [x] 20.5 工具跟上：新增 `tools/boot-shot.mjs`（常规截图工具都等 `built`，那张图里加载层早没了，
+  永远拍不到它）；`shoot.mjs` / `peek.mjs` 在 `built` 之后还要等 `#boot` 从 DOM 消失才拍
+  —— `page.screenshot()` 拍的是合成后的画面，会把 DOM 覆盖层一起拍进去；
+  `boot-check.mjs` 断言加载层已摘除且 `progress.v === 1`。
+- [x] 20.6 复核：`npm run check` 136/136、`npm run check:boot` 通过（含新断言）、
+  `boot-shot` 第 2200 ms 读到 49.3%「摆放店铺与道具」、第 4500 ms 读到 84%；
+  1600×900 成帧 8.32 → 8.53 s（+0.2 s，在装配期帧数抖动的噪声带内）。

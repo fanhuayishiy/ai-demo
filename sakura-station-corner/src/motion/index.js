@@ -1,5 +1,6 @@
 // 动效注册中心：所有动态系统在此挂载（模块各自容忍目标缺失）
 import { yieldToBrowser, traceMark } from '../core/kit.js';
+import { BOOT_PHASES } from '../core/engine.js';
 import * as PetalStorm from './petal-storm.js';
 import * as BranchSway from './branch-sway.js';
 import * as LightBreath from './light-breath.js';
@@ -16,6 +17,8 @@ const SYSTEMS = [PetalStorm, BranchSway, LightBreath, GlassShimmer, TrafficSigna
  */
 export async function registerMotion(engine, world) {
   const active = [];
+  const [p0, p1] = BOOT_PHASES.motion;
+  let n = 0;
   for (const s of SYSTEMS) {
     await yieldToBrowser();
     const t0 = performance.now();
@@ -25,6 +28,7 @@ export async function registerMotion(engine, world) {
     } catch (e) {
       console.warn('[motion] attach failed:', s.NAME || s, e);
     }
+    engine?.markProgress(p0 + (p1 - p0) * (++n) / SYSTEMS.length, '接上落樱与风动');
     traceMark('motion', s.NAME || 'motion', t0);
   }
   engine.motion = active;

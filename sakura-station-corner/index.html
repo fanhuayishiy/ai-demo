@@ -39,11 +39,63 @@
         height: 100%;
         outline: none;
       }
-      /* 画面纯净：不放置任何 DOM 覆盖层、文字、控件 */
+      /* 装配期唯一的画面外元素。首帧画出来就整块从 DOM 里摘掉（见 src/core/boot-screen.js），
+         所以成品画面仍然零 UI：截图工具、以及任何一次正常访问的最终状态里都不会出现它。 */
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--boot-bg);
+        pointer-events: none;
+        transition: opacity 0.55s ease;
+      }
+      #boot.is-done {
+        opacity: 0;
+      }
+      .boot-title {
+        font: 500 13px/1.6 "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+        letter-spacing: 0.34em;
+        text-indent: 0.34em;
+        color: #5c6b78;
+      }
+      .boot-track {
+        position: relative;
+        width: 240px;
+        height: 1px;
+        margin: 18px 0 10px;
+        background: rgba(92, 107, 120, 0.2);
+        overflow: hidden;
+      }
+      .boot-track i {
+        position: absolute;
+        inset: 0;
+        display: block;
+        transform: scaleX(0);
+        transform-origin: 0 50%;
+        background: #d9879f;
+        transition: transform 0.18s linear;
+      }
+      .boot-meta {
+        display: flex;
+        justify-content: space-between;
+        width: 240px;
+        font: 400 10px/1.5 ui-monospace, "SFMono-Regular", Consolas, monospace;
+        letter-spacing: 0.12em;
+        color: rgba(92, 107, 120, 0.72);
+      }
     </style>
   </head>
   <body>
     <canvas id="stage"></canvas>
+    <div id="boot">
+      <div class="boot-inner">
+        <div class="boot-title">樱花街角</div>
+        <div class="boot-track"><i data-fill></i></div>
+        <div class="boot-meta"><span data-cap>启动引擎</span><span data-pct>0%</span></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

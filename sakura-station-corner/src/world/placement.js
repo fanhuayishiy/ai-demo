@@ -245,7 +245,7 @@ function spanOptions(entry) {
 }
 
 
-export async function placeAll(assets, engine, { budgetMs = 12, overflowTol = 0.06 } = {}) {
+export async function placeAll(assets, engine, { budgetMs = 12, overflowTol = 0.06, onProgress } = {}) {
   const missing = [];
   const overflow = [];
   const poleOk = {};   // 电线档距只有在两端电线杆真的落了地时才成立
@@ -262,6 +262,9 @@ export async function placeAll(assets, engine, { budgetMs = 12, overflowTol = 0.
   let last = performance.now();
   for (const entry of PLACEMENT) {
     i++;
+    // 进度按清单序号报，而不是按「已落地件数」：被裁剪框剔除的件不占时间，
+    // 用落地数计数会让进度条在南侧花树那一段突然停滞。
+    onProgress?.(i, PLACEMENT.length);
     if (performance.now() - last > budgetMs) {
       await yieldToBrowser();
       last = performance.now();
