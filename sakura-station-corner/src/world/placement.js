@@ -206,23 +206,39 @@ export const PLACEMENT = [
   ['interior/ceiling-lights', [STORE.cx, 0, STORE.cz], 0, 1, { seed: 703, strips: 4 }, 'in-ceiling'],
   ['interior/drink-fridge', [-8.0, STORE.floorY, -0.2], 0, 1, { seed: 707, doors: 4, density: 0.3 }, 'in-fridge'],
   ['interior/bento-display', [-5.0, STORE.floorY, -0.25], 0, 1, { seed: 711, len: 2.4, density: 0.32 }, 'in-bento'],
-  ['interior/shelf-gondola', [-9.3, STORE.floorY, 1.4], 0, 1, { seed: 713, len: 3.2, tiers: 4, len: 2.7, density: 0.2 }, 'in-gondola-1'],
+  // x=-9.3 时 gondola-1 的实测占位 x[-10.66,-7.94] 与西壁壁面棚 x[-10.96,-10.19] 咬掉
+  // 47 cm。东移 0.5 m 让出壁面棚，两条 gondola 之间仍留 0.88 m 通道（现实值 0.9～1.2 m）。
+  ['interior/shelf-gondola', [-8.8, STORE.floorY, 1.4], 0, 1, { seed: 713, len: 3.2, tiers: 4, len: 2.7, density: 0.2 }, 'in-gondola-1'],
   ['interior/shelf-gondola', [-5.2, STORE.floorY, 1.4], 0, 1, { seed: 717, len: 3.2, tiers: 4, len: 2.7, density: 0.2 }, 'in-gondola-2'],
-  ['interior/shelf-wall', [-10.85, STORE.floorY, 1.3], 90, 1, { seed: 721, len: 2.6, density: 0.2 }, 'in-shelf-wall'],
-  ['interior/register-counter', [-4.2, STORE.floorY, 3.3], 0, 1, { seed: 723, len: 2.6 }, 'in-register'],
+  // 西壁の壁面棚。z=1.3 だと北西隅（in-freezer の新座）と z[-0.01,0.12] で重なるので
+  // 南へ 0.25 m。これ以上振ると in-magazine（z≥2.90）とぶつかる。
+  ['interior/shelf-wall', [-10.85, STORE.floorY, 1.55], 90, 1, { seed: 721, len: 2.6, density: 0.2 }, 'in-shelf-wall'],
+  // レジは「入口マット（x ≤ -5.63）」と「おでんケース（x ≥ -3.71）」の間の
+  // 1.92 m に収める。len 2.6 だと両側に食い込んだので、単一レーンの実寸 1.8 m に。
+  ['interior/register-counter', [-4.67, STORE.floorY, 3.3], 0, 1, { seed: 723, len: 1.8 }, 'in-register'],
   ['interior/coffee-machine', [-3.4, STORE.floorY, 1.6], 0, 1, { seed: 727 }, 'in-coffee'],
   ['interior/oden-counter', [-2.9, STORE.floorY, 4.05], 180, 1, { seed: 731 }, 'in-oden'],
   ['interior/magazine-rack', [-10.75, STORE.floorY, 3.7], 90, 1, { seed: 733, len: 1.6 }, 'in-magazine'],
-  ['interior/upright-freezer', [-2.52, STORE.floorY, 0.2], 270, 1, { seed: 737, doors: 2, density: 0.34 }, 'in-freezer'],
-  // コインロッカーは東壁の内側（freezer z0.67 終端と register z2.22 開始の空き帯）。
-  // z=-1.6 に置くと店舗外（北壁は z=-0.8）に出て壁を貫通する。
-  ['interior/lockers', [-2.42, STORE.floorY, 1.45], 270, 1, { seed: 741, cols: 4, rows: 3 }, 'in-lockers'],
+  // 北西隅（元は shelf-wall が占拠していたが南へ退避）。fridge の西端 x=-9.43 と
+  // 東壁の間に収まる 0.87×0.94 の直立式。
+  ['interior/upright-freezer', [-10.70, STORE.floorY, -0.35], 0, 1, { seed: 737, doors: 2, density: 0.34 }, 'in-freezer'],
+  // コインロッカーは店外・東壁際へ。日本のコンビニのロッカーは店内より店頭の
+  // 壁面に並べるほうが実態に近いし、店内に置くには東帯はレジ・おでん・コーヒーで
+  // 既に埋まっている。
+  ['interior/lockers', [-1.55, 0.15, 2.0], 90, 1, { seed: 741, cols: 4, rows: 3 }, 'in-lockers'],
   ['interior/poster-lightbox', [-9.6, STORE.floorY, 4.6], 0, 1, { seed: 743, kind: 'wall' }, 'in-lightbox-1'],
   ['interior/poster-lightbox', [-4.0, STORE.floorY, 4.6], 0, 1, { seed: 747, kind: 'wall' }, 'in-lightbox-2'],
   ['interior/poster-lightbox', [-6.6, 2.235, 0.4], 0, 1, { seed: 749, kind: 'ceiling' }, 'in-lightbox-3'],
-  // 在庫ラック：北壁際（fridge/bento）と東壁際（freezer/lockers）が埋まっているため、
-  // レジ前の中央通路南端に置く。x=-3.0 だと東壁と北壁を貫通していた。
-  ['interior/backroom-shelving', [-6.6, STORE.floorY, 3.2], 0, 1, { seed: 751, len: 1.6 }, 'in-backroom'],
+  /* 在庫ラック＝後場一式。**自動ドアの真内側に置いてはいけなかった。**
+     旧配置 (-6.6, 3.2) rotY 0 len 1.6 的实测占位是 x[-7.62,-5.51] z[2.46,4.20]、
+     顶高 2.34 m，而门洞是 x[-7.84,-5.36] z=4.69 —— 等于一堵和门同宽、前沿离门
+     0.5 m、还压在入口垫子（z[3.56,4.81]）上的货墙，从门口看进去整幅画面被
+     プラコンと段ボール挡死（`shots/y1/in-door.png`）。
+     旧注释「北壁際と東壁際が埋まっているため中央通路に置く」的推理本身是错的：
+     中央通路是唯一不能放的地方。真正的解法是把东带腾出来 —— freezer 移到北西隅、
+     shelf-wall 南移 0.9 m、lockers 到店外东墙，rack 落到 backroom-door（东壁
+     z[-0.64,1.32]）旁边的北东角，rotY 270 让顾客侧（局部 +Z）朝西对着店内动线。 */
+  ['interior/backroom-shelving', [-2.77, STORE.floorY, 0.15], 270, 1, { seed: 751, len: 1.15 }, 'in-backroom'],
   ['interior/floor-guidance', [STORE.cx, STORE.floorY, 2.6], 0, 1, { seed: 753 }, 'in-floor-guide'],
   ['interior/basket-and-cart', [-9.0, STORE.floorY, 4.0], 0, 1, { seed: 757 }, 'in-basket'],
   ['products/price-tag', [-6.6, STORE.floorY, 4.42], 0, 1, { variant: 'pop', seed: 761 }, 'in-pop-1'],
