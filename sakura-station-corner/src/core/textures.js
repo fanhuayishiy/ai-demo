@@ -1,7 +1,7 @@
 // 程序化纹理库 —— 全部用 Canvas2D 逐张手绘生成（无外部资源、无占位图）
 // 在 Node（离线 smoke test）环境下自动降级为 1x1 DataTexture，保证可 import。
 import * as THREE from 'three';
-import { IS_FLAT } from './style.js';
+import { IS_FLAT, traceMark } from './style.js';
 
 export const HAS_DOM = typeof document !== 'undefined' && !!document.createElement;
 const cache = new Map();
@@ -19,9 +19,29 @@ export function mulberry32(seed = 1) {
 
 export function memo(key, factory) {
   if (cache.has(key)) return cache.get(key);
+  const t0 = performance.now();
   const v = factory();
+  traceMark('tex', key, t0);
   cache.set(key, v);
   return v;
+}
+
+/** 贴图缓存的字节账（按家族）：启动慢到后来基本都是「往 GPU 灌位图」，先看清谁占的。 */
+export function texCacheInfo() {
+  const by = new Map();
+  let bytes = 0;
+  for (const [key, v] of cache) {
+    const list = v && v.isTexture ? [v] : [v && v.map, v && v.normalMap, v && v.alphaMap, v && v.roughnessMap];
+    let b = 0;
+    for (const t of list) if (t && t.image && t.image.width) b += t.image.width * t.image.height * 4;
+    bytes += b;
+    const fam = key.split('|')[0];
+    const e = by.get(fam) || [0, 0];
+    e[0] += b;
+    e[1]++;
+    by.set(fam, e);
+  }
+  return { entries: cache.size, bytes, by: [...by].map(([k, v]) => [k, v[0], v[1]]).sort((a, b) => b[1] - a[1]) };
 }
 
 function blank(rgba = 'rgba(0,0,0,0)') {
@@ -38,8 +58,10 @@ function blank(rgba = 'rgba(0,0,0,0)') {
    全场景几百对就是几百 MB 与装配期的几十秒，实测装配 66 s / JS 堆 1.6 GB。
    这里直接返回共享的「白底 + 平法线」1×1：万一被绑上也是纯色，不会变透明。 */
 const SURFACE_NOISE = new Set([
+  // 名字必须与 pack(`xxx|`) 的实际 key 前缀一致：这里原本写着 'corrugated'，
+  // 而 pack 用的是 'corru'，闸门从来没生效过（白画一张 512² + 一次 heightToNormal）。
   'asphalt', 'concrete', 'paving', 'tile', 'wood', 'bark', 'metal', 'ballast',
-  'grass', 'roofTile', 'corrugated', 'storeFloor', 'tactile', 'leafCluster',
+  'grass', 'roofTile', 'corru', 'storeFloor', 'tactile', 'leafCluster',
 ]);
 // 不在此列的（lightPanel / frost / fabric / paper / petal / wear / gradient /
 // poster / signboard / drinkLabel / adStrip）都是**内容**或被 decal() 直接绑定，
@@ -273,7 +295,11 @@ function pack(key, draw, opts = {}) {
     const cv = makeCanvas(size, opts.h || size);
     draw(cv, opts);
     const map = toTexture(cv, opts);
-    const normalMap = opts.normal === false ? null : heightToNormal(cv, { size: Math.min(size, 512), strength: opts.normalStrength ?? 1.2 });
+    // 平涂模式只有 graphic 材质保留贴图，而 graphic 材质（MAT.poster / MAT.glow）从不接收
+    // pack() 的 normalMap —— 这一张 heightToNormal 做出来必定被 flatShading 丢掉，
+    // 白付一次 512² 逐像素循环（≈ 20 ms）和一份位图上传。
+    const wantNormal = opts.normal !== false && !(IS_FLAT && !opts.graphic);
+    const normalMap = wantNormal ? heightToNormal(cv, { size: Math.min(size, 512), strength: opts.normalStrength ?? 1.2 }) : null;
     if (normalMap) {
       normalMap.wrapS = normalMap.wrapT = THREE.RepeatWrapping;
       normalMap.repeat.copy(map.repeat);
@@ -450,7 +476,7 @@ export const TEX = {
     const dens = Math.round((o.density || 1) * 2) / 2;
     return memo(`wear|${o.kind || 'chip'}|${o.color || '#8a5236'}|${bucket}|${dens}`, () => {
       if (!HAS_DOM) return blank();
-      const size = 256;
+      const size = 128;
       const cv = makeCanvas(size);
       const { g, w, h, rnd } = cv;
       g.clearRect(0, 0, w, h);
@@ -515,11 +541,14 @@ export const TEX = {
     });
   },
 
-  /** 纸张（泛黄 / 皱褶），海报与告示用 */
+  /** 纸张（泛黄 / 皱褶），海报与告示用。
+   *  底稿一律画成白：纸纹本身与底色无关，颜色交给材质 `color` 去乘。
+   *  以前按 base 分 key，140 个 MAT.paper 调用各要画一张 512² 再做一次 heightToNormal
+   *  （≈ 39 ms/张、合计 6.3 s），而平涂模式还会把这些非 graphic 材质的 map 剥掉，等于全白做。 */
   paper(o = {}) {
-    return pack(`paper|${o.base || '#f4efe1'}|${o.repeat || 1}`, (cv) => {
+    return pack(`paper|${o.repeat || 1}`, (cv) => {
       const { g, w, h, rnd } = cv;
-      g.fillStyle = o.base || '#f4efe1';
+      g.fillStyle = '#ffffff';
       g.fillRect(0, 0, w, h);
       blotches(g, w, h, { count: 18, rad: [40, 180], colors: ['#c9b994', '#fff8e8'], alpha: [0.05, 0.16], rnd });
       for (let i = 0; i < 60; i++) {
@@ -534,11 +563,14 @@ export const TEX = {
     }, { repeat: o.repeat || 1, normalStrength: 0.35 });
   },
 
-  /** 织物 / 地垫 */
+  /** 织物 / 地垫（与底色无关，颜色交给材质 color）。
+   *  画布只画一次：不同 repeat 用 clone() 复用同一个 source —— three 按 source 上传 GPU，
+   *  以前 16 种 repeat 就是把同一张 512² 画 16 遍、传 16 遍。 */
   fabric(o = {}) {
-    return pack(`fabric|${o.base || '#5d6470'}|${o.repeat || 4}`, (cv) => {
+    const rep = o.repeat || 4;
+    const base = pack('fabric|base', (cv) => {
       const { g, w, h, rnd } = cv;
-      g.fillStyle = o.base || '#5d6470';
+      g.fillStyle = '#ffffff';
       g.fillRect(0, 0, w, h);
       const s = 6;
       for (let y = 0; y < h; y += s) for (let x = 0; x < w; x += s) {
@@ -546,7 +578,15 @@ export const TEX = {
         g.fillRect(x, y, s, s);
       }
       speckle(g, w, h, { count: 7000, r: [0.4, 1.4], colors: ['#fff', '#000'], alpha: [0.03, 0.14], rnd });
-    }, { repeat: o.repeat || 4, normalStrength: 1.4 });
+    }, { repeat: 4, normalStrength: 1.4 });
+    if (rep === 4 || !base.map?.clone) return base;
+    return memo(`fabric@${rep}`, () => {
+      const map = base.map.clone();
+      map.repeat.set(rep, rep);
+      const normalMap = base.normalMap ? base.normalMap.clone() : null;
+      if (normalMap) normalMap.repeat.set(rep, rep);
+      return { map, normalMap };
+    });
   },
 
   /** 道床砕石 */
@@ -599,7 +639,7 @@ export const TEX = {
   drinkLabel(o = {}) {
     return memo(`label|${o.name || ''}|${o.a || ''}|${o.b || ''}|${o.kind || 'bottle'}`, () => {
       if (!HAS_DOM) return blank();
-      const cv = makeCanvas(512, 256);
+      const cv = makeCanvas(256, 128);
       const { g, w, h, rnd } = cv;
       fillGrad(g, w, h, [[0, o.b || '#dfeff5'], [0.5, o.a || '#3fa9d8'], [1, o.b || '#dfeff5']], true);
       g.globalAlpha = 0.25;
@@ -629,8 +669,8 @@ export const TEX = {
     const ar = o.ar ?? 4;                              // 目標アスペクト比（w/h）。看板盤の実寸に合わせる
     return memo(`sign|${o.text || ''}|${o.bg}|${o.fg}|${o.sub || ''}|${ar}|${o.size || 0}`, () => {
       if (!HAS_DOM) return blank();
-      const w = 1024;
-      const h = Math.max(128, Math.min(1024, Math.round(w / ar)));
+      const w = 512;
+      const h = Math.max(96, Math.min(512, Math.round(w / ar)));
       const cv = makeCanvas(w, h);
       const { g } = cv;
       g.fillStyle = o.bg || '#2f6b52';
@@ -666,9 +706,9 @@ export const TEX = {
 
   /** 竖排看板（立ち看板 / 広告柱） */
   poster(o = {}) {
-    return memo(`poster|${o.title || ''}|${o.bg}|${o.accent}|${o.seed || 1}`, () => {
+    return memo(`poster|${o.title || ''}|${o.bg}|${o.accent}|${Math.round((o.seed || 1) / 7) % 6}`, () => {
       if (!HAS_DOM) return blank();
-      const cv = makeCanvas(512, 768);
+      const cv = makeCanvas(256, 384);
       const { g, w, h, rnd } = cv;
       g.fillStyle = o.bg || '#f6e9d2';
       g.fillRect(0, 0, w, h);
@@ -695,7 +735,7 @@ export const TEX = {
   adStrip(o = {}) {
     return memo(`ad|${o.text || ''}|${o.bg}|${o.seed || 1}`, () => {
       if (!HAS_DOM) return blank();
-      const cv = makeCanvas(1024, 256);
+      const cv = makeCanvas(512, 128);
       const { g, w, h, rnd } = cv;
       fillGrad(g, w, h, [[0, o.bg || '#e9eef3'], [1, shade(o.bg || '#e9eef3', 0.85)]]);
       for (let i = 0; i < 6; i++) {
@@ -864,7 +904,7 @@ export const TEX = {
   lightPanel(o = {}) {
     return memo(`panel|${o.text || ''}|${o.bg || '#f5d78e'}|${o.mode || 'sign'}`, () => {
       if (!HAS_DOM) return blank();
-      const cv = makeCanvas(512, 256);
+      const cv = makeCanvas(256, 128);
       const { g, w, h } = cv;
       g.fillStyle = o.bg || '#f5d78e';
       g.fillRect(0, 0, w, h);

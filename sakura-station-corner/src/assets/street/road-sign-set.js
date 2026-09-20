@@ -372,7 +372,7 @@ export function build(options = {}) {
     decal(plateG, { map: TEX.wear({ kind: 'dirt', color: '#6d6558', seed: seed + 7, density: 1.6 }), w: 0.07, h: 0.07, pos: [dx, dy, 0.0046], order: 2 });
   }
   // 貼紙剥がし跡（四角い残糊）
-  decal(plateG, { map: TEX.paper({ base: '#efe6cf' }).map, w: w * 0.2, h: h * 0.14, pos: [w * 0.26, -h * 0.12, 0.0044], rot: [0, 0, 0.12], opacity: 0.72, order: 3 });
+  decal(plateG, { map: TEX.paper({ repeat: 1 }).map, color: '#efe6cf', w: w * 0.2, h: h * 0.14, pos: [w * 0.26, -h * 0.12, 0.0044], rot: [0, 0, 0.12], opacity: 0.72, order: 3 });
   decal(plateG, { map: TEX.wear({ kind: 'chip', color: '#d9d2bf', seed: seed + 8, density: 1.2 }), w: w * 0.24, h: h * 0.1, pos: [-w * 0.3, -h * 0.36, 0.0044], order: 4 });
   // 板の下端に小さな補助札（自転車補助・「ここから」等）
   if (kind === 'bicycle-only' || kind === 'crossing' || kind === 'children') {

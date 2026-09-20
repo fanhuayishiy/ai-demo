@@ -74,6 +74,7 @@ export function createEngine({ canvas, quality = {} } = {}) {
   let framesTotal = 0;
   let shadowTick = 999;
   let camStill = 0;
+  let booted = false;   // 世界装配完成后才允许重绘阴影（见 renderFrame 的闸门）
   const _camPos = new THREE.Vector3();
   const _camQuat = new THREE.Quaternion();
   let acc = 0;
@@ -128,10 +129,11 @@ export function createEngine({ canvas, quality = {} } = {}) {
       camStill += dt;
     }
     shadowTick += dt;
-    // 静止が長く続くほど影は動かない（日光は固定、動くのは花枝と吊幌子だけ）：
-    // 落ち着いてすぐ一度だけ直した後は刻みを緩め、待ち受け中の微脈動を消す。
+    // 装配期间（world 已挂上、动效还没注册完）不要重绘阴影：那时相机本来就是静止的，
+    // 每让出一帧就会被塞进一次全场景阴影 pass（~1 s），启动墙钟里凭空多出 5-6 s。
+    // booted 由 main.js 的 `engine.built = true` 翻起来（见下方 setter），随后立即补一次刷新。
     const refresh = camStill > 3 ? (quality.shadowRefresh ?? 0.45) * 5 : (quality.shadowRefresh ?? 0.45);
-    if (shadowTick > refresh && camStill > (quality.shadowSettle ?? 0.2)) {
+    if (booted && shadowTick > refresh && camStill > (quality.shadowSettle ?? 0.2)) {
       shadowTick = 0;                 // 注意不要清 camStill：清了它就永远攒不到「静止很久」
       renderer.shadowMap.needsUpdate = true;
     }
@@ -188,6 +190,15 @@ export function createEngine({ canvas, quality = {} } = {}) {
     markShadowsDirty() {
       shadowTick = 999;
       camStill = 999;
+    },
+    // main.js 用 `engine.built = true` 标记装配完成。它同时是阴影闸门的开关：
+    // 装配期间相机本来就是静止的，若不挡住，每次让帧都会被塞进一次全场景阴影 pass。
+    get built() {
+      return booted;
+    },
+    set built(v) {
+      booted = !!v;
+      if (booted) { shadowTick = 999; camStill = 999; }
     },
     setView(name, { instant = true } = {}) {
       const v = VIEWS[name] || VIEWS.hero;

@@ -7,6 +7,18 @@ const params = typeof location !== 'undefined' ? new URLSearchParams(location.se
 export const MODE = params?.get('style') || 'flat';
 export const IS_FLAT = MODE === 'flat';
 
+/* ---------------- 装配耗时剖析（?trace=1） ----------------
+   画面被要求零 UI，调试信息不能画在屏幕上，所以只留一个数据出口给无头工具读
+   （tools/boot-trace.mjs）。放在 style.js 是因为它是最底层的叶子模块：
+   kit / textures / world / motion 都能引它而不会成环。默认关闭，开启时也只 push 字符串和数字。 */
+export const TRACE_ON = params?.get('trace') === '1';
+export const TRACE = { map: [], asset: [], motion: [], misc: [], tex: [] };
+/** 记一段耗时：traceMark('asset', name, t0) */
+export function traceMark(kind, label, t0) {
+  if (!TRACE_ON) return;
+  TRACE[kind].push([label, Math.round((performance.now() - t0) * 10) / 10]);
+}
+
 /**
  * 平涂模式下要压掉的着色项（toon 模式返回原对象，保持不动）。
  * 这里是**覆盖**语义：全局观感必须统一，否则 100 多个资产各自传的 shadowAmt

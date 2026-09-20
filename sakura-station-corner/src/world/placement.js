@@ -1,7 +1,7 @@
 // 资产落位总表：docs/LAYOUT.md 的坐标 → 场景实例
 // 通过 Vite 的 import.meta.glob 静态收集 src/assets/**/*.js，清单里写明的资产会自动入场景；
 // 尚未交付的资产会被记录到 engine.missing（便于装配阶段核对，不会中断运行）。
-import { grp, yieldToBrowser, THREE } from '../core/kit.js';
+import { grp, yieldToBrowser, traceMark, THREE } from '../core/kit.js';
 import { place } from './index.js';
 import { SEG, STORE, POLES, SPANS, PLOT, RAIL, CROSSWALK, CROP } from './plan.js';
 
@@ -252,6 +252,7 @@ export async function placeAll(assets, engine, { budgetMs = 12, overflowTol = 0.
       last = performance.now();
     }
     const [file, pos, rotY, scale, options, name] = entry;
+    const t0 = performance.now();
     const mod = await resolveModule(file);
     if (!mod) {
       missing.push(file);
@@ -284,6 +285,7 @@ export async function placeAll(assets, engine, { budgetMs = 12, overflowTol = 0.
     } catch (e) {
       console.warn('[placement] build failed:', file, e && e.message);
       missing.push(file + ' (throw)');
+      traceMark('asset', (name || file) + ' (throw)', t0);
       continue;
     }
     /* 中心在框内 ≠ 东西在框内：树冠、屋簷、4 m 绿篱都会伸出台座，
@@ -297,10 +299,12 @@ export async function placeAll(assets, engine, { budgetMs = 12, overflowTol = 0.
         if (over > overflowTol) {
           if (o.parent) o.parent.remove(o);
           overflow.push({ name: name || file, over: +over.toFixed(2) });
+          traceMark('asset', (name || file) + ' (越界丢弃)', t0);
           continue;
         }
       }
     }
+    traceMark('asset', name || file, t0);
     const pid = /^pole-(P\d)$/.exec(name || '');
     if (pid) poleOk[pid[1]] = true;
   }

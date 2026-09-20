@@ -14,19 +14,26 @@ function cachedGeo(key, factory) {
 }
 
 /* ------------------------------ 基础图元 ------------------------------ */
-export const box = (w, h, d) => cachedGeo(`box:${w},${h},${d}`, () => new THREE.BoxGeometry(w, h, d));
+/**
+ * 缓存键量化到 0.5 mm。0.0249 与 0.025 是同一个零件，不该各存一份几何：
+ * 全场景 1.1 万个「唯一」几何里相当一部分就是这种亚毫米重复，
+ * 每一份都要占一次 GPU 上传（启动等待的大头）。只量化 key，
+ * 构造参数取首次命中的实际值，误差 ≤ 0.5 mm。
+ */
+const kq = (v) => Math.round(v * 2000) / 2000;
+export const box = (w, h, d) => cachedGeo(`box:${kq(w)},${kq(h)},${kq(d)}`, () => new THREE.BoxGeometry(w, h, d));
 export const rbox = (w, h, d, r = 0.02, s = 2) =>
-  cachedGeo(`rbox:${w},${h},${d},${r},${s}`, () => new RoundedBoxGeometry(w, h, d, s, Math.min(r, Math.min(w, h, d) / 2.001)));
+  cachedGeo(`rbox:${kq(w)},${kq(h)},${kq(d)},${kq(r)},${s}`, () => new RoundedBoxGeometry(w, h, d, s, Math.min(r, Math.min(w, h, d) / 2.001)));
 export const cyl = (rt, rb, h, seg = 16, open = false) =>
-  cachedGeo(`cyl:${rt},${rb},${h},${seg},${open}`, () => new THREE.CylinderGeometry(rt, rb, h, seg, 1, open));
-export const cone = (r, h, seg = 14) => cachedGeo(`cone:${r},${h},${seg}`, () => new THREE.ConeGeometry(r, h, seg));
+  cachedGeo(`cyl:${kq(rt)},${kq(rb)},${kq(h)},${seg},${open}`, () => new THREE.CylinderGeometry(rt, rb, h, seg, 1, open));
+export const cone = (r, h, seg = 14) => cachedGeo(`cone:${kq(r)},${kq(h)},${seg}`, () => new THREE.ConeGeometry(r, h, seg));
 export const sph = (r, ws = 16, hs = 12, phiS = 0, phiL = Math.PI * 2, thetaS = 0, thetaL = Math.PI) =>
-  cachedGeo(`sph:${r},${ws},${hs},${phiS},${phiL},${thetaS},${thetaL}`, () => new THREE.SphereGeometry(r, ws, hs, phiS, phiL, thetaS, thetaL));
+  cachedGeo(`sph:${kq(r)},${ws},${hs},${kq(phiS)},${kq(phiL)},${kq(thetaS)},${kq(thetaL)}`, () => new THREE.SphereGeometry(r, ws, hs, phiS, phiL, thetaS, thetaL));
 export const tor = (r, t, rs = 12, ts = 8, aSeg = Math.PI * 2) =>
-  cachedGeo(`tor:${r},${t},${rs},${ts},${aSeg}`, () => new THREE.TorusGeometry(r, t, rs, ts, aSeg));
-export const plane = (w, h, sw = 1, sh = 1) => cachedGeo(`plane:${w},${h},${sw},${sh}`, () => new THREE.PlaneGeometry(w, h, sw, sh));
-export const circ = (r, seg = 24) => cachedGeo(`circ:${r},${seg}`, () => new THREE.CircleGeometry(r, seg));
-export const capsule = (r, len, seg = 12) => cachedGeo(`cap:${r},${len},${seg}`, () => new THREE.CapsuleGeometry(r, len, 4, seg));
+  cachedGeo(`tor:${kq(r)},${kq(t)},${rs},${ts},${kq(aSeg)}`, () => new THREE.TorusGeometry(r, t, rs, ts, aSeg));
+export const plane = (w, h, sw = 1, sh = 1) => cachedGeo(`plane:${kq(w)},${kq(h)},${sw},${sh}`, () => new THREE.PlaneGeometry(w, h, sw, sh));
+export const circ = (r, seg = 24) => cachedGeo(`circ:${kq(r)},${seg}`, () => new THREE.CircleGeometry(r, seg));
+export const capsule = (r, len, seg = 12) => cachedGeo(`cap:${kq(r)},${kq(len)},${seg}`, () => new THREE.CapsuleGeometry(r, len, 4, seg));
 /**
  * 樱花花瓣的**几何轮廓**（不是矩形面片）。
  *
@@ -475,6 +482,9 @@ export function retile(geo, u, v, tile = 1.5) {
   uv.needsUpdate = true;
   return geo;
 }
+/* 装配耗时剖析的实现在 core/style.js（叶子模块，避免与 textures 成环），这里转发给各层用 */
+export { TRACE, TRACE_ON, traceMark } from './style.js';
+
 /* ------------------------------ 裁剪框（只保留一块矩形） ------------------------------ */
 // diorama 有时只需要红线内的那一块。地图层的所有铺面都经由下面四个函数生成，
 // 所以裁剪集中在这里做一次即可，不必去改十个地图模块的坐标。
@@ -607,29 +617,40 @@ const sigCache = new WeakMap();
  * 颜色其实可以走 instanceColor（three 在着色器里把它乘进 diffuse），
  * 所以判「能不能并成一次绘制」应当比材质**配置**，而不是比材质对象本身。
  */
+/**
+ * 材质签名只比「会改变绘制结果」的字段：标准管线开关 + 贴图身份（uuid + repeat）。
+ * 语义与旧的 `JSON.stringify(m.toJSON())` 一致，但绝不调用它 ——
+ * three 的 `TextureSource.toJSON` 会把每张贴图 `canvas.toDataURL('image/png')`
+ * 编码成 base64（实测占整段启动 CPU 约 5%，并且每个材质都生成一份 100–300 KB 的字符串，
+ * 3331 个材质就是几百 MB 的瞬时垃圾，GC 也一起拖慢装配）。
+ */
+const SIG_PROP = ['type', 'side', 'transparent', 'opacity', 'alphaTest', 'depthWrite', 'depthTest', 'blending',
+  'vertexColors', 'flatShading', 'wireframe', 'toneMapped', 'dithering', 'fog', 'premultipliedAlpha',
+  'polygonOffset', 'polygonOffsetFactor', 'polygonOffsetUnits', 'colorWrite', 'alphaToCoverage', 'shadowSide',
+  'forceSinglePass', 'roughness', 'metalness', 'shininess', 'clearcoat', 'clearcoatRoughness', 'ior',
+  'transmission', 'thickness', 'sheen', 'sheenRoughness', 'specularIntensity', 'reflectivity', 'refractionRatio',
+  'emissiveIntensity', 'combine'];
+const SIG_TEX = ['map', 'alphaMap', 'normalMap', 'bumpMap', 'roughnessMap', 'metalnessMap', 'emissiveMap',
+  'aoMap', 'lightMap', 'specularMap', 'matcap', 'gradientMap', 'envMap', 'displacementMap', 'sheenColorMap',
+  'specularColorMap', 'iridescenceMap', 'anisotropyMap', 'clearcoatMap', 'transmissionMap', 'thicknessMap'];
+function sigNum(v) {
+  if (v == null) return '-';
+  if (typeof v === 'number') return v.toFixed(4);
+  if (typeof v === 'boolean' || typeof v === 'string') return String(v);
+  if (v.isVector2 || v.isVector3 || v.isVector4) return v.toArray().map((n) => n.toFixed(3)).join(',');
+  if (v.isColor) return v.getHexString();
+  return typeof v;
+}
 function materialSignature(m) {
   let s = sigCache.get(m);
   if (s !== undefined) return s;
-  let json = null;
-  try {
-    if (m.toJSON) {
-      const o = m.toJSON();
-      // 只剔掉材质自身的身份字段：贴图仍然带 uuid 参与比较，
-      // 否则两张不同的贴图会被判成「同配置」而并成一张。
-      delete o.uuid;
-      delete o.name;
-      delete o.id;
-      json = JSON.stringify(o).replace(/"color":\s*"?[0-9a-fx#]*"?,?/gi, '');
-    }
-  } catch {
-    json = null;
+  let out = '';
+  for (const k of SIG_PROP) out += k + '=' + sigNum(m[k]) + ';';
+  for (const k of SIG_TEX) {
+    const t = m[k];
+    out += k + '=' + (t ? t.uuid + '@' + sigNum(t.repeat) + '/' + t.wrapS + t.wrapT + '/' + t.colorSpace + '/' + t.anisotropy : '-') + ';';
   }
-  if (json == null) {
-    // 序列化不了就退回「只认同一个材质对象」—— 宁可少并，不能把不同贴图并成一张
-    s = 'uniq:' + m.uuid;
-  } else {
-    s = json;
-  }
+  s = out;
   sigCache.set(m, s);
   return s;
 }

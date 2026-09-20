@@ -1,5 +1,7 @@
 // 入口引导：引擎 + 世界组装 + 动效系统（无任何 UI / 文字 / 控件）
 import { createEngine } from './core/engine.js';
+import { texCacheInfo } from './core/textures.js';
+import { TRACE } from './core/kit.js';
 import { buildWorld } from './world/index.js';
 import { registerMotion } from './motion/index.js';
 import { installLod } from './core/lod.js';
@@ -20,6 +22,7 @@ async function boot() {
   const engine = createEngine({ canvas });
   // 尽早暴露：装配分批让出主线程，工具（以及调试者）需要能在建图过程中就轮询状态
   window.__DIORAMA__ = engine;
+  engine.trace = TRACE;   // ?trace=1 时才有内容，零 UI 场景下耗时剖析的唯一出口
   timings.engine = Math.round(performance.now() - T0);
 
   const world = await buildWorld(engine);
@@ -41,6 +44,7 @@ async function boot() {
   // 不代表「世界建完」。装配是分批让出主线程的，工具必须等这个标记再截图。
   engine.built = true;
   engine.timings = timings;
+  engine.texCacheInfo = texCacheInfo;   // 贴图字节账，供 tools/boot-trace.mjs 读
   // 阴影贴图现在只在画面静止时重绘，装配期间的若干次重绘可能都发生在世界建完之前，
   // 所以建完后再点一次脏，确保最终状态有一张完整的阴影贴图。
   engine.markShadowsDirty();

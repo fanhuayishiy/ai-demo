@@ -552,7 +552,7 @@ export function build(options = {}) {
   g.add(gr);
   gr.add(mesh(box(1.210, 0.030, 0.830), MAT.concrete({ repeat: 2, cracked: true, base: PAL.concreteDark }), { pos: [0, 0.015, 0.020], name: 'curb-pad' }));
   gr.add(mesh(box(0.880, 0.014, 0.170), MAT.rubber('#3d3a34'), { pos: [-0.150, 0.037, 0.366], name: 'mat' }));
-  decal(gr, { map: TEX.fabric({ base: '#4a463e', repeat: 6 }).map, w: 0.84, h: 0.13, pos: [-0.150, 0.0455, 0.366], rot: [-PI / 2, 0, 0], opacity: 0.5 });
+  decal(gr, { map: TEX.fabric({ repeat: 6 }).map, color: '#4a463e', w: 0.84, h: 0.13, pos: [-0.150, 0.0455, 0.366], rot: [-PI / 2, 0, 0], opacity: 0.5 });
   [[-0.49, -0.28], [-0.49, 0.30], [0.49, -0.28], [0.49, 0.30]].forEach(([ax, az]) => {
     gr.add(mesh(cyl(0.0090, 0.0090, 0.048, 8), zinc, { pos: [ax, 0.056, az] }));
     gr.add(mesh(cyl(0.0150, 0.0150, 0.014, 6), MAT.metal('#999ea1', { worn: 0.9 }), { pos: [ax, 0.080, az] }));

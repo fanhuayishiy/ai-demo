@@ -366,3 +366,50 @@
 - [ ] 18.12 遗留：① 16.7 的店内对比度问题未动；② 其他用 `leafCluster`/`petal` 卡片做 alpha 抠形的
   资产（绿篱、花坛、ivy）在平涂下同样是方块，本轮只处理了樱花与店前；
   ③ 空中花瓣仍会从建筑屋顶「穿过去」再在地板出现（全局撒花层没有遮挡体概念）。
+
+## 阶段 19 · 启动时间（「当前加载还是要很久，降到 10 秒以内」）
+起点：dist 到 built **21.2 s**。先量后改，结论是「慢」几乎全在贴图与几何的**生成 + GPU 上传**上，
+不是模型精度，也不是 draw call。
+- [x] 19.1 测量协议先立起来，否则后面每一步都在猜：
+  · `?trace=1` → `core/style.js` 的 TRACE 出口（零 UI 场景不能把调试画在屏幕上），
+    `tools/boot-trace.mjs` 打印 map/asset/motion/misc/tex 五类逐项毫秒 + 贴图字节账
+  · **踩过的坑**：单次 boot-check 会被并发 Chrome 与冷缓存污染，同一份产物实测 11.4 / 12.97 / 13.41 s，
+    差点把「量化键」判成倒退。改成**两个产物交替跑 5 轮 + 丢掉第一轮冷启动 + 取中位**才可比。
+- [x] 19.2 平涂剥 map 的连带浪费（一）：`TEX.paper` / `TEX.fabric` 把**底色放进缓存键**，
+  140 个 `MAT.paper` 调用 = 161 张 512² 画布 + 161 次 heightToNormal（6.3 s，占同步耗时 1/3）。
+  纸纹/织纹本身与底色无关 → 底稿一律画白，颜色交给材质 `color` 相乘：161 → 7、56 → 16。
+  两处 `decal()` 直接吃这两张贴图（看板残胶、贩卖机橡胶垫）改为显式传 `color`。
+- [x] 19.3 平涂剥 map 的连带浪费（二）：`pack()` 无条件做一次 `heightToNormal`，
+  但平涂只有 `graphic` 材质保留贴图，而 `MAT.poster` / `MAT.glow` 从不接收 pack 的 normalMap
+  → 平涂下每张法线必被剥掉。改成平涂不生成（省一次 512² 逐像素循环 + 一份上传）。
+- [x] 19.4 修一个「闸门从来没生效过」的 bug：`SURFACE_NOISE` 里写的是 `'corrugated'`，
+  而 `pack()` 的键前缀是 `'corru'`（同理 `'leafCluster'` vs `'leaf'`）→ 波纹铁皮/叶簇照样白画。
+- [x] 19.5 印刷内容按**屏上 texel 密度**降采样（不是降精度，是本来就过采样 4–8 倍：
+  60 cm 招牌在 8 m 外只占约 120 px）：signboard 1024→512、poster 512×768→256×384、
+  adStrip 1024×256→512×128、drinkLabel 512×256→256×128、lightPanel 512×256→256×128、
+  wear 256→128；`TEX.poster` 的 seed 分 6 桶（110 → 101 份，花纹相位看不出重复）。
+- [x] 19.6 `fabric` 的 16 种 repeat 用 `Texture.clone()` 复用同一个 `source`
+  —— three 按 source 上传 GPU，以前是同一张 512² 画 16 遍、传 16 遍。
+- [x] 19.7 几何缓存键量化到 0.5 mm（box/rbox/cyl/cone/sph/tor/plane/circ/capsule）：
+  0.0249 与 0.025 是同一个零件，不该各存一份几何各传一次 GPU。几何 11201 → 10432、Mesh 27025 → 26605。
+  `retile()` 只作用于 `surface/wallX/wallZ` 自建的平面，不会污染共享几何 ✓
+- [x] 19.8 装配期间挡住阴影重绘：`engine.built` 改成 `built` 存取器，同时翻起引擎内部的
+  `booted` 闸门。world 挂上后相机本来就是静止的，每次让帧都被塞进一次全场景阴影 pass。
+- [x] 19.9 最后一个结构性浪费：`materialSignature` 用 `JSON.stringify(material.toJSON())` 比材质配置，
+  而 three 的 `TextureSource.toJSON` 会把每张贴图 `canvas.toDataURL('image/png')` 编码成 base64 ——
+  3331 个材质各编一遍（CPU 剖析里 `getDataURL` 占 5% 采样，另外每次产生 100–300 KB 字符串喂给 GC）。
+  改成显式列举「会改变绘制结果」的标准字段 + 贴图身份（uuid / repeat / wrap / colorSpace / anisotropy），
+  语义与原来一致（同样忽略 color，颜色走 instanceColor），但不再序列化。再省约 0.8 s。
+
+  **结果（dist，同一协议 5 次）**：
+  · 到 built **21.2 s → 9.33 s**（中位 9.33，区间 9.24–9.78；本轮改动前同协议 10.16 s）
+  · 贴图位图 455 MB → **148 MB**；JS 堆 591 → **~240 MB**；几何 11201 → 10432；Mesh 27025 → 26553
+  · 交互无回退：draw calls 中位 ~7000（原 7200–7600）、拖拽 fps 中位 17.6（原 16.8）、三角 4.8M/帧
+  · 画面复核：`shots/hero.png`、`shots/store.png` 招牌与海报文字仍清晰、无白块、无褪色
+  · toon 模式复核：推进正常（10 个地图层 + 资产逐件落地、零 pageerror），但它要生成平涂跳过的全部
+    噪点贴图，启动约 2 分钟 —— 平涂是默认路径，toon 只作对照，本轮没有为它优化
+- [ ] 19.10 还能再压（这次没做）：① signboard 44.7 MB 是剩下最大的一族，可按「招牌实际占屏」分两档尺寸；
+  ② 上传窗口仍有 ~3.4 s，主要是 1.04 万份几何的 bufferData，要继续就得把零件几何再合并一层
+  （与「不合并网格」的约束冲突，需要单独决策）；③ `materialSignature` 目前不含 `userData.spec`
+  （toon 自定义着色参数），与旧行为一致，但严格说同标准配置、不同 `steps/tint` 的两个材质仍会被并到
+  一张 —— 要收紧就得同时接受 draw call 回升。
