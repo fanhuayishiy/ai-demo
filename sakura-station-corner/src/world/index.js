@@ -1,6 +1,7 @@
 // 世界组装：地图层 + 资产摆放（坐标取自 docs/LAYOUT.md / plan.js）
-// 每个资产来自独立模块文件；此处只做 import 与落位。几何数据永不改写、永不 merge；
-// 允许的是「同一几何+同一材质的实例列表拼接」（InstancedMesh，逐件变换仍独立）。
+// 每个资产来自独立模块文件；此处只做 import 与落位。
+// 建模期几何永不改写（kit 的 autoInstance / mergeInstances 只拼实例矩阵）；
+// 装配的最后一步是「提交层合并」——把静止同材质的零件按资产成组烘成少量 buffer，见 core/merge-static.js。
 import * as THREE from 'three';
 import { grp, finish, put, rotY, autoInstance, mergeInstances, pruneHulls, pruneToClip, yieldToBrowser, setWorldClip, traceMark } from '../core/kit.js';
 
@@ -17,6 +18,8 @@ import * as LevelCrossing from './level-crossing.js';
 import { placeAll } from './placement.js';
 import { CROP } from './plan.js';
 import { markStatic } from '../core/lod.js';
+import { mergeStaticIfFlat } from '../core/merge-static.js';
+import { unifyShapesMaybe, shapeStats } from '../core/canonical-shapes.js';
 import { BOOT_PHASES } from '../core/engine.js';
 
 /** 落位工具 */
@@ -31,6 +34,9 @@ export function place(parent, mod, { pos = [0, 0, 0], rotY: ry = 0, scale = 1, o
   parent.add(o);
   // 变换定稿：先修剪无价值的小描边壳，再折叠同类零件（资产内部可能还会改 lean 等）
   const t0 = performance.now();
+  // 形状原型归一：必须排在 autoInstance 之前 —— 它的分桶键是 geometry.uuid，
+  // 归一之后「同形状不同尺寸」的零件才算同一个批次。渲染结果逐像素不变（见 core/canonical-shapes.js）。
+  unifyShapesMaybe(o);
   pruneHulls(o, options.hullMin ?? 0.16);
   // min 2：两个完全相同的零件（同一几何、同一材质、同一渲染状态）并成一次绘制调用
   // 就已经省一次 8.8 µs 的提交；零件仍是独立实例，几何数据不改写。
@@ -72,6 +78,7 @@ export async function buildWorld(engine) {
   await mk('crossing', LevelCrossing.build);
   pruneToClip(map);   // 兜底：地图模块里直接 mesh(box(...)) 自由排布的散件按世界位置收口
   const post0 = performance.now();
+  unifyShapesMaybe(map);
   pruneHulls(map, 0.14);
   autoInstance(map, { min: 4 });
   mergeInstances(map);
@@ -93,6 +100,15 @@ export async function buildWorld(engine) {
   world.add(assets);
   if (engine) engine.assetsGroup = assets;
   world.map = map;
+  // 提交层合并：建模层（src/assets/** 与 autoInstance 的逐件实例）完全不变，
+  // 这里只是把「静止 + 同材质 + 不透明」的零件按资产成组烘成少量 buffer，见 core/merge-static.js。
+  // 必须在 world.add(assets) 之后：合并的分组粒度就是 world 的直接子图层，早一步资产还没挂上来。
+  const post2 = performance.now();
+  if (engine) {
+    engine.mergeStats = mergeStaticIfFlat(world);
+    engine.shapeStats = shapeStats();
+  }
+  traceMark('misc', '提交层合并', post2);
   return world;
 }
 

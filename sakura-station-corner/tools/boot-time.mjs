@@ -28,7 +28,7 @@ for (let i = 0; i < RUNS; i++) {
   const parts = await page.evaluate(() => {
     const t = window.__DIORAMA__.timings || {};
     const i = window.__DIORAMA__.renderer.info;
-    return { engine: t.engine, world: t.world, lod: t.lod, motion: t.motion, rm: t.motion_render, fr: t.motion_frames, geo: i.memory.geometries, tex: i.memory.textures, calls: i.render.calls };
+    return { engine: t.engine, world: t.world, lod: t.lod, motion: t.motion, rm: t.motion_render, fr: t.motion_frames, geo: i.memory.geometries, tex: i.memory.textures, calls: i.render.calls, meshes: (() => { let k = 0; window.__DIORAMA__.scene.traverse((o) => { if (o.isMesh) k++; }); return k; })(), shape: window.__DIORAMA__.shapeStats?.meshes ?? 0 };
   });
   // built 只是「装配完」，还要等装配期间被跳过/限流的那一帧真正补上，用户才算看见成品
   await page.waitForFunction(`window.__DIORAMA__.frames > ${parts.fr || 0} + 1`, { polling: 100, timeout: 120000 });
@@ -44,5 +44,5 @@ const walls = kept.map((r) => r.wall);
 const v = kept.map((r) => r.vis);
 console.log(`\n丢弃首次冷启动后 ${kept.length} 次：到 built 中位 ${med(walls).toFixed(2)} s（区间 ${Math.min(...walls).toFixed(2)}–${Math.max(...walls).toFixed(2)}）｜成帧中位 ${med(v).toFixed(2)} s（区间 ${Math.min(...v).toFixed(2)}–${Math.max(...v).toFixed(2)}）`);
 const last = rows[rows.length - 1];
-console.log(`末次资源：几何 ${last.geo}，贴图 ${last.tex}，Mesh 绘制 ${last.calls}`);
+console.log(`末次资源：几何 ${last.geo}，贴图 ${last.tex}，Mesh 绘制 ${last.calls}   场景 Mesh ${last.meshes}（形状归一命中 ${last.shape}）`);
 await browser.close();

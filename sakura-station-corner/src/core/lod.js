@@ -93,7 +93,14 @@ export function installLod(engine, root, opts = {}) {
         if (!g.boundingBox) g.computeBoundingBox();
         g.boundingBox.getSize(tmpSize);
         n.getWorldScale(tmpScale);
-        const maxDim = Math.max(tmpSize.x * tmpScale.x, tmpSize.y * tmpScale.y, tmpSize.z * tmpScale.z);
+        // 提交层合并体（core/merge-static.js）申报的零件尺寸：
+        // 合并体的包围盒是「整条尺寸带的空间范围」，拿它当尺寸就等于永不剔除。
+        // lodSize 存的是该档里**最大**那个成员的世界尺寸 —— 于是只有全员都会被判隐藏时
+        // 整块才隐藏，画面比逐件剔除时多一点细节，但绝不会少。
+        const override = n.userData?.lodSize;
+        const maxDim = Number.isFinite(override)
+          ? override
+          : Math.max(tmpSize.x * tmpScale.x, tmpSize.y * tmpScale.y, tmpSize.z * tmpScale.z);
         if (maxDim > 0) parts.push({ n, maxDim });
       });
       if (!hulls.length && !parts.length) continue;

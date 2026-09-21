@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { IS_FLAT } from './style.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { TEX, mulberry32 } from './textures.js';
+import { uniqueOf } from './toon.js';
 import { MAT } from './materials.js';
 
 const geoCache = new Map();
@@ -714,11 +715,15 @@ export function autoInstance(root, { min = 5, skipNames = /#shine|decal|screen|l
     if (b.items.length < min) continue;
     const host = b.proto.parent || root;
     inv.copy(host.matrixWorld).invert();
-    // 一桶里若混着「只有颜色不同」的材质：克隆一份把底色刷白，真实颜色逐实例走 instanceColor。
-    // 克隆体与原材质配置相同 → three 的 program 缓存会复用同一个着色器，不会多编译成本。
+    // 一桶里若混着「只有颜色不同」的材质：拿一份重新注入过的副本，把底色刷白，
+    // 真实颜色逐实例走 instanceColor。
+    // 绝不能用 Material.clone()：本项目的着色全部来自 onBeforeCompile 注入，
+    // 而 clone 不带 onBeforeCompile —— 克隆体会退回 stock MeshToonMaterial，
+    // 丢掉冷染阴影/边缘光/卡通高光/分级/抖动，整批零件换个亮法画。
+    // uniqueOf 走 toon(spec) → clone → 重新注入，customProgramCacheKey 相同故复用同一份编译。
     const one = b.mats.size === 1;
     if (!one && !b.items.every((it) => it.material.color)) continue;   // 有件没颜色属性 → 不冒半填 instanceColor 的险
-    const mat = one ? b.mat : b.mat.clone();
+    const mat = one ? b.mat : (b.mat.isMeshToonMaterial && b.mat.userData?.spec ? uniqueOf(b.mat) : b.mat.clone());
     if (!one && mat.color) mat.color.setRGB(1, 1, 1);
     const im = new THREE.InstancedMesh(b.geo, mat, b.items.length);
     im.name = (b.proto.name || 'part') + '@' + b.items.length;
@@ -758,6 +763,11 @@ export function autoInstance(root, { min = 5, skipNames = /#shine|decal|screen|l
  * 每朵花仍是独立实例（独立变换、独立颜色、仍可整体剔除）。
  * 宿主取「最近的摆动祖先」：摆动子树内部的相对变换恒定，整组随祖先一起动是等价的；
  * 跨摆动根则不等价，所以绝不跨根合并。
+ *
+ * 不跨资产并批，实测过：合并体跨越的资产一多，包围球就同时跨过了视锥边界，
+ * 原本被逐个剔掉的批次反而每帧都要提交（cell=8 m 时 interior 视口 +656 次、
+ * cell=100 m 时 −511 次，按视口正负号都会翻）—— 省下的提交被剔除粒度吃回去。
+ * 跨资产的重复形状交给 core/canonical-shapes.js 在**资产内**塌缩，那一步是净赚。
  */
 export function mergeInstances(root, { min = 2 } = {}) {
   if (!root) return root;
@@ -809,6 +819,9 @@ export function mergeInstances(root, { min = 2 } = {}) {
       im.renderOrder = proto.renderOrder;
       im.frustumCulled = proto.frustumCulled;
       im.userData = { ...proto.userData, mergedFrom: list.length, instancedFrom: total };
+      // 实例矩阵已换到宿主坐标系 → 合并体自身恒等，不必逐帧重算矩阵
+      im.matrixAutoUpdate = false;
+      im.matrixWorldNeedsUpdate = true;
       let j = 0;
       for (const s of list) {
         hostM.copy(s.matrixWorld);

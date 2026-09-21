@@ -8,14 +8,13 @@ const argv = process.argv.slice(2);
 const arg = (k, d) => { const h = argv.find((a) => a.startsWith(`--${k}=`)); return h ? h.split('=').slice(1).join('=') : d; };
 const W = Number(arg('w', 1600)), H = Number(arg('h', 900));
 const SECONDS = Number(arg('seconds', 8));
-
 const browser = await chromium.launch({
   channel: 'chrome', headless: true,
   args: ['--use-gl=angle', '--use-angle=d3d11', '--enable-unsafe-swiftshader', '--disable-gpu-sandbox', '--ignore-gpu-blocklist', '--no-sandbox'],
 });
 const page = await (await browser.newContext({ viewport: { width: W, height: H } })).newPage();
 page.setDefaultTimeout(280000);
-await page.goto('http://127.0.0.1:5173/', { waitUntil: 'commit' });
+await page.goto(arg('url', 'http://127.0.0.1:5173/'), { waitUntil: 'commit' });
 await page.waitForFunction('window.__DIORAMA__ && window.__DIORAMA__.built === true', { timeout: 240000, polling: 500 });
 
 // 关掉自动重置，自己每帧复位一次，才能拿到「整条后期链 + 场景」的总 draw call
