@@ -17,6 +17,16 @@ try {
 const resolved = new Map();
 
 /**
+ * 「定义画面身份」的资产：远景阈值抬到 90 px 后仍然逐件钉在 26 px（= 抬阈值之前的画面）。
+ * 判据不是「重要」而是**拆件可读性**：全局阈值砍掉的是零件，
+ * 而这些物件一旦少一个零件就读不出来 —— 自行车只剩两个轮、樱花树掉空内层花簇、
+ * 屋顶招牌只剩白底板、灯杆没了灯头。整件消失反而无害（远处的井盖、排水格栅、空调外机），
+ * 所以那些不在此列，照旧吃 90 px。
+ * 名单是量出来的：tools/lod-where.mjs 按资产列出 26 → 90 px 各少了多少次提交。
+ */
+const IDENTITY = /(flora\/sakura|bike\/bicycle|store\/store-signage|store\/awning|store\/exterior-poster-case|station\/station-name-sign|station\/timetable-board|station\/train-car-|station\/platform-bench|station\/rail-signal|street\/street-lamp|street\/road-sign-set|street\/traffic-light|street\/bench-wait|street\/bulletin-board|bike\/bike-park-sign)/;
+
+/**
  * 一次性并发预热所有资产 chunk。
  * 本地 localhost 察觉不到问题，但构建产物把资产切成 ~100 个 lazy chunk，
  * 而下面的清单循环是 `await resolveModule(file)` 逐个取 —— 放到 GitHub Pages 上
@@ -303,9 +313,13 @@ export async function placeAll(assets, engine, { budgetMs = 12, overflowTol = 0.
     }
     const opt = file.endsWith('power-lines') ? spanOptions({ options }) : { ...options };
     // 店内商品、贩卖机里的饮料：标签色带只有 2 cm 上下，是需求点名「每层都要看得见」的内容，
-    // 不能被远景 LOD 的 26 px 剔除吃掉 —— 给这些资产单独更严（更小）的阈值。
+    // 不能被远景 LOD 的剔除阈值吃掉 —— 给这些资产单独更严（更小）的阈值。
     if (/^interior\//.test(file) || /^products\//.test(file) || /vending-machine/.test(file)) opt.lodPx = 16;
-    const p = file === null || pos === null ? null : pos;
+    // 「定义画面身份」的资产：全局阈值抬到 90 px 之后，它们不是整件消失而是**拆件消失**
+    // —— 自行车只剩两个轮、樱花树掉光内层花簇、屋顶招牌只剩白底板、灯杆没了灯头。
+    // 一个零件属于哪个可读物体，就该跟着那个物体一起留下或一起消失，所以这些资产钉在 26 px
+    // （= 抬阈值之前的画面，逐件不变）。谁被钉了、钉回来值多少提交，用 tools/lod-where.mjs 量的。
+    if (IDENTITY.test(file)) opt.lodPx = 26;    const p = file === null || pos === null ? null : pos;
     // 裁剪框过滤：电线档距要两端都在框内，否则线头会悬在空处
     if (file.endsWith('power-lines')) {
       const [pa, pb] = SPANS[opt.span];

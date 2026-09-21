@@ -9,10 +9,12 @@
 // 所以后期不是瓶颈，瓶颈是「视锥内可绘制对象数 × 每次提交成本」。
 // 这一档只动三件事：渲染分辨率、LOD 剔除阈值、阴影贴图尺寸。
 const TIERS = {
-  // hi 就是历史行为：画面与之前逐像素一致，不加不减。
-  hi: { name: 'hi', pixelRatio: 2, shadow: 2048, lodPx: 26, hullRange: 10 },
-  mid: { name: 'mid', pixelRatio: 1.3, shadow: 1536, lodPx: 34, hullRange: 9 },
-  lo: { name: 'lo', pixelRatio: 1, shadow: 1024, lodPx: 46, hullRange: 8 },
+  // 投影像素阈值：2026-09-21 阶段 39 按用户拍板从 26 抬到 90（1600×900 实测 +30% 帧率，
+  // 代价是远景小件提前消失；拉近仍逐件回归，模型本身没有被简化）。
+  // mid / lo 是「更弱的机器」，所以阈值只会更狠，不会比 hi 更细。
+  hi: { name: 'hi', pixelRatio: 2, shadow: 2048, lodPx: 90, hullRange: 10 },
+  mid: { name: 'mid', pixelRatio: 1.3, shadow: 1536, lodPx: 110, hullRange: 9 },
+  lo: { name: 'lo', pixelRatio: 1, shadow: 1024, lodPx: 140, hullRange: 8 },
 };
 
 const ORDER = ['lo', 'mid', 'hi'];

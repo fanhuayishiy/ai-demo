@@ -60,11 +60,12 @@ async function boot() {
   engine.swayGpu = installGpuSway(engine, world);
 
   // LOD 阈值：本场景有 ~3.2 万个独立 Mesh（每件道具单独建模、不合并几何），
-  // 实测 Chrome/ANGLE 下每个 draw call 约 8.3 µs 的 CPU 提交成本，且 85% 的帧时间就是提交
-  // （把分辨率降到 400×300 只从 77 ms 掉到 65 ms → 不是填充率问题）。
-  // 默认 18px 时近景仍有 ~10200 次提交；抬到 26px（≈ 画面高度 2.9%，2 cm 的标签在 14 m 外）
-  // 实测 store 100.8→79.8 ms、interior 109→85.2 ms、hero 73.3→64.4 ms。
-  // 隐藏的是「屏幕上已经小于 26 像素」的零件，拉近即逐件回归 —— 模型本身没有被简化。
+  // 实测 Chrome/ANGLE 下每个 draw call 约 10.3 µs 的 CPU 提交成本，且帧时间的九成就是提交
+  // （五点拟合 ms ≈ 10.3 µs × 提交数 + 0.31 ms × 百万三角 + 3.4 ms，见 docs 阶段 38）。
+  // 历史：18px 时近景仍有 ~10200 次提交 → 抬到 26px（≈ 画面高度 2.9%）；
+  // 2026-09-21 阶段 39 按拍板抬到 90px（≈ 画面高度 5.6%），1600×900 持续拖拽 +30% 帧率。
+  // 隐藏的是「屏幕上已经小于 90 像素」的零件，拉近即逐件回归 —— 模型本身没有被简化。
+  // 要复看旧画面：?lodpx=26（这个口同时是用来做曲线测量的，见 quality.js）。
   engine.lod = installLod(engine, world, { pxThreshold: q.lodPx, hullRange: q.hullRange, interval: 0.12 });
   engine.markProgress(BOOT_PHASES.lod, '整理可见性');
   mark('lod');
