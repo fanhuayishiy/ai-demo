@@ -24,6 +24,9 @@ async function boot() {
   // 页面上仍然不出现任何东西，零 UI 不变。
   const T0 = performance.now();
   const timings = {};
+  // T0 本身就是「导航 → 入口代码开始跑」的墙钟：模块下载 + 解析 + 求值全算在里面。
+  // 不记这一段的话，工具看到的「到 built 11 s」里有几秒是 JS 加载，却无处可查。
+  timings.bootstrap = Math.round(T0);
   /**
    * 装配期引擎的 rAF 循环照跑：每次 await 让出主线程都可能插进一整帧。
    * 分不清「代码慢」还是「被渲染挤占」时，看 phaseMs 旁边的 renderMs 增量。
@@ -88,8 +91,8 @@ async function boot() {
   // 所以建完后再点一次脏，确保最终状态有一张完整的阴影贴图。
   engine.markShadowsDirty();
   engine.markProgress(1, '就绪');
-  // 加载层要等「首帧真的画上屏幕」才撤：built 之后仍有约 3 s 的 GPU 首触
-  // （分批上传 1 万份几何 + 831 张贴图，外加一次全场景阴影 bake）。
+  // 加载层要等「首帧真的画上屏幕」才撤：built 之后仍有约 1.5 s 的 GPU 首触
+  // （上传视锥内那 1.6k 份几何 + 333 张贴图 + 建 59 个着色器程序 + 一次全场景阴影 bake）。
   // 在 built 那一刻就撤掉，用户会看到「进度条满了、画面还是空的」。
   requestAnimationFrame(() => requestAnimationFrame(() => bootScreen.hide()));
   // 兜底：后台标签页里 rAF 挂起，不摘掉的话无头工具等「加载层消失」会一直等到超时。

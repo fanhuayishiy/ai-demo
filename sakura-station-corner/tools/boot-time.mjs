@@ -28,7 +28,17 @@ for (let i = 0; i < RUNS; i++) {
   const parts = await page.evaluate(() => {
     const t = window.__DIORAMA__.timings || {};
     const i = window.__DIORAMA__.renderer.info;
-    return { engine: t.engine, world: t.world, lod: t.lod, motion: t.motion, rm: t.motion_render, fr: t.motion_frames, geo: i.memory.geometries, tex: i.memory.textures, calls: i.render.calls, meshes: (() => { let k = 0; window.__DIORAMA__.scene.traverse((o) => { if (o.isMesh) k++; }); return k; })(), shape: window.__DIORAMA__.shapeStats?.meshes ?? 0 };
+    // timings 里的 engine/world/lod/... 是「相对入口代码开跑」的，加上 bootstrap 才是
+    // 相对时间原点的绝对墙钟，各段做差才是这一段花了多久。
+    const bs = t.bootstrap || 0, abs = (v) => (v == null ? null : bs + v);
+    return {
+      bs: bs, engine: abs(t.engine), world: abs(t.world), lod: abs(t.lod),
+      motion: abs(t.motion), weather: abs(t.weather),
+      rm: t.motion_render, fr: t.motion_frames, geo: i.memory.geometries, tex: i.memory.textures,
+      calls: i.render.calls,
+      meshes: (() => { let k = 0; window.__DIORAMA__.scene.traverse((o) => { if (o.isMesh) k++; }); return k; })(),
+      shape: window.__DIORAMA__.shapeStats?.meshes ?? 0,
+    };
   });
   // built 只是「装配完」，还要等装配期间被跳过/限流的那一帧真正补上，用户才算看见成品
   await page.waitForFunction(`window.__DIORAMA__.frames > ${parts.fr || 0} + 1`, { polling: 100, timeout: 120000 });
@@ -36,13 +46,16 @@ for (let i = 0; i < RUNS; i++) {
   rows.push({ wall, vis, ...parts });
   const d = (a, b) => (((a || 0) - (b || 0)) / 1000).toFixed(2);
   const rm = (parts.rm || 0) / 1000, fr = parts.fr || 0;
-  console.log(`  #${i + 1}  到 built ${wall.toFixed(2)} s → 成帧 ${vis.toFixed(2)} s   engine ${((parts.engine || 0) / 1000).toFixed(2)} | world ${d(parts.world, parts.engine)} | lod ${d(parts.lod, parts.world)} | motion ${d(parts.motion, parts.lod)}   ← 装配期帧渲染 ${rm.toFixed(2)} s / ${fr} 帧（${fr ? Math.round(rm * 1000 / fr) : 0} ms/帧）`);
+  const bs = (parts.bs || 0) / 1000;
+  console.log(`  #${i + 1}  到 built ${wall.toFixed(2)} s → 成帧 ${vis.toFixed(2)} s   加载 ${(bs).toFixed(2)} | engine ${d(parts.engine, parts.bs)} | world ${d(parts.world, parts.engine)} | lod ${d(parts.lod, parts.world)} | motion ${d(parts.motion, parts.lod)} | weather ${d(parts.weather, parts.motion)}   ← 装配期帧渲染 ${rm.toFixed(2)} s / ${fr} 帧（${fr ? Math.round(rm * 1000 / fr) : 0} ms/帧）`);
   await ctx.close();
 }
 const kept = arg('keep-first') ? rows : rows.slice(1);
 const walls = kept.map((r) => r.wall);
 const v = kept.map((r) => r.vis);
 console.log(`\n丢弃首次冷启动后 ${kept.length} 次：到 built 中位 ${med(walls).toFixed(2)} s（区间 ${Math.min(...walls).toFixed(2)}–${Math.max(...walls).toFixed(2)}）｜成帧中位 ${med(v).toFixed(2)} s（区间 ${Math.min(...v).toFixed(2)}–${Math.max(...v).toFixed(2)}）`);
+const seg = (a, b) => med(kept.map((r) => Math.max(0, (r[b] || 0) - (r[a] || 0)))) / 1000;
+console.log(`阶段中位：加载 ${(med(kept.map((r) => r.bs || 0)) / 1000).toFixed(2)} s → engine ${seg('bs', 'engine').toFixed(2)} s → world ${seg('engine', 'world').toFixed(2)} s → lod ${seg('world', 'lod').toFixed(2)} s → motion ${seg('lod', 'motion').toFixed(2)} s → weather ${seg('motion', 'weather').toFixed(2)} s → built 后成帧 ${(med(kept.map((r) => r.vis)) - med(kept.map((r) => r.wall))).toFixed(2)} s`);
 const last = rows[rows.length - 1];
 console.log(`末次资源：几何 ${last.geo}，贴图 ${last.tex}，Mesh 绘制 ${last.calls}   场景 Mesh ${last.meshes}（形状归一命中 ${last.shape}）`);
 await browser.close();

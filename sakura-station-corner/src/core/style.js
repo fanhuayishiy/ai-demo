@@ -19,10 +19,25 @@ export const TRACE_ON = params?.get('trace') === '1';
  * slow 4.82 / 7.81，freeze 4.88 / 7.85 —— 那 3 s 并不是浪费，而是「把 26.5k Mesh、
  * 10.2k 几何、831 张贴图分批灌进 GPU」，节流只是把它从装配期挪到首帧。
  * 选 slow：两个指标都不比 freeze 差，又保留了装配过程中画面在动的反馈。
+ * 2026-09-21 阶段 37 补：LOD 安装时立刻剔除一遍（?lodtick）之后，那一帧要画的东西
+ * 从 2.3 万次提交降到 3.2k 次，装配期渲染的总账从 3.3 s 掉到 1.2 s —— 「省不掉只能挪」
+ * 只对「上传」成立，「画一张没人看的整场景」是真的可以省掉的。
  */
 export const ASM = params?.get('asm') || 'slow';
 /** 起始天气（?weather=rain）；取值见 src/weather/index.js 的 NAMES。不是界面控件，只是入口参数。 */
 export const WEATHER_PARAM = params?.get('weather') || '';
+/**
+ * 程序化贴图的边长上限（?texcap=128），0 = 不压。
+ * 这是给「贴图预算」定价的消融开关：画面一定会变（文字/图案糊掉），不作为交付状态。
+ * 实测（构建产物 1600×900，成对）：压到 8 px 只让成帧从 5.85 s 到 5.36 s，即整条贴图线
+ * —— 1191 份位图的绘制 + 上传 —— 只值 0.5 s；再动它就是拿画面换半秒，不划算。
+ */
+export const TEXCAP = Number(params?.get('texcap') || 0) || 0;
+/**
+ * LOD 安装时是否立刻跑一遍剔除（?lodtick=off 关）。默认开：
+ * 关掉只是回到「等 0.12 s 后第一个周期帧才剔」的历史行为，用来对照首帧成本与拉近时的补传。
+ */
+export const LOD_TICK_FIRST = params?.get('lodtick') !== 'off';
 export const TRACE = { map: [], asset: [], motion: [], misc: [], tex: [] };
 /** 记一段耗时：traceMark('asset', name, t0) */
 export function traceMark(kind, label, t0) {

@@ -1,7 +1,7 @@
 // 程序化纹理库 —— 全部用 Canvas2D 逐张手绘生成（无外部资源、无占位图）
 // 在 Node（离线 smoke test）环境下自动降级为 1x1 DataTexture，保证可 import。
 import * as THREE from 'three';
-import { IS_FLAT, traceMark } from './style.js';
+import { IS_FLAT, TEXCAP, traceMark } from './style.js';
 
 export const HAS_DOM = typeof document !== 'undefined' && !!document.createElement;
 const cache = new Map();
@@ -110,6 +110,12 @@ function noiselessPair() {
 
 export function makeCanvas(w = 512, h = w) {
   if (!HAS_DOM) return null;
+  if (TEXCAP > 0) {
+    // 定价开关：等比压到边长 ≤ TEXCAP，最小 4 px（0 尺寸会让 getContext/渐变直接炸）
+    const k = Math.min(1, TEXCAP / Math.max(w, h));
+    w = Math.max(4, Math.round(w * k));
+    h = Math.max(4, Math.round(h * k));
+  }
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
@@ -136,6 +142,7 @@ export function toTexture(canvasObj, { repeat = 1, repeatY = null, srgb = true, 
 /** 由高度函数（或灰度 canvas）求法线图 —— 让平面贴图拥有真实起伏 */
 export function heightToNormal(src, { size = 512, strength = 1.6, heightFn = null } = {}) {
   if (!HAS_DOM) return blank();
+  if (TEXCAP > 0) size = Math.max(4, Math.min(size, TEXCAP));
   const h = new Float32Array(size * size);
   if (heightFn) {
     for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) h[y * size + x] = heightFn(x / size, y / size);

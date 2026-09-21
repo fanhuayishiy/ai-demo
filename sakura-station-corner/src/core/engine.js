@@ -83,6 +83,8 @@ export function createEngine({ canvas, quality = {} } = {}) {
   let shadowTick = 999;
   let camStill = 0;
   let renderMs = 0;     // 累计花在 renderFrame() 里的毫秒（含 updaters）
+  const _t0 = performance.now();
+  const frameLog = [];  // 逐帧账本（启动剖析用），见 renderFrame 末尾
   let booted = false;   // 世界装配完成后才允许重绘阴影（见 renderFrame 的闸门）
   const _camPos = new THREE.Vector3();
   const _camQuat = new THREE.Quaternion();
@@ -165,11 +167,25 @@ export function createEngine({ canvas, quality = {} } = {}) {
       renderer.shadowMap.needsUpdate = true;
     }
     for (const fn of updaters) fn(dt, U.time.value, { camera, scene, renderer, rig, dist });
+    // 阴影 pass 会不会在这一帧跑（跑完 needsUpdate 就被消费掉，事后读不到）
+    const didShadow = renderer.shadowMap.needsUpdate;
     fx.composer.render(dt);
 
     frame++;
     framesTotal++;
-    renderMs += performance.now() - _t;
+    const frameMs = performance.now() - _t;
+    renderMs += frameMs;
+    // 装配期帧账本：记下「这帧多少毫秒、这帧有没有 bake 阴影、结束时已上传多少份几何/贴图」。
+    // 相邻两帧的 memory 差 = 这一帧的上传量；差为 0 而 ms 很大 → 时间花在绘制/阴影/后期，
+    // 不是喂 GPU。没有这行数据，「启动 8 s」里到底是哪种成分根本分不开。
+    if (frameLog.length < 1500) {
+      const mem = renderer.info.memory;
+      frameLog.push({
+        f: framesTotal, t: Math.round(performance.now() - _t0), ms: Math.round(frameMs),
+        c: frameCalls, sh: didShadow ? 1 : 0, geo: mem.geometries, tex: mem.textures,
+        prog: renderer.info.programs ? renderer.info.programs.length : 0,
+      });
+    }
     acc += dt;
     if (acc > 0.5) {
       stats.fps = frame / acc;
@@ -256,7 +272,11 @@ export function createEngine({ canvas, quality = {} } = {}) {
     },
     set built(v) {
       booted = !!v;
-      if (booted) { shadowTick = 999; camStill = 999; }
+      if (booted) {
+        shadowTick = 999; camStill = 999;
+        // 账本里打一个记号：装配前的帧是「边建边喂」，装配后那几帧才是「GPU 首触总账」
+        frameLog.push({ f: framesTotal, t: Math.round(performance.now() - _t0), ms: 0, c: 0, sh: 0, geo: renderer.info.memory.geometries, tex: renderer.info.memory.textures, prog: renderer.info.programs ? renderer.info.programs.length : 0, mark: 'built' });
+      }
     },
     setView(name, { instant = true } = {}) {
       const v = VIEWS[name] || VIEWS.hero;
@@ -294,6 +314,7 @@ export function createEngine({ canvas, quality = {} } = {}) {
     get renderMs() {
       return Math.round(renderMs);
     },
+    frameLog,
     step(dt = 1 / 60, n = 1) {
       for (let i = 0; i < n; i++) renderFrame(dt);
     },

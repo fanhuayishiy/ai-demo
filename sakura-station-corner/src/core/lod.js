@@ -5,6 +5,7 @@
 //   · 屏幕尺寸：投影后小于 pxThreshold 像素的独立零件隐藏（螺栓/标签/小花等），靠近自动回归
 // 只切换 visible，绝不改动几何、不合并网格。
 import * as THREE from 'three';
+import { LOD_TICK_FIRST } from './style.js';
 
 const DEFAULTS = { hullRange: 16, pxThreshold: 9, interval: 0.2, hysteresis: 1.14 };
 
@@ -132,11 +133,7 @@ export function installLod(engine, root, opts = {}) {
   let acc = 0;
   let active = true;
 
-  engine.onUpdate((dt) => {
-    if (!active) return;
-    acc += dt;
-    if (acc < cfg.interval) return;
-    acc = 0;
+  function pass() {
     const cam = engine.camera.position;
     const pxScale = pxToScale();                       // 1 m 在 1 m 处占多少像素
     for (const g of groups) {
@@ -164,7 +161,19 @@ export function installLod(engine, root, opts = {}) {
         g.cut = lo;
       }
     }
+  }
+
+  engine.onUpdate((dt) => {
+    if (!active) return;
+    acc += dt;
+    if (acc < cfg.interval) return;
+    acc = 0;
+    pass();
   });
+  // 安装时立刻跑一遍：装配完成后「第一帧全量画面」如果不先剔除，就会以 2.3 万次提交
+  // 的代价画一张被加载层盖住、没人看见的帧（实测首触帧 4.87 s + 次帧 518 ms，
+  // 而剔除后的稳态帧只有 ~45 ms / 3.2k 次）。画面结果与等它自然跑到 0.12 s 再剔完全一致。
+  if (LOD_TICK_FIRST) pass();
 
   return {
     groups,
