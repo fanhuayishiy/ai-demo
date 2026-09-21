@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#dce7ee">
+  <title>TERRA 728 — Engineering Study</title>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+
+:root { --paper:#edf3f6; --paper-hi:#f8fbfc; --ink:#263743; --muted:#718492; --line:#c7d5dd; --blue:#37677d; --blue-deep:#234958; --accent:#db6d42; --shadow:0 18px 46px rgba(44,70,83,.13); }
+* { box-sizing:border-box; }
+[hidden] { display:none !important; }
+html,body { margin:0; min-height:100%; background:var(--paper); color:var(--ink); font-family:'Noto Sans SC',system-ui,sans-serif; }
+body { background-image:linear-gradient(105deg,rgba(255,255,255,.54),transparent 55%), radial-gradient(circle at 76% 2%,#fff 0,transparent 33%); }
+button,input { font:inherit; }
+button { cursor:pointer; }
+.app-shell { width:min(1560px,calc(100% - 68px)); margin:0 auto; padding:31px 0 22px; }
+.masthead { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid var(--line); padding:0 4px 22px; }
+.brand-lockup { display:flex; gap:16px; align-items:center; }
+.brand-mark { width:60px; height:60px; display:grid; place-items:center; border:1px solid var(--blue); color:var(--blue-deep); font:700 17px/1 'Barlow Condensed',sans-serif; letter-spacing:-.04em; transform:skew(-9deg); }
+.eyebrow,.micro-code,.section-label,.readout-label,.page-footer,.header-meta,.viewport-tag,.viewport-hint { font-family:'IBM Plex Mono',monospace; }
+.eyebrow { color:var(--blue); font-size:11px; letter-spacing:.16em; margin:0 0 5px; }
+.eyebrow span { color:var(--accent); margin:0 5px; }
+h1 { margin:0; font-size:clamp(20px,2vw,29px); letter-spacing:.04em; font-weight:600; }
+.header-meta { display:flex; align-items:center; gap:11px; color:var(--muted); font-size:10px; letter-spacing:.06em; padding-top:9px; }
+.status-dot,.state-pip { display:inline-block; width:7px; height:7px; border-radius:50%; background:#54a276; box-shadow:0 0 0 4px rgba(84,162,118,.12); }
+.meta-divider { width:1px; height:13px; background:var(--line); }
+.viewer-layout { display:grid; grid-template-columns:minmax(0,1fr) 322px; gap:22px; margin-top:22px; }
+.viewport-card { min-width:0; background:rgba(255,255,255,.42); border:1px solid var(--line); box-shadow:var(--shadow); }
+#viewport { min-height:650px; height:min(69vh,760px); position:relative; overflow:hidden; background:linear-gradient(146deg,#dae7ee 0%,#cadbe4 48%,#e5eef2 100%); outline:none; }
+#viewport:after { content:''; position:absolute; inset:auto 0 0; height:22%; background:linear-gradient(0deg,rgba(255,255,255,.25),transparent); pointer-events:none; }
+canvas { width:100%; height:100%; display:block; }
+.viewport-tag { position:absolute; left:23px; top:22px; font-size:10px; letter-spacing:.08em; color:var(--blue-deep); display:flex; gap:10px; align-items:center; z-index:2; }
+.crosshair { width:19px; height:19px; border:1px solid var(--blue); display:inline-block; position:relative; opacity:.8; }
+.crosshair:before,.crosshair:after { content:''; position:absolute; background:var(--blue); }
+.crosshair:before { width:1px; height:27px; left:8px; top:-5px; }.crosshair:after { height:1px; width:27px; top:8px; left:-5px; }
+.viewport-hint { position:absolute; right:21px; bottom:17px; color:#57727e; font-size:9px; letter-spacing:.04em; z-index:2; }
+.viewport-footer { min-height:60px; display:flex; align-items:center; gap:38px; padding:0 21px; background:rgba(248,251,252,.78); border-top:1px solid var(--line); }
+.readout { display:flex; gap:10px; align-items:baseline; white-space:nowrap; }.readout-label { font-size:9px; color:var(--muted); letter-spacing:.1em; }.readout strong { font:600 11px 'IBM Plex Mono',monospace; letter-spacing:.06em; }.readout-muted { color:var(--muted); font:10px 'IBM Plex Mono',monospace; }.model-state { margin-left:auto; gap:8px; }.state-pip { background:var(--blue); width:5px; height:5px; box-shadow:none; }
+.loading-panel,.error-panel { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:11px; color:var(--blue-deep); background:linear-gradient(145deg,rgba(230,241,246,.86),rgba(208,226,234,.58)); z-index:3; }.loading-panel small,.error-panel span { font-size:11px; color:var(--muted); }.loader-ring { width:38px; height:38px; border:1px solid rgba(55,103,125,.2); border-top-color:var(--accent); border-radius:50%; animation:spin 1.2s linear infinite; }.error-panel code { background:rgba(255,255,255,.55); padding:3px 6px; font:10px 'IBM Plex Mono',monospace; }.error-panel strong { font-size:17px; }.quiet-button { border:1px solid var(--line); background:var(--paper-hi); color:var(--blue-deep); padding:8px 14px; font-size:11px; }.quiet-button:hover { border-color:var(--blue); } @keyframes spin { to{transform:rotate(360deg)} }
+.inspector { background:rgba(248,251,252,.68); border:1px solid var(--line); box-shadow:var(--shadow); padding:0 19px; }.inspector-block { padding:21px 0 20px; border-bottom:1px solid var(--line); }.section-label { display:flex; justify-content:space-between; color:var(--blue-deep); font-size:10px; letter-spacing:.13em; margin-bottom:14px; }.micro-code { color:#90a2ac; font-size:9px; letter-spacing:.05em; }
+.camera-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }.camera-button { border:1px solid var(--line); background:rgba(255,255,255,.42); color:var(--ink); min-height:59px; padding:8px 10px; text-align:left; display:grid; grid-template-columns:25px 1fr; grid-template-rows:1fr 1fr; column-gap:7px; align-items:center; transition:.18s ease; }.camera-button:hover,.camera-button.active { background:var(--blue-deep); color:#eef6f8; border-color:var(--blue-deep); }.camera-button.wide { grid-column:1/-1; min-height:46px; }.camera-icon { grid-row:1/-1; font-size:20px; font-family:Georgia,serif; color:var(--accent); }.camera-button span:not(.camera-icon) { font-size:11px; font-weight:600; }.camera-button small { font:9px 'IBM Plex Mono',monospace; opacity:.63; letter-spacing:.08em; }
+.animation-controls { display:flex; gap:13px; align-items:center; }.play-button { border:1px solid var(--blue-deep); background:var(--blue-deep); color:#edf5f7; min-width:84px; height:35px; display:flex; align-items:center; justify-content:center; gap:8px; font-size:11px; }.play-button:hover { background:var(--blue); }.play-glyph { font-size:10px; color:#f5bd83; }.frame-slider-wrap { flex:1; }.frame-slider-wrap input { width:100%; accent-color:var(--accent); height:3px; }.slider-scale { display:flex; justify-content:space-between; color:#91a3ac; font:8px 'IBM Plex Mono',monospace; margin-top:3px; }.timeline-rule { height:1px; background:var(--line); margin:17px 0 3px; }.timeline-rule span { display:block; width:17%; height:1px; background:var(--accent); }
+.chapter-list { display:flex; flex-direction:column; }.chapter { border:0; border-bottom:1px solid rgba(199,213,221,.64); background:transparent; color:var(--muted); text-align:left; padding:11px 2px; display:grid; grid-template-columns:27px 1fr auto; gap:8px; align-items:center; }.chapter:last-child { border-bottom:0; }.chapter:hover,.chapter.active { color:var(--blue-deep); }.chapter.active .chapter-number { color:var(--accent); border-color:var(--accent); }.chapter-number { width:22px; height:22px; border:1px solid var(--line); display:grid; place-items:center; font:10px 'IBM Plex Mono',monospace; }.chapter b { display:block; font:500 10px 'IBM Plex Mono',monospace; letter-spacing:.02em; }.chapter small { display:block; font-size:10px; margin-top:3px; opacity:.75; }.chapter i { font:9px 'IBM Plex Mono',monospace; color:#99a9b0; font-style:normal; }
+.toggle-row { min-height:50px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; }.toggle-row + .toggle-row { border-top:1px solid rgba(199,213,221,.62); }.toggle-row b { font-size:11px; font-weight:600; display:block; }.toggle-row small { color:var(--muted); font-size:10px; display:block; margin-top:3px; }.toggle-row input { position:absolute; opacity:0; pointer-events:none; }.switch { width:34px; height:18px; border:1px solid var(--line); border-radius:12px; background:#e0e9ed; position:relative; transition:.2s; }.switch:after { content:''; width:12px; height:12px; background:#fff; border:1px solid var(--line); border-radius:50%; position:absolute; top:2px; left:2px; transition:.2s; }.toggle-row input:checked + .switch { background:var(--blue); border-color:var(--blue); }.toggle-row input:checked + .switch:after { left:18px; border-color:var(--blue); }.inspector-note { padding:20px 1px 19px; display:flex; gap:10px; color:var(--muted); }.note-rule { display:block; width:3px; min-height:32px; background:var(--accent); }.inspector-note p { font:10px/1.65 'IBM Plex Mono',monospace; margin:0; }.page-footer { display:flex; justify-content:space-between; color:#8597a0; font-size:9px; letter-spacing:.08em; padding:15px 4px 0; }
+@media (max-width:1050px) { .app-shell { width:min(100% - 30px,780px); }.viewer-layout { grid-template-columns:1fr; }.inspector { display:grid; grid-template-columns:1fr 1fr; gap:0 22px; }.inspector-block { padding-top:17px; }.inspector-note { grid-column:1/-1; }.camera-block,.animation-block { border-bottom:1px solid var(--line); } #viewport { height:62vh; min-height:500px; } }
+@media (max-width:640px) { .app-shell { width:calc(100% - 20px); padding-top:17px; }.masthead { display:block; }.header-meta { margin-top:17px; }.viewer-layout { margin-top:14px; }.inspector { display:block; padding:0 14px; }.viewport-footer { gap:13px; padding:0 12px; }.readout-label { display:none; }.readout strong { font-size:9px; }.model-state { display:none; } #viewport { min-height:430px; height:60vh; }.viewport-hint { font-size:8px; right:10px; }.page-footer { gap:8px; font-size:7px; }.page-footer span:nth-child(2) { display:none; } }
+</style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="masthead">
+      <div class="brand-lockup">
+        <span class="brand-mark" aria-hidden="true">T/28</span>
+        <div>
+          <p class="eyebrow">TERRA 728 <span>·</span> ENGINEERING STUDY</p>
+          <h1>现代四驱拖拉机 / 结构审阅</h1>
+        </div>
+      </div>
+      <div class="header-meta"><span class="status-dot"></span><span id="loadStatus">准备载入模型</span><span class="meta-divider"></span><span>GLB / 24 FPS</span></div>
+    </header>
+
+    <section class="viewer-layout" aria-label="三维模型审阅">
+      <div class="viewport-card">
+        <div id="viewport" tabindex="0" aria-label="三维模型视口，可拖动旋转，滚轮缩放">
+          <div class="loading-panel" id="loadingPanel">
+            <span class="loader-ring"></span>
+            <strong>正在读取 TERRA_728.glb</strong>
+            <small>模型、材质与机械动画准备中</small>
+          </div>
+          <div class="error-panel" id="errorPanel" hidden>
+            <strong>模型尚未就绪</strong>
+            <span>模型需经 HTTP 载入：在仓库根目录运行 <code>python -m http.server 8000</code>，再打开 <code>/terra-728-tractor-blender-animation/</code></span>
+            <button class="quiet-button" id="retryButton">重新载入</button>
+          </div>
+          <div class="viewport-tag"><span class="crosshair"></span><span id="cameraTag">HERO / FRONT LEFT</span></div>
+          <div class="viewport-hint">拖动旋转&nbsp;&nbsp;·&nbsp;&nbsp;滚轮缩放&nbsp;&nbsp;·&nbsp;&nbsp;Shift + 拖动平移</div>
+        </div>
+        <div class="viewport-footer">
+          <div class="readout"><span class="readout-label">当前章节</span><strong id="chapterReadout">DRIVELINE / 4WD</strong></div>
+          <div class="readout"><span class="readout-label">帧</span><strong id="frameReadout">001</strong><span class="readout-muted">/ 360</span></div>
+          <div class="readout model-state"><span class="state-pip"></span><strong id="modelState">LIVE MODEL</strong></div>
+        </div>
+      </div>
+
+      <aside class="inspector" aria-label="模型控制面板">
+        <div class="inspector-block camera-block">
+          <div class="section-label"><span>视点</span><span class="micro-code">CAM / 05</span></div>
+          <div class="camera-grid">
+            <button class="camera-button active" data-camera="hero"><span class="camera-icon">↙</span><span>整车</span><small>HERO</small></button>
+            <button class="camera-button" data-camera="front"><span class="camera-icon">◉</span><span>前端</span><small>FRONT</small></button>
+            <button class="camera-button" data-camera="side"><span class="camera-icon">↔</span><span>侧视</span><small>SIDE</small></button>
+            <button class="camera-button" data-camera="rear"><span class="camera-icon">↗</span><span>后悬挂</span><small>REAR</small></button>
+            <button class="camera-button wide" data-camera="cab"><span class="camera-icon">⌂</span><span>驾驶室</span><small>OPERATOR STATION</small></button>
+          </div>
+        </div>
+
+        <div class="inspector-block animation-block">
+          <div class="section-label"><span>机械演示</span><span class="micro-code">ANIM / 360</span></div>
+          <div class="animation-controls">
+            <button class="play-button" id="playButton" aria-label="播放动画"><span class="play-glyph">▶</span><span id="playLabel">播放</span></button>
+            <div class="frame-slider-wrap"><input id="frameSlider" type="range" min="1" max="360" step="1" value="1" aria-label="动画帧"><div class="slider-scale"><span>001</span><span>180</span><span>360</span></div></div>
+          </div>
+          <div class="timeline-rule"><span></span></div>
+          <div class="chapter-list" id="chapterList">
+            <button data-frame="1" class="chapter active"><span class="chapter-number">01</span><span><b>DRIVELINE / 4WD</b><small>驱动桥与轮胎</small></span><i>001</i></button>
+            <button data-frame="98" class="chapter"><span class="chapter-number">02</span><span><b>ACKERMANN STEERING</b><small>前桥转向联动</small></span><i>098</i></button>
+            <button data-frame="180" class="chapter"><span class="chapter-number">03</span><span><b>ENGINE SERVICE</b><small>机罩与发动机舱</small></span><i>180</i></button>
+            <button data-frame="220" class="chapter"><span class="chapter-number">04</span><span><b>CAB ACCESS</b><small>左侧驾驶室门</small></span><i>220</i></button>
+            <button data-frame="280" class="chapter"><span class="chapter-number">05</span><span><b>THREE-POINT LIFT</b><small>后悬挂与液压</small></span><i>280</i></button>
+            <button data-frame="320" class="chapter"><span class="chapter-number">06</span><span><b>OPERATOR CONTROLS</b><small>雨刷与操作台</small></span><i>320</i></button>
+          </div>
+        </div>
+
+        <div class="inspector-block visibility-block">
+          <div class="section-label"><span>结构显示</span><span class="micro-code">VIEW / X-RAY</span></div>
+          <label class="toggle-row"><span><b>线框叠加</b><small>检查曲面与胎块密度</small></span><input id="wireToggle" type="checkbox"><span class="switch" aria-hidden="true"></span></label>
+          <label class="toggle-row"><span><b>隐藏驾驶室顶棚</b><small>观察座椅、扶手与双屏</small></span><input id="roofToggle" type="checkbox"><span class="switch" aria-hidden="true"></span></label>
+        </div>
+
+        <div class="inspector-note"><span class="note-rule"></span><p>参考 Fendt 700 Vario 架构<br>原创概念设计 · 非工程 CAD</p></div>
+      </aside>
+    </section>
+
+    <footer class="page-footer"><span>MODEL / TERRA 728</span><span>AXIS / X FRONT · Y UP · Z LATERAL</span><span>LOCAL REVIEW BUILD 01</span></footer>
+  </main>
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script>
+  <script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const MODEL_URL = './TERRA_728.glb';
+const $ = (id) => document.getElementById(id);
+const viewport = $('viewport');
+const loadingPanel = $('loadingPanel');
+const errorPanel = $('errorPanel');
+const status = $('loadStatus');
+const slider = $('frameSlider');
+const frameReadout = $('frameReadout');
+const chapterReadout = $('chapterReadout');
+const cameraTag = $('cameraTag');
+const playButton = $('playButton');
+const playLabel = $('playLabel');
+
+let renderer, scene, camera, controls, mixer, clipAction, model;
+const timer = new THREE.Timer();
+let playing = false;
+let wireframe = false;
+let frame = 1;
+let roofHidden = false;
+let cameraTween = null;
+const originalMaterials = new Map();
+const originalVisibility = new Map();
+const cameraPresets = {
+  hero: { label: 'HERO / FRONT LEFT', position: [-7.2, 4.9, 7.2], target: [0, 1.32, 0] },
+  front: { label: 'FRONT / SERVICE BAY', position: [-8.3, 3.35, .25], target: [-.45, 1.35, 0] },
+  side: { label: 'SIDE / ELEVATION', position: [.15, 3.15, 9.6], target: [-.1, 1.4, 0] },
+  rear: { label: 'REAR / THREE-POINT LIFT', position: [7.1, 4.05, 6.9], target: [.1, 1.32, 0] },
+  cab: { label: 'CAB / OPERATOR STATION', position: [1.35, 2.72, 2.42], target: [.53, 2.12, 0] },
+};
+const chapters = [
+  [1, 'DRIVELINE / 4WD'], [98, 'ACKERMANN STEERING'], [180, 'ENGINE SERVICE'],
+  [220, 'CAB ACCESS'], [280, 'THREE-POINT LIFT'], [320, 'OPERATOR CONTROLS'],
+];
+
+function setStatus(message, live = false) {
+  status.textContent = message;
+  document.querySelector('.status-dot').style.background = live ? '#54a276' : '#db6d42';
+}
+
+function init() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xd4e3e9);
+  camera = new THREE.PerspectiveCamera(36, 1, .01, 200);
+  camera.position.set(...cameraPresets.hero.position);
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.08;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
+  viewport.appendChild(renderer.domElement);
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = .075;
+  controls.minDistance = .7;
+  controls.maxDistance = 24;
+  controls.target.set(...cameraPresets.hero.target);
+  controls.saveState();
+
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const environment = new RoomEnvironment(renderer);
+  scene.environment = pmrem.fromScene(environment, .04).texture;
+  environment.dispose(); pmrem.dispose();
+
+  const key = new THREE.DirectionalLight(0xffe9d2, 3.4);
+  key.position.set(-5, 10, 6); key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.camera.left = -12; key.shadow.camera.right = 12; key.shadow.camera.top = 12; key.shadow.camera.bottom = -12; scene.add(key);
+  const fill = new THREE.DirectionalLight(0xcfe9ff, 2.2); fill.position.set(5, 6, -7); scene.add(fill);
+  scene.add(new THREE.HemisphereLight(0xe9f5ff, 0x78919c, 1.4));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0xbfcfd6, roughness: .72, metalness: .08 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = -.1; floor.receiveShadow = true; floor.name = 'Review studio floor'; scene.add(floor);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(3.4, 3.42, 96), new THREE.MeshBasicMaterial({ color: 0x8faab4, transparent: true, opacity: .4, side: THREE.DoubleSide }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = -.098; scene.add(ring);
+  window.addEventListener('resize', resize);
+  $('retryButton').addEventListener('click', loadModel);
+  bindControls(); resize(); loadModel(); animate();
+}
+
+function bindControls() {
+  document.querySelectorAll('.camera-button').forEach((button) => button.addEventListener('click', () => {
+    document.querySelectorAll('.camera-button').forEach((b) => b.classList.remove('active'));
+    button.classList.add('active'); setCamera(button.dataset.camera);
+  }));
+  playButton.addEventListener('click', () => { playing = !playing; if (clipAction) clipAction.paused = !playing; updatePlayButton(); });
+  slider.addEventListener('input', () => { seek(Number(slider.value)); playing = false; if (clipAction) clipAction.paused = true; updatePlayButton(); });
+  document.querySelectorAll('.chapter').forEach((button) => button.addEventListener('click', () => { seek(Number(button.dataset.frame)); playing = false; if (clipAction) clipAction.paused = true; updatePlayButton(); }));
+  $('wireToggle').addEventListener('change', (event) => { wireframe = event.target.checked; applyWireframe(); });
+  $('roofToggle').addEventListener('change', (event) => { roofHidden = event.target.checked; applyRoofVisibility(); });
+}
+
+function resize() {
+  const rect = viewport.getBoundingClientRect();
+  camera.aspect = Math.max(rect.width, 1) / Math.max(rect.height, 1); camera.updateProjectionMatrix(); renderer.setSize(rect.width, rect.height, false);
+}
+
+function loadModel() {
+  loadingPanel.hidden = false; errorPanel.hidden = true; setStatus('读取模型中');
+  new GLTFLoader().load(MODEL_URL, (gltf) => {
+    if (model) scene.remove(model);
+    model = gltf.scene; model.name = 'TERRA 728 / imported study'; scene.add(model);
+    model.traverse((object) => {
+      originalVisibility.set(object, object.visible);
+      if (object.name.toLowerCase().includes('studio | seamless floor')) object.visible = false;
+      if (object.isMesh) {
+        originalMaterials.set(object, object.material);
+        object.castShadow = true; object.receiveShadow = true;
+        if (object.material?.isMeshStandardMaterial) object.material.envMapIntensity = 1.15;
+      }
+    });
+    const box = new THREE.Box3().setFromObject(model);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    model.userData.bounds = { center, size };
+    controls.target.copy(new THREE.Vector3(center.x, Math.max(center.y * .77, .9), center.z));
+    mixer = new THREE.AnimationMixer(model);
+    // Blender's glTF export emits one action per rigged component. Flatten those
+    // actions into the single review timeline advertised by this page.
+    const sourceClips = gltf.animations || [];
+    const clip = sourceClips.length ? new THREE.AnimationClip('Mechanical demonstration', -1, sourceClips.flatMap((candidate) => candidate.tracks)) : null;
+    if (clip) { clipAction = mixer.clipAction(clip); clipAction.setLoop(THREE.LoopOnce, 1); clipAction.clampWhenFinished = true; clipAction.play(); clipAction.paused = true; }
+    else setStatus('模型已载入 · 未检测到动画');
+    loadingPanel.hidden = true; setStatus('模型已就绪', true); $('modelState').textContent = clip ? 'LIVE MODEL / ANIMATED' : 'LIVE MODEL';
+    applyWireframe(); applyRoofVisibility(); seek(1); setCamera('hero', true);
+  }, undefined, () => { loadingPanel.hidden = true; errorPanel.hidden = false; setStatus('模型载入失败'); });
+}
+
+function updatePlayButton() { playLabel.textContent = playing ? '暂停' : '播放'; document.querySelector('.play-glyph').textContent = playing ? 'Ⅱ' : '▶'; }
+function seek(value) {
+  frame = Math.max(1, Math.min(360, Math.round(value))); slider.value = String(frame); frameReadout.textContent = String(frame).padStart(3, '0');
+  if (clipAction) { clipAction.time = (frame - 1) / 24; mixer.update(0); }
+  let current = chapters[0]; chapters.forEach((chapter) => { if (frame >= chapter[0]) current = chapter; }); chapterReadout.textContent = current[1];
+  document.querySelectorAll('.chapter').forEach((button) => button.classList.toggle('active', Number(button.dataset.frame) === current[0]));
+  document.querySelector('.timeline-rule span').style.width = `${Math.max(1, frame / 360 * 100)}%`;
+}
+
+function setCamera(name, instant = false) {
+  const preset = cameraPresets[name]; if (!preset) return;
+  cameraTag.textContent = preset.label;
+  const startPosition = camera.position.clone(); const startTarget = controls.target.clone(); const endPosition = new THREE.Vector3(...preset.position); const endTarget = new THREE.Vector3(...preset.target);
+  cameraTween = { start: performance.now(), duration: instant ? 0 : 620, startPosition, startTarget, endPosition, endTarget };
+}
+
+function applyWireframe() { if (!model) return; model.traverse((object) => { if (!object.isMesh) return; if (Array.isArray(object.material)) object.material.forEach((mat) => { mat.wireframe = wireframe; }); else object.material.wireframe = wireframe; }); }
+function isRoofPart(name) { return /^(roof |front roof|rear roof|precision gnss|gnss |radio antenna|radio antenna rubber|beacon|amber warning|hvac inlet)/i.test(name.trim()); }
+function applyRoofVisibility() { if (!model) return; model.traverse((object) => { if (isRoofPart(object.name)) object.visible = !roofHidden; }); }
+
+function animate(now = performance.now()) {
+  requestAnimationFrame(animate);
+  timer.update(now);
+  const delta = Math.min(timer.getDelta(), .05);
+  if (mixer && playing && clipAction) { mixer.update(delta); frame = Math.min(360, 1 + Math.round(clipAction.time * 24)); slider.value = String(frame); frameReadout.textContent = String(frame).padStart(3, '0'); if (clipAction.time >= clipAction.getClip().duration) { playing = false; updatePlayButton(); } }
+  if (cameraTween) {
+    const progress = cameraTween.duration === 0 ? 1 : Math.min(1, (now - cameraTween.start) / cameraTween.duration); const eased = 1 - Math.pow(1 - progress, 3);
+    camera.position.lerpVectors(cameraTween.startPosition, cameraTween.endPosition, eased); controls.target.lerpVectors(cameraTween.startTarget, cameraTween.endTarget, eased); if (progress >= 1) cameraTween = null;
+  }
+  controls.update(); renderer.render(scene, camera);
+}
+
+init();
+</script>
+</body>
+</html>

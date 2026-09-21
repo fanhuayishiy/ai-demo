@@ -1,0 +1,199 @@
+{
+  "status": "Technical and animation checks passed; subjective visual acceptance not performed",
+  "reference": "https://www.fendt.com/int/agricultural-machinery/tractors/fendt-700-vario-gen7",
+  "specification_reference": "https://api.fendt.com/techdata/GB/en/1551551",
+  "fidelity": "Original TERRA 728 concept that borrows the published mechanical architecture of a modern 4WD CVT tractor. Dimensions, pivots and clearances are artistic adjustments, not manufacturer CAD, service drawings or a digital twin.",
+  "blender_version": "5.2.1 LTS",
+  "scene_statistics": {
+    "scene_objects": 1482,
+    "mesh_objects": 1363,
+    "source_vertices": 228217,
+    "materials": 25,
+    "animated_objects": 35,
+    "frame_start": 1,
+    "frame_end": 360,
+    "fps": 24,
+    "build_seconds": 241.13
+  },
+  "nominal_dimensions_m_xyz": {
+    "note": "Frame 1, bonnet closed. X = overall length, Y = overall width, Z = height to roof rack.",
+    "length": 6.082,
+    "width": 2.838,
+    "height": 3.89,
+    "wheelbase": 3.0,
+    "front_tyre_radius": 0.745,
+    "rear_tyre_radius": 1.02
+  },
+  "geometry": {
+    "glb_meshes": 1434,
+    "glb_nodes": 1472,
+    "sampled_frames": [
+      1,
+      98,
+      180,
+      220,
+      280,
+      320,
+      360
+    ],
+    "all_sampled_bounds_finite": true,
+    "nonfinite_accessor_count": 0,
+    "ground_contact": {
+      "model_min_z": 0.000297,
+      "within_2cm": true
+    }
+  },
+  "animation": {
+    "glb_animation_clips": 34,
+    "glb_channel_counts": {
+      "rotation": 33,
+      "translation": 9,
+      "scale": 10
+    },
+    "rig_animated_objects": 35,
+    "assertions_passed": 95,
+    "assertions_total": 95,
+    "errors": [],
+    "moving_subsystems": [
+      "CTRL • Hydraulic implement joystick",
+      "CTRL • Left rear-hinged cab access door",
+      "CTRL • Multifunction drive joystick",
+      "CTRL • Pneumatic suspended operator seat",
+      "CTRL • Rotating warning beacon -1",
+      "CTRL • Rotating warning beacon 1",
+      "CTRL • Steering wheel rotor",
+      "CTRL • Windshield wiper motor",
+      "RIG | Bonnet rear hinge",
+      "RIG | Engine cooling fan",
+      "RIG | Lower lift arm -1",
+      "RIG | Lower lift arm 1",
+      "RIG | Rear PTO output"
+    ],
+    "wheels": [
+      "Front LEFT | rolling axis",
+      "Front RIGHT | rolling axis",
+      "Rear LEFT | rolling axis",
+      "Rear RIGHT | rolling axis"
+    ],
+    "steering_kingpins": [
+      "Front LEFT | Ackermann steering kingpin",
+      "Front RIGHT | Ackermann steering kingpin"
+    ]
+  },
+  "mechanical_consistency": {
+    "child_motion_checks": 19,
+    "max_child_relative_matrix_error": 3.5762786865234375e-07,
+    "note": "relative_matrix_error is the rigidity invariant (must stay ~0); world_matrix_change is intended travel, not an error.",
+    "max_child_world_travel_radians": 3.2142388820648193,
+    "telescopic_joints": {
+      "Bonnet gas lift": {
+        "max_mount_error_m": 1.228781230931777e-07,
+        "max_axis_dot_error": 1.0247458703815937e-07
+      },
+      "Bonnet gas lift.001": {
+        "max_mount_error_m": 1.228781230931777e-07,
+        "max_axis_dot_error": 1.0247458703815937e-07
+      },
+      "Hitch lift ram -1": {
+        "max_mount_error_m": 3.801641063080157e-05,
+        "max_axis_dot_error": 1.30385160446167e-07
+      },
+      "Hitch lift ram 1": {
+        "max_mount_error_m": 3.801192466498583e-05,
+        "max_axis_dot_error": 9.12696123123169e-08
+      }
+    },
+    "bonnet_windshield_intersecting_face_pairs": {
+      "1": 0,
+      "140": 0,
+      "160": 0,
+      "180": 0,
+      "215": 0,
+      "235": 0,
+      "250": 0
+    }
+  },
+  "materials_present": {
+    "paint": true,
+    "graphite": true,
+    "rubber": true,
+    "tread": true,
+    "steel": true,
+    "chrome": true,
+    "rim": true,
+    "label": true
+  },
+  "stills": [
+    {
+      "file": "01_Hero.png",
+      "camera": "CAM | 01 Hero",
+      "frame": 1
+    },
+    {
+      "file": "02_Rear_Three_Point.png",
+      "camera": "CAM | 02 Rear linkage",
+      "frame": 280
+    },
+    {
+      "file": "03_Engine_Bay.png",
+      "camera": "CAM | 03 Service bay",
+      "frame": 200
+    },
+    {
+      "file": "04_Cab_Interior.png",
+      "camera": "CAM | 04 Operator station",
+      "frame": 220,
+      "roof_hidden": true
+    }
+  ],
+  "viewer_checks": [
+    "Five camera presets, six chapter jumps, 1-360 frame scrubbing and both x-ray toggles exercised in a browser.",
+    "Loading and error overlays verified to hide after a successful load.",
+    "Roof-hide toggle matches 85 of 1472 GLB nodes, so it demonstrably acts on real geometry.",
+    "Page console clean after load: no errors and no deprecation warnings under three.js r186.",
+    "Playback advanced 001 to 038 in 1.5 s (24 fps) while the tab was foreground; an automated tab throttles requestAnimationFrame once hidden, so final playback smoothness still wants a human eye."
+  ],
+  "files": [
+    {
+      "name": "01_Hero.png",
+      "bytes": 2111287,
+      "sha256": "4321558e53af07c320a616dfe55da2d39a2cc9c26fe896df1eb20985ccd6ed1d"
+    },
+    {
+      "name": "02_Rear_Three_Point.png",
+      "bytes": 2257493,
+      "sha256": "c6bc39c645ecbe98c17ffbdc8919da6b944163c5a56c8353f17e097cf4077ce8"
+    },
+    {
+      "name": "03_Engine_Bay.png",
+      "bytes": 2556991,
+      "sha256": "b626f0571a0972217b8cf4d715bce308d620318b64e1ece1bf51a054b951dbe5"
+    },
+    {
+      "name": "04_Cab_Interior.png",
+      "bytes": 2321696,
+      "sha256": "e626f5ed411c7ebbce72c47aebeb77821644194fffe88244c781d9a77202fa99"
+    },
+    {
+      "name": "README.md",
+      "bytes": 8995,
+      "sha256": "e4edcba160fd54f595937a6ccf28001c05dbba5e30a0032904d5f7820edac8a2"
+    },
+    {
+      "name": "TERRA_728.blend",
+      "bytes": 3505309,
+      "sha256": "eb65051b7473c19bfbeff26e2b049e0c34257496db2eb65e43972913ca0cdcef"
+    },
+    {
+      "name": "TERRA_728.glb",
+      "bytes": 29003272,
+      "sha256": "18b1966e7c5b53d971d49032aed06709ce066129c04be25ee6f6490931f1c982"
+    },
+    {
+      "name": "index.html",
+      "bytes": 26670,
+      "sha256": "f417f9f84ea2aee0b8f95dd739cb9445bf73c290c65aad7ebcc2b72c32439e9f"
+    }
+  ],
+  "visual_review_limitation": "Numerical assertions and Cycles stills are automated checks, not a substitute for human review. Opening angles, speeds and choreography are demonstration design and must not be read as manufacturer performance data."
+}
