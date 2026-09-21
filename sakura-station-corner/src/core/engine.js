@@ -182,7 +182,7 @@ export function createEngine({ canvas, quality = {} } = {}) {
       const mem = renderer.info.memory;
       frameLog.push({
         f: framesTotal, t: Math.round(performance.now() - _t0), ms: Math.round(frameMs),
-        c: frameCalls, sh: didShadow ? 1 : 0, geo: mem.geometries, tex: mem.textures,
+        c: frameCalls, tr: frameTris, sh: didShadow ? 1 : 0, geo: mem.geometries, tex: mem.textures,
         prog: renderer.info.programs ? renderer.info.programs.length : 0,
       });
     }

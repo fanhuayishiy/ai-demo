@@ -24,7 +24,11 @@ export function downgrade(name) {
 }
 
 export function qualityOf(name) {
-  return TIERS[name] || TIERS.hi;
+  const q = TIERS[name] || TIERS.hi;
+  // ?lodpx=N：单独拨「投影像素剔除阈值」，用来量 阈值 ↔ 帧率 ↔ 画面 这条曲线，
+  // 不动 dpr / 阴影 / 描边距离。装配期（installLod）与降档期（applyQuality）都读这一份。
+  const px = Number(typeof location !== 'undefined' ? new URLSearchParams(location.search).get('lodpx') : 0);
+  return px > 0 ? { ...q, lodPx: px } : q;
 }
 
 /**
