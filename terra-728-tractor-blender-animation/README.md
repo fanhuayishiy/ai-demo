@@ -1,10 +1,16 @@
 # TERRA 728 · 现代四驱拖拉机精细建模与机械动画研究
 
-主生成提示：去学习一下blender怎么用，我下载好blender了，你配置好后，先调研一下拖拉机，作为参考，然后精细建模，我的标准很高，内外配饰都要有动画。
-
 成品是一台虚构命名的 **TERRA 728** 大型四驱 CVT 拖拉机概念模型：以现代农机的公开机械架构为参考，用 Blender 5.2.1 程序化建模，交付 1–360 帧、24 fps 的 15 秒机械演示动画，以及可编辑 `.blend`、通用 `.glb`、四张 Cycles 渲染图和一套浏览器交互查看器。
 
+> 在线预览：<https://fanhuayishiy.github.io/ai-demo/terra-728-tractor-blender-animation/>
+>
+> 本地查看需在仓库根目录运行 `python -m http.server 8000` 后打开 `http://localhost:8000/terra-728-tractor-blender-animation/`：GLB 与 ES Module 必须经 HTTP 载入，直接双击 `index.html` 会被浏览器拦截。
+
 模型**不是**任何厂商的认证复刻、工程装配模型或数字孪生。轴距、轮胎半径、车顶高度与全部开合角度、速度、时序均为艺术调整和演示设计，不得用于选型、制造、驾驶培训或安全校验。
+
+## 主生成提示（原文）
+
+> 去学习一下blender怎么用，我下载好blender了，你配置好后，先调研一下拖拉机，作为参考，然后精细建模，我的标准很高，内外配饰都要有动画。
 
 ## 参考调研
 
