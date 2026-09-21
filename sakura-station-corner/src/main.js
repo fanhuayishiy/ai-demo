@@ -7,6 +7,7 @@ import { TRACE } from './core/kit.js';
 import { buildWorld } from './world/index.js';
 import { registerMotion } from './motion/index.js';
 import { installLod } from './core/lod.js';
+import { pickTier, qualityOf, installAdapt } from './core/quality.js';
 import { installWeather } from './weather/index.js';
 
 /**
@@ -31,7 +32,12 @@ async function boot() {
     timings[key + '_frames'] = engine.frames;
   };
 
-  const engine = createEngine({ canvas });
+  // 设备分档：createEngine 过去完全不接 quality，任何机器都按 dpr 上限 2 + 2048² 阴影跑。
+  // 先按设备信号猜一档，装配完成后 adapt() 再用真实帧率向下修（永不升档，避免画质呼吸）。
+  const tier = pickTier();
+  const q = qualityOf(tier);
+  const engine = createEngine({ canvas, quality: q });
+  engine.quality = q;
   // 尽早暴露：装配分批让出主线程，工具（以及调试者）需要能在建图过程中就轮询状态
   window.__DIORAMA__ = engine;
   engine.trace = TRACE;   // ?trace=1 时才有内容，零 UI 场景下耗时剖析的唯一出口
@@ -51,7 +57,7 @@ async function boot() {
   // 默认 18px 时近景仍有 ~10200 次提交；抬到 26px（≈ 画面高度 2.9%，2 cm 的标签在 14 m 外）
   // 实测 store 100.8→79.8 ms、interior 109→85.2 ms、hero 73.3→64.4 ms。
   // 隐藏的是「屏幕上已经小于 26 像素」的零件，拉近即逐件回归 —— 模型本身没有被简化。
-  engine.lod = installLod(engine, world, { pxThreshold: 26, hullRange: 10, interval: 0.12 });
+  engine.lod = installLod(engine, world, { pxThreshold: q.lodPx, hullRange: q.hullRange, interval: 0.12 });
   engine.markProgress(BOOT_PHASES.lod, '整理可见性');
   mark('lod');
   await registerMotion(engine, world);
@@ -62,6 +68,9 @@ async function boot() {
   engine.setWeather = (n) => engine.weather && engine.weather.set(n);
   engine.markProgress(BOOT_PHASES.weather, '调好天光');
   mark('weather');
+  // 猜错的档位由真实帧率兜底：装配完成、画面稳定 3 秒后才开始数帧，
+  // 不达标就单向降一档（dpr / 阴影贴图 / LOD 阈值一起动），最多降到 lo。
+  installAdapt(engine);
 
   // 引擎从创建起就在跑（ready = 已渲染 >2 帧），所以 ready 只代表「画面活着」，
   // 不代表「世界建完」。装配是分批让出主线程的，工具必须等这个标记再截图。

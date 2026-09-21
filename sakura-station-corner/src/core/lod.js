@@ -186,6 +186,19 @@ export function installLod(engine, root, opts = {}) {
       }
     },
     ranges: cfg,
+    /**
+     * 换档用：改像素阈值与描边距离。
+     * 必须把 g.cut 复位成 -1，否则滞回会把上一档的判定结果继续延用，
+     * 表现为「降档了但要转一下镜头才生效」。
+     */
+    setThresholds(o = {}) {
+      Object.assign(cfg, o);
+      for (const g of groups) {
+        g.cut = -1;
+        g.hullOn = true;
+      }
+      acc = cfg.interval;
+    },
   };
 }
 

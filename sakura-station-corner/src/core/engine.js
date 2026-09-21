@@ -243,6 +243,23 @@ export function createEngine({ canvas, quality = {} } = {}) {
       if (w && h) { vw = w; vh = h; }
       onResize();
     },
+    /**
+     * 换档用：改渲染分辨率。
+     * 必须走 onResize()，因为 composer / 边缘检测的 uResolution 都按绘制缓冲尺寸建，
+     * 只调 setPixelRatio 会让 SMAA 与描边在旧分辨率上采样。
+     */
+    setPixelRatio(v) {
+      renderer.setPixelRatio(v);
+      onResize();
+    },
+    /** 换档用：重设日光阴影贴图尺寸，并丢掉已分配的旧贴图让它按新尺寸重建 */
+    shadowMapSize(n) {
+      if (!light.sun?.shadow) return;
+      light.sun.shadow.mapSize.set(n, n);
+      const m = light.sun.shadow.map;
+      if (m) { m.dispose(); light.sun.shadow.map = null; }
+      renderer.shadowMap.needsUpdate = true;
+    },
     get ready() {
       return framesTotal > 2;
     },
