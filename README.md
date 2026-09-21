@@ -17,6 +17,7 @@ https://fanhuayishiy.github.io/ai-demo
 | [voxel-construction-site](./voxel-construction-site/) | 体素微缩建筑工地沙盘「方寸之间」（Three.js r160 完全离线单 HTML） | 可运行 |
 | [voxel-ramen-stall](./voxel-ramen-stall/) | 体素微缩深夜拉面摊沙盘「深夜拉面摊」（Three.js r160 完全离线单 HTML） | 可运行 |
 | [sakura-station-corner](./sakura-station-corner/) | 樱花街角 · 电车与便利店微缩三维沙盘（Three.js r186，102 个独立资产模块，五档天气，画面无文字无浮层） | 可交互 |
+| [sanfang-qixiang-atlas](./sanfang-qixiang-atlas/) | 三坊七巷 · 坊巷漫游：基于真实地图的 3D 古城导览，支持景点搜索、滚轮缩放、点击飞行与空中漫游 | [在线预览](https://fanhuayishiy.github.io/ai-demo/sanfang-qixiang-atlas/dist/) |
 
 ---
 
@@ -591,6 +592,69 @@ habitat-interactive-home/
 ```
 
 户型与设备均为原创示例，不代表真实测绘，也不会连接真实家电；后续接入真实户型时，可替换 `src/scene/house.ts` 的空间几何并保留设备 ID 与控制层。
+
+---
+
+---
+
+## sanfang-qixiang-atlas — 三坊七巷 · 坊巷漫游
+
+在线预览：<https://fanhuayishiy.github.io/ai-demo/sanfang-qixiang-atlas/dist/>
+
+### 主生成提示词（原文）
+
+> 根据网上的地图，实现一个3D的三坊七巷旅游全景图，要求可以交互、滚轮缩放，点击某个地点后，可以自动飞过去。
+
+基于 OpenStreetMap 真实街巷与建筑平面轮廓的交互式三维文化导览。场景以白墙黛瓦、马鞍墙、屋脊、窗棂、院落与榕树表现福州古城肌理，支持景点搜索和点击飞行；建筑高度、屋顶形式及装饰是风格化复原，不是摄影全景或测绘模型。
+
+### 功能亮点
+
+- 真实地图数据：901 个建筑、107 段道路、294 个庭院内孔、19 个导览地点。
+- 左键拖拽旋转、右键拖拽平移、滚轮缩放；点击地图标签或左侧景点目录后相机平滑飞往地点。
+- 景点搜索与筛选，3D / 俯瞰视角、朝北、恢复全景、标签显隐和日夜切换。
+- 五站空中漫游，支持暂停、继续、手动下一站和结束；适配桌面、手机竖屏及低高度横屏。
+- 页面显示 © OpenStreetMap contributors 和 ODbL 许可入口；近似坐标显示“位置示意”。
+
+### 技术栈
+
+| 依赖 | 用途 |
+| --- | --- |
+| Three.js 0.180.x | 3D 建模、轨道相机、阴影、材质和标签投影 |
+| Vite 6.x | 本地开发、构建静态产物 |
+| 原生 JavaScript / CSS | 交互状态、响应式导览界面 |
+
+### 运行方式
+
+Pages 托管已提交的 `dist/`，直接打开上方在线预览即可。重新构建：
+
+```bash
+cd sanfang-qixiang-atlas
+npm ci
+npm run build
+npm run preview
+```
+
+本地静态验证也可以从仓库根目录运行 `python3 -m http.server 8123`，然后访问 `/sanfang-qixiang-atlas/dist/`。
+
+### 目录结构
+
+```text
+sanfang-qixiang-atlas/
+├── index.html              # 导览入口
+├── src/main.js             # 界面、相机飞行、搜索、路线和标签
+├── src/district.js         # OSM 轮廓、庭院、屋顶、道路和植被
+├── src/style.css           # 响应式视觉系统
+├── public/data/map.geojson # OSM 街巷与建筑数据
+├── public/data/places.json # 景点、来源和坐标精度
+├── public/data/prepare_map.py
+├── public/sources.md       # 数据来源与许可
+├── dist/                   # GitHub Pages 静态产物
+└── README.md               # 项目说明
+```
+
+### 数据边界与验证
+
+坐标使用 WGS84，原点为 `[119.2916, 26.085]`。小黄楼、二梅书屋和光禄吟台是公开地址对应街段的近似位置，不表示入口实测坐标；虚线路线是参观顺序，不是步行导航。已验证 `npm run build`、生产静态资源加载、桌面/竖屏/低高度横屏布局、滚轮缩放、拖拽旋转、搜索筛选、点击飞行、俯瞰日夜切换与漫游控制。
 
 ---
 
