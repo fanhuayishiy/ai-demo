@@ -2,14 +2,13 @@
 
 AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运行的完整作品，后续会持续新增其他项目。
 
-[![Open Source](https://img.shields.io/badge/open%20source-MIT-8fc79b?style=flat-square)](./LICENSE) [![LINUX DO](https://img.shields.io/badge/community-LINUX%20DO-7ea6c4?style=flat-square)](https://linux.do/)
+[![Open Source](https://img.shields.io/badge/open%20source-MIT-8fc79b?style=flat-square)](./LICENSE)
 
-本仓库以 MIT License 开源，欢迎复用、改进和提交新的交互式 Demo。社区交流与友链：[LINUX DO 社区](https://linux.do/)。
+本仓库以 MIT License 开源，欢迎复用、改进和提交新的交互式 Demo。
 
 ## 开源说明
 
 - 许可证：[MIT License](./LICENSE)
-- 社区友链：[LINUX DO](https://linux.do/)
 - 项目首页：[AI Demo Collection](https://fanhuayishiy.github.io/ai-demo)
 
 ## 项目预览地址
@@ -671,3 +670,7 @@ sanfang-qixiang-atlas/
 ## 新增项目
 
 后续新项目直接在根目录建独立文件夹，并在上方「项目列表」表格中补一行即可。建议每个项目自带 README 或在文件夹内说明运行方式。
+
+---
+
+友链：[LINUX DO 社区](https://linux.do/)。
