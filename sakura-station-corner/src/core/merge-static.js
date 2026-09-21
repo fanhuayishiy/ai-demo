@@ -102,8 +102,6 @@ export function mergeStatic(world, o = {}) {
           const m = c.material;
           if (!m) { bump('noMaterial'); continue; }
           if (Array.isArray(m)) { bump('materialArray'); continue; }
-          if (m.transparent) { bump('transparent'); continue; }
-          if (m.blending !== THREE.NormalBlending) { bump('blending'); continue; }
           if (SKIP_NAME.test(c.name || '')) { bump('skipName'); continue; }
           if (isAnimatedFlagged(c.userData)) { bump('flagged'); continue; }
           if (animated(c, unit.parent)) { bump('animated'); continue; }
@@ -114,6 +112,17 @@ export function mergeStatic(world, o = {}) {
           if (!sig) { bump('instancedAttr'); continue; }
           const s = worldSize(c, g);
           if (!(s > 0)) { bump('zeroSize'); continue; }
+          if (m.transparent || m.blending !== THREE.NormalBlending) {
+            // 透明件不并。试过并（本文件的历史版本）：
+            //   · 只查「同桶内互不重叠」→ store 省 700 次，但跨材质互相叠着的件（吊牌的印刷膜
+            //     与它的玻璃面）排序 z 一变就可能翻面；
+            //   · 补上「与任何其它透明件都不重叠」的严格守卫 → 翻面风险消掉了（钉住动画时间
+            //     逐像素复测 0.01–0.08），但收益塌到 −75～−125 次；
+            //   · 而为 7430 个零件克隆+拼接几何要多花约 1.2 s 装配时间。
+            // 2% 的提交换 1.2 s 启动 + 一类新的排序风险，不划算，撤。
+            bump('transparent');
+            continue;
+          }
           cands.push({ n: c, g, m, sig, s });
           continue;
         }
@@ -145,45 +154,52 @@ export function mergeStatic(world, o = {}) {
 
     inv.copy(unit.matrixWorld).invert();
     let made = 0;
-    for (const b of buckets.values()) {
-      if (b.items.length < min) { stats.partsKept += b.items.length; continue; }
+    /** 把一组同材质零件烘进一个 buffer。返回 false = mergeGeometries 拒收（属性布局不一致）。 */
+    const emit = (items, mat, lodSize) => {
       const src = [];
-      for (const it of b.items) {
+      for (const it of items) {
         bake.multiplyMatrices(inv, it.n.matrixWorld);
         src.push(it.g.clone().applyMatrix4(bake));
       }
       const geo = mergeGeometries(src, false);
       if (!geo) {
-        stats.failed += b.items.length;
-        stats.partsKept += b.items.length;
         for (const s of src) s.dispose();
-        continue;
+        stats.failed += items.length;
+        return false;
       }
-      stats.partsMerged += b.items.length;
-      made++;
       const idx = geo.index ? geo.index.count : geo.attributes.position.count;
       stats.tris += idx / 3;
       stats.verts += geo.attributes.position.count;
       geo.computeBoundingSphere();
       geo.computeBoundingBox();
-      geo.name = 'merged:' + (b.items[0].n.name || unit.name);
-      const mesh = new THREE.Mesh(geo, b.mat);
+      geo.name = 'merged:' + (items[0].n.name || unit.name);
+      const mesh = new THREE.Mesh(geo, mat);
       // 几何已烘到资产局部坐标系 → 合并体自身是恒等变换，不需要任何逐帧矩阵更新。
       mesh.matrixAutoUpdate = false;
       mesh.matrixWorldNeedsUpdate = true;
-      mesh.name = (unit.name || 'unit') + '#' + b.items.length;
-      mesh.renderOrder = b.items[0].n.renderOrder;
-      mesh.castShadow = b.items[0].n.castShadow;
-      mesh.receiveShadow = b.items[0].n.receiveShadow;
-      mesh.frustumCulled = b.items[0].n.frustumCulled;
-      mesh.layers.mask = b.items[0].n.layers.mask;
-      mesh.userData = { mergedParts: b.items.length, lodSize: b.size };
+      mesh.name = (unit.name || 'unit') + '#' + items.length;
+      mesh.renderOrder = items[0].n.renderOrder;
+      mesh.castShadow = items[0].n.castShadow;
+      mesh.receiveShadow = items[0].n.receiveShadow;
+      mesh.frustumCulled = items[0].n.frustumCulled;
+      mesh.layers.mask = items[0].n.layers.mask;
+      mesh.userData = { mergedParts: items.length, lodSize };
       unit.add(mesh);
-      for (const it of b.items) {
+      for (const it of items) {
         if (it.n.parent) it.n.parent.remove(it.n);
         it.n.geometry = null;                                     // 防止误用，真实几何仍被缓存持有
       }
+      stats.partsMerged += items.length;
+      return true;
+    };
+
+    for (const b of buckets.values()) {
+      if (b.items.length < min) { stats.partsKept += b.items.length; continue; }
+      if (emit(b.items, b.mat, b.size)) made++;
+      else stats.partsKept += b.items.length;
     }
+
+    /* ---------- 透明件通道：见上面 bump('transparent') 处记录的实测，已撤 ---------- */
     stats.mergedBuffers += made;
     // 合并体是新塞进来的子节点，而 markStatic 之后父链的 matrixWorldAutoUpdate 全是 false ——
     // 渲染循环里那次 scene.updateMatrixWorld() 摸不到它们。这里强制烘一次，

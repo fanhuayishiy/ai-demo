@@ -102,6 +102,10 @@ for (const wx of WEATHERS) {
   for (const v of VIEWS) {
     await page.evaluate((name) => window.__DIORAMA__.setView(name), v);
     await page.waitForTimeout(WAIT);
+    // --time=3.4 把动画时间钉住再拍：UV 流光 / 摆动都是墙钟驱动的，
+    // 不钉住的话任何两次运行之间这些表面都对不上，逐像素比对就成了比谁跑得快。
+    const tp = arg('time', '');
+    if (tp) await page.evaluate((t) => window.__DIORAMA__.setAnimTime(t), Number(tp));
     const file = `${OUT}/${wx ? v + '-' + wx : v}.png`;
     await page.screenshot({ path: file });
     console.log('shot ->', file);

@@ -25,6 +25,7 @@ const head = await page.evaluate(() => {
   return {
     tier: e.quality?.name,
     shapes: e.shapeStats || null,
+    sway: e.swayGpu || null,
     batches: e.batchStats || null,
     stats: s && { ...s, top: s.top.slice(0, 12) },
     objects: (() => { let mesh = 0, im = 0, plain = 0, merged = 0; e.scene.traverse((o) => { if (!o.isMesh) return; mesh++; if (o.isInstancedMesh) im++; else plain++; if (o.userData?.mergedParts) merged += o.userData.mergedParts; }); return { mesh, instanced: im, plain, mergedParts: merged }; })(),
@@ -34,6 +35,7 @@ const head = await page.evaluate(() => {
 console.log('档位', head.tier, ' 形状归一', head.shapes ? `Mesh ${head.shapes.meshes} + 批次 ${head.shapes.batches}（实例 ${head.shapes.instances}）→ ${head.shapes.protos} 个原型，落选 ${head.shapes.skipped}` : '（关闭）');
 console.log('  跨资产并批', head.batches ? `并了 ${head.batches.buckets} 桶，省 ${head.batches.saved} 次提交` : '（关闭或未命中）');
 console.log('  合并', head.stats ? `${head.stats.mergedBuffers} 个 buffer，吸收 ${head.stats.partsMerged} 件（候选 ${head.stats.cands}），未并 ${head.stats.partsKept}，失败 ${head.stats.failed}，耗时 ${head.stats.ms} ms` : '（关闭）');
+console.log('  摆动合并', head.sway ? `${head.sway.tookFrom} 批 → ${head.sway.batches} 批（实例 ${head.sway.instances}，骨骼 ${head.sway.groups}）` : '（关闭）');
 if (head.stats) {
   console.log('  不并原因：', JSON.stringify(head.stats.skip));
   console.log('  合并体三角形', Math.round(head.stats.tris).toLocaleString('en'), ' 顶点', Math.round(head.stats.verts).toLocaleString('en'));

@@ -7,6 +7,7 @@ import { TRACE } from './core/kit.js';
 import { buildWorld } from './world/index.js';
 import { registerMotion } from './motion/index.js';
 import { installLod } from './core/lod.js';
+import { installGpuSway } from './core/sway-gpu.js';
 import { pickTier, qualityOf, installAdapt } from './core/quality.js';
 import { installWeather } from './weather/index.js';
 
@@ -50,6 +51,9 @@ async function boot() {
   const world = await buildWorld(engine);
   engine.add(world);
   mark('world');
+  // 摆动件合并：把枝条组里的花瓣批次抽出来按树合成一个批次，摆动改由顶点着色器应用
+  // （动画仍在 CPU 的 257 个组上）。必须在 installLod 之前 —— LOD 要看见合并后的批次。
+  engine.swayGpu = installGpuSway(engine, world);
 
   // LOD 阈值：本场景有 ~3.2 万个独立 Mesh（每件道具单独建模、不合并几何），
   // 实测 Chrome/ANGLE 下每个 draw call 约 8.3 µs 的 CPU 提交成本，且 85% 的帧时间就是提交

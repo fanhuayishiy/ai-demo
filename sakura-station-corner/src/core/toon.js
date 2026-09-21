@@ -142,6 +142,67 @@ function windMain(o) {
 }
 `;
 }
+/**
+ * 摆动件 GPU 合并的着色器侧。
+ *
+ * 原理（代数恒等，不需要在 GLSL 里复刻风的公式）：
+ *   摆动组 g 的静态世界矩阵 W_s、当前世界矩阵 W_a，令 **B = W_a · W_s⁻¹**；
+ *   某顶点静止时的世界位置 x = W_s·R·p，则摆动后的位置 = W_a·R·p = B·x。
+ *   B 含平移（绕枝根的旋转本身就是「旋转 + 平移」的仿射阵），所以乘一次就够。
+ *   祖先组的运动已经含在 W_a / W_s 里 → **每个实例只需一个骨骼号**，与链深无关。
+ *   动画仍然跑在 CPU 上（全场 257 个组、每帧 257 次矩阵乘），搬进 GPU 的只是「应用变换」。
+ */
+const SWAY_DECL = /* glsl */`
+#ifdef USE_INSTANCING
+#endif
+uniform sampler2D uSwayBones;
+uniform vec2 uSwayTexel;
+attribute float aSwayBone;
+mat4 swayBone(float i) {
+  float x = i * 4.0;
+  return mat4(
+    texture2D( uSwayBones, vec2( ( x + 0.5 ) * uSwayTexel.x, 0.5 ) ),
+    texture2D( uSwayBones, vec2( ( x + 1.5 ) * uSwayTexel.x, 0.5 ) ),
+    texture2D( uSwayBones, vec2( ( x + 2.5 ) * uSwayTexel.x, 0.5 ) ),
+    texture2D( uSwayBones, vec2( ( x + 3.5 ) * uSwayTexel.x, 0.5 ) )
+  );
+}
+`;
+
+/** 替换 project_vertex：世界位置算完再乘 B（modelViewMatrix 这条路会把 B 挤到错误的一侧） */
+const SWAY_PROJECT = /* glsl */`
+vec4 swayWorld = vec4( transformed, 1.0 );
+#ifdef USE_INSTANCING
+  swayWorld = instanceMatrix * swayWorld;
+#endif
+swayWorld = modelMatrix * swayWorld;
+swayWorld = swayBone( aSwayBone ) * swayWorld;
+vec4 mvPosition = viewMatrix * swayWorld;
+gl_Position = projectionMatrix * mvPosition;
+`;
+
+/** 替换 worldpos_vertex：阴影 / 环境采样用的世界位置要走同一条变换，否则影子停在静止姿态 */
+const SWAY_WORLDPOS = /* glsl */`
+#if defined( USE_ENVMAP ) || defined( DISTANCE ) || defined ( USE_SHADOWMAP ) || defined ( USE_TRANSMISSION ) || NUM_SPOT_LIGHT_COORDS > 0
+  vec4 worldPosition = vec4( transformed, 1.0 );
+  #ifdef USE_INSTANCING
+    worldPosition = instanceMatrix * worldPosition;
+  #endif
+  worldPosition = modelMatrix * worldPosition;
+  worldPosition = swayBone( aSwayBone ) * worldPosition;
+#endif
+`;
+
+/** 把摆动补丁打到任意一个自带 project_vertex 的顶点着色器上（MeshDepthMaterial 也走这个） */
+export function patchSwayShader(shader, bones = null, texel = null) {
+  shader.uniforms.uSwayBones = { value: bones };
+  shader.uniforms.uSwayTexel = { value: texel || new THREE.Vector2(0, 0) };
+  shader.vertexShader = shader.vertexShader
+    .replace('#include <common>', '#include <common>\n' + SWAY_DECL)
+    .replace('#include <project_vertex>', SWAY_PROJECT)
+    .replace('#include <worldpos_vertex>', SWAY_WORLDPOS);
+}
+
 function pulsePars(o) {
   return o.pulse ? `uniform vec4 uPulse;\nvarying float vPulse;\n` : '';
 }
@@ -198,18 +259,27 @@ function inject(mat, o) {
   }
   if (o.pulse) uniforms.uPulse = { value: new THREE.Vector4(1, 1, 1, 1) };
   if (o.scroll) uniforms.uScroll = { value: new THREE.Vector2(o.scroll[0], o.scroll[1]) };
+  if (o.swayBones) {
+    uniforms.uSwayBones = { value: null };
+    uniforms.uSwayTexel = { value: new THREE.Vector2(0, 0) };
+  }
 
   mat.userData.u = uniforms;
-  const tag = `${o.wind ? 'W' : ''}${o.pulse ? 'P' : ''}${o.scroll ? 'S' : ''}`;
+  const tag = `${o.wind ? 'W' : ''}${o.pulse ? 'P' : ''}${o.scroll ? 'S' : ''}${o.swayBones ? 'Y' : ''}`;
   mat.customProgramCacheKey = () => 'toon' + tag;
 
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
 
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', `#include <common>\nuniform float uTime;\n${windPars(o)}${pulsePars(o)}${scrollPars(o)}`)
+      .replace('#include <common>', `#include <common>\nuniform float uTime;\n${windPars(o)}${pulsePars(o)}${scrollPars(o)}${o.swayBones ? SWAY_DECL : ''}`)
       .replace('#include <begin_vertex>', `${windMain(o)}${pulseMain(o)}`)
       .replace('#include <uv_vertex>', `#include <uv_vertex>\n${scrollMain(o)}`);
+    if (o.swayBones) {
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <project_vertex>', SWAY_PROJECT)
+        .replace('#include <worldpos_vertex>', SWAY_WORLDPOS);
+    }
 
     const dither = (o.dither ?? 0.010).toFixed(4);
     shader.fragmentShader = shader.fragmentShader

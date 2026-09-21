@@ -225,6 +225,16 @@ export function createEngine({ canvas, quality = {} } = {}) {
       shadowTick = 999;
       camStill = 999;
     },
+    /**
+     * 把动画时间钉到 t 秒并跑一遍所有 updater（dt=0，只重算姿态不推进状态）。
+     * 存在的理由：摆动件合并必须证明「和 CPU 逐组转动是同一个姿态」，
+     * 而 rAF 的 dt 是墙钟量来的，两次运行对不上 —— 钉住 t 之后两侧截图才能逐像素比。
+     */
+    setAnimTime(t) {
+      U.time.value = t;
+      syncSunToView(camera);
+      for (const fn of updaters) fn(0, t, { camera, scene, renderer, rig, dist: camera.position.distanceTo(rig.controls.target) });
+    },
     // main.js 用 `engine.built = true` 标记装配完成。它同时是阴影闸门的开关：
     // 装配期间相机本来就是静止的，若不挡住，每次让帧都会被塞进一次全场景阴影 pass。
     get built() {
