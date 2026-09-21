@@ -2,7 +2,7 @@
 
 一个可以环绕探索、逐个控制灯光与家电的 3D 家庭前端项目。以温暖木色、低饱和绿色和清晰的空间层次组织交互，使用 React、TypeScript、Three.js 和 Vite 实现。
 
-在线预览：<https://fanhuayishiy.github.io/ai-demo/habitat-interactive-home/>
+在线预览：<https://fanhuayishiy.github.io/ai-demo/habitat-interactive-home/dist/>
 
 ## 运行
 
