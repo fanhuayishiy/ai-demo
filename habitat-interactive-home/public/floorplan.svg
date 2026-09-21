@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="940" viewBox="0 0 1120 940" role="img" aria-labelledby="title desc">
+  <title id="title">栖居 Habitat · 108 平方米示例户型</title>
+  <desc id="desc">12 米乘 9 米的原创示例户型，包含主卧、书房、客厅、餐厨、卫浴和阳台。分区和交互三维模型的平面坐标一致。</desc>
+  <defs>
+    <pattern id="wood" width="72" height="18" patternUnits="userSpaceOnUse"><rect width="72" height="18" fill="#e9ddcd"/><path d="M0 18H72M36 0V18" stroke="#d9c9b6" stroke-width=".7"/></pattern>
+    <pattern id="tile" width="30" height="30" patternUnits="userSpaceOnUse"><rect width="30" height="30" fill="#e3e6df"/><path d="M0 30V0H30" fill="none" stroke="#cbd1c7" stroke-width=".7"/></pattern>
+    <style>text{font-family:Inter,'Segoe UI','Microsoft YaHei',sans-serif}.room{font-size:19px;fill:#35463c;font-weight:600;letter-spacing:2px}.sub{font-size:12px;fill:#7b847c}.dim{font-size:13px;fill:#6a756e}.furniture{stroke:#a99e90;stroke-width:1.2}.rule{stroke:#a1aba3;stroke-width:1;fill:none}</style>
+  </defs>
+  <rect width="1120" height="940" fill="#f6f5ee"/>
+  <text x="90" y="75" font-size="15" font-weight="600" fill="#668173" letter-spacing="6">HABITAT / 栖居</text>
+  <text x="90" y="124" font-size="34" font-weight="600" fill="#273e31">家的另一种视角</text>
+  <text x="90" y="153" font-size="13" fill="#879087">ORIGINAL CONCEPT FLOOR PLAN · 108 m²</text>
+  <text x="1030" y="112" text-anchor="end" font-size="14" fill="#6d8172">示例户型 / 01</text>
+  <path d="M90 177H1030" stroke="#dedfd5"/>
+  <!-- Model coordinates: x = -6…6 m, z = -4.5…4.5 m; scale 60 px/m. -->
+  <g transform="translate(180 265)">
+    <rect x="0" y="0" width="240" height="306" fill="url(#wood)"/>
+    <rect x="0" y="306" width="240" height="234" fill="url(#tile)"/>
+    <rect x="240" y="0" width="258" height="222" fill="url(#wood)"/>
+    <rect x="240" y="222" width="258" height="318" fill="url(#wood)"/>
+    <rect x="498" y="0" width="222" height="420" fill="#e9e5dc"/>
+    <rect x="498" y="420" width="222" height="120" fill="url(#tile)"/>
+    <!-- Furnishings: bed, wardrobe, desk, sofa, media, kitchen, dining, wet area. -->
+    <g class="furniture">
+      <rect x="47" y="30" width="145" height="173" rx="6" fill="#f7f3e9"/>
+      <rect x="47" y="20" width="145" height="22" rx="4" fill="#a7a68f"/>
+      <rect x="56" y="45" width="59" height="36" rx="7" fill="#fffdf5"/>
+      <rect x="124" y="45" width="59" height="36" rx="7" fill="#fffdf5"/>
+      <path d="M48 136H191V199H48Z" fill="#b6beaa"/>
+      <rect x="16" y="39" width="24" height="34" rx="3" fill="#c9b295"/>
+      <rect x="199" y="39" width="24" height="34" rx="3" fill="#c9b295"/>
+      <rect x="37" y="267" width="123" height="32" rx="2" fill="#cabca8"/>
+      <path d="M78 270V295M120 270V295" fill="none"/>
+      <rect x="271" y="13" width="189" height="43" rx="4" fill="#cdb899"/>
+      <rect x="337" y="22" width="58" height="24" rx="3" fill="#5e6e63"/>
+      <rect x="349" y="64" width="41" height="38" rx="10" fill="#aab39d"/>
+      <rect x="250" y="109" width="29" height="87" fill="#b8a38b"/>
+      <path d="M254 127H275M254 149H275M254 171H275" fill="none"/>
+      <rect x="279" y="433" width="144" height="63" rx="13" fill="#e6e3d8"/>
+      <rect x="275" y="430" width="19" height="70" rx="8" fill="#d1d4c5"/>
+      <rect x="414" y="430" width="19" height="70" rx="8" fill="#d1d4c5"/>
+      <rect x="294" y="478" width="120" height="22" rx="7" fill="#d1d4c5"/>
+      <path d="M334 438V476M374 438V476" fill="none"/>
+      <rect x="318" y="356" width="81" height="49" rx="23" fill="#bba385"/>
+      <rect x="310" y="230" width="139" height="27" rx="3" fill="#aa9279"/>
+      <path d="M329 239H434" stroke="#4c5a50" stroke-width="8"/>
+      <rect x="516" y="13" width="133" height="49" fill="#c9c5b9"/>
+      <rect x="660" y="13" width="48" height="70" rx="4" fill="#c7cbd0"/>
+      <rect x="671" y="86" width="37" height="154" fill="#c9c5b9"/>
+      <rect x="596" y="23" width="34" height="23" rx="3" fill="#dce1df"/>
+      <rect x="534" y="22" width="42" height="28" rx="3" fill="#65706b"/>
+      <circle cx="545" cy="36" r="7" fill="none" stroke="#c7cbd0"/>
+      <circle cx="564" cy="36" r="7" fill="none" stroke="#c7cbd0"/>
+      <rect x="548" y="277" width="99" height="60" rx="28" fill="#bfa987"/>
+      <rect x="560" y="258" width="27" height="20" rx="6" fill="#a7b199"/>
+      <rect x="608" y="258" width="27" height="20" rx="6" fill="#a7b199"/>
+      <rect x="560" y="336" width="27" height="20" rx="6" fill="#a7b199"/>
+      <rect x="608" y="336" width="27" height="20" rx="6" fill="#a7b199"/>
+      <rect x="12" y="340" width="37" height="79" rx="2" fill="#b9aa94"/>
+      <ellipse cx="31" cy="378" rx="12" ry="22" fill="#f6f6ef"/>
+      <rect x="132" y="434" width="97" height="94" fill="#d5dfd9"/>
+      <path d="M133 434H229V528" fill="none" stroke="#90aba6" stroke-width="3"/>
+      <rect x="72" y="461" width="36" height="23" rx="4" fill="#f9f9f1"/>
+      <ellipse cx="90" cy="499" rx="19" ry="25" fill="#f9f9f1"/>
+      <rect x="653" y="460" width="52" height="53" rx="4" fill="#dde1db"/>
+      <circle cx="679" cy="486" r="17" fill="#74857d"/>
+    </g>
+    <g fill="#8d9e80" stroke="#78906f" stroke-width="1">
+      <circle cx="461" cy="493" r="19"/><circle cx="449" cy="484" r="12"/><circle cx="470" cy="481" r="11"/>
+      <circle cx="526" cy="481" r="20"/><circle cx="513" cy="476" r="11"/><circle cx="535" cy="468" r="11"/>
+    </g>
+    <!-- Partitions broken at door openings, matching the model's six zones. -->
+    <g stroke="#66786a" stroke-width="7" fill="none" stroke-linecap="square">
+      <path d="M0 0H720V540H0Z"/>
+      <path d="M240 0V237M240 292V360M240 415V540"/>
+      <path d="M0 306H240"/>
+      <path d="M240 222H398M453 222H498"/>
+      <path d="M498 0V252M498 382V540"/>
+      <path d="M498 420H555M657 420H720"/>
+    </g>
+    <g stroke="#849083" stroke-width="1.2" fill="none">
+      <path d="M240 237H185A55 55 0 0 0 240 292M240 415H185A55 55 0 0 1 240 360M398 222V167A55 55 0 0 1 453 222"/>
+    </g>
+    <g stroke="#afc5c0" stroke-width="8"><path d="M0 87V222M306 0H431M570 540H635"/></g>
+    <g stroke="#f3f5ef" stroke-width="2"><path d="M0 87V222M306 0H431M570 540H635"/></g>
+    <g text-anchor="middle">
+      <text class="room" x="120" y="230">主卧</text><text class="sub" x="120" y="250">4.0 × 5.1 m</text>
+      <text class="room" x="369" y="137">书房</text><text class="sub" x="369" y="159">4.3 × 3.7 m</text>
+      <text class="room" x="369" y="297">客厅</text><text class="sub" x="369" y="319">4.3 × 5.3 m</text>
+      <text class="room" x="597" y="189">餐厨</text><text class="sub" x="597" y="211">3.7 × 7.0 m</text>
+      <text class="room" x="146" y="375">卫浴</text><text class="sub" x="146" y="397">4.0 × 3.9 m</text>
+      <text class="room" x="591" y="475">阳台</text><text class="sub" x="591" y="496">3.7 × 2.0 m</text>
+    </g>
+    <g class="rule">
+      <path d="M0 -16V-54M720 -16V-54M0 -44H720M-5 -49L5 -39M715 -49L725 -39"/>
+      <path d="M-17 0H-60M-17 540H-60M-48 0V540M-53 -5L-43 5M-53 535L-43 545"/>
+      <path d="M0 562V591M240 562V591M498 562V591M720 562V591M0 580H720"/>
+    </g>
+    <g class="dim" text-anchor="middle">
+      <text x="360" y="-57">12.0 m</text>
+      <text x="-67" y="270" transform="rotate(-90 -67 270)">9.0 m</text>
+      <text x="120" y="602">4.0 m</text><text x="369" y="602">4.3 m</text><text x="609" y="602">3.7 m</text>
+    </g>
+    <g transform="translate(788 24)"><path d="M0 25V-12M-8 0L0 -17L8 0" fill="none" stroke="#728676" stroke-width="1.6"/><text x="0" y="-29" text-anchor="middle" fill="#728676" font-size="12">N</text></g>
+  </g>
+  <path d="M90 902H1030" stroke="#dedfd5"/>
+  <text x="90" y="926" font-size="11" fill="#879087">原创演示户型 · 分区尺寸为示意，不作为施工图 · 三维家具与设备均为程序化模型</text>
+  <text x="1030" y="926" text-anchor="end" font-size="11" fill="#879087">12.0 × 9.0 m / 108 m²</text>
+</svg>

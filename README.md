@@ -10,6 +10,7 @@ https://fanhuayishiy.github.io/ai-demo
 
 | 项目 | 简介 | 状态 |
 | --- | --- | --- |
+| [habitat-interactive-home](./habitat-interactive-home/) | 栖居 HABITAT 可探索家庭 3D 模型，支持多灯独立控制、家电交互与智能隐墙 | 可交互 |
 | [hydrogen-energy-system](./hydrogen-energy-system/) | H₂ NEXUS 含氢综合能源数字孪生，五类能流动态可视化与守恒仿真 | 可交互 |
 | [campus-3d-dashboard](./campus-3d-dashboard/) | 智慧校园 3D 数据大屏（单 HTML 文件） | 可运行 |
 | [mcb-2p-c16-blender-animation](./mcb-2p-c16-blender-animation/) | 双极空气开关 Blender 精细建模与工程动画（主提示：调研空气开关，作为参考，然后使用 Blender 精细建模，我的标准很高，都要有动画） | 可交互 |
@@ -517,6 +518,56 @@ sakura-station-corner/
 ├── storefront.png            # 店前与落地玻璃
 └── sakura-close.png          # 樱花与落樱近景
 ```
+
+---
+
+## habitat-interactive-home — 栖居 HABITAT 家庭 3D 空间
+
+一个以原创 108㎡ 示例户型为基础的家庭 3D 交互前端。用户可以环绕观察客厅、主卧、书房、餐厨、卫浴和阳台，点选模型中的灯具与家电，在右侧面板调整状态；灯光、色温和环境时段会实时影响三维空间的光影。
+
+### 功能亮点
+
+- Three.js 程序化构建家具、软装、墙体、门窗和 22 件设备，设备实体与设备列表使用稳定 ID 关联。
+- 支持拖拽旋转、缩放、平移、俯视平面、房间聚焦和截图；自动隐墙会根据观察方向淡出遮挡视线的墙体。
+- 客厅、主卧、书房和餐厨提供多路独立灯光；每盏灯可以单独开关、调节亮度和色温，并映射到实时点光源。
+- 支持电视画面模式、空调、窗帘、冰箱、洗烘机、烤箱、油烟机、热水器、扫地机器人和音箱等家电交互。
+- 提供舒适归家、沉浸观影、一夜好眠、安心离家四种场景；设置保存在浏览器本地存储中，移动端提供抽屉式设备面板。
+
+### 技术栈
+
+| 依赖 | 版本 | 用途 |
+| --- | --- | --- |
+| React | 19 | 页面状态、设备面板与响应式交互 |
+| Three.js | 0.180 | 程序化家庭模型、灯光、相机和射线拾取 |
+| TypeScript | 5.8 | 严格类型检查 |
+| Vite | 6 | 开发服务器和生产构建 |
+
+### 运行方式
+
+```bash
+cd habitat-interactive-home
+npm ci
+npm run dev
+# 打开 http://localhost:5173
+
+npm test
+npm run build
+```
+
+### 目录结构
+
+```text
+habitat-interactive-home/
+├── public/floorplan.svg       # 原创示例户型图
+├── src/App.tsx                # 房间导航、控制面板与场景预设
+├── src/scene/HomeScene.tsx    # Three.js 相机、光照、点选与智能隐墙
+├── src/scene/house.ts         # 家庭空间与设备程序化模型
+├── src/data.ts                # 房间、设备、场景和本地状态校验
+├── src/styles.css             # 视觉系统与响应式布局
+└── tests/home-state.test.ts   # 设备状态和持久化测试
+```
+
+户型与设备均为原创示例，不代表真实测绘，也不会连接真实家电；后续接入真实户型时，可替换 `src/scene/house.ts` 的空间几何并保留设备 ID 与控制层。
 
 ---
 
