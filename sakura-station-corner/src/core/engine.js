@@ -88,6 +88,21 @@ export function createEngine({ canvas, quality = {} } = {}) {
   const _camQuat = new THREE.Quaternion();
   let acc = 0;
   const stats = { fps: 60, calls: 0, tris: 0 };
+  /**
+   * 「这一帧提交了多少次」必须在**场景那次 render 结束的瞬间**取。
+   * renderer.info 默认 autoReset=true，而 composer 每个 pass 都调一次 renderer.render，
+   * 于是帧末读到的是最后一个全屏 quad 的 1 次提交 —— 看着是个合理数字，其实测的是别的东西
+   * （右上角 HUD 第一版就这么理直气壮地显示过「1 draw」）。
+   * 这里取的是场景 pass 的总数：不含后面 SMAA / 输出那 2–3 次全屏 quad，作为「画面里有多少东西要画」
+   * 反而是更干净的口径。
+   */
+  let frameCalls = 0, frameTris = 0;
+  const prevAfterRender = scene.onAfterRender;
+  scene.onAfterRender = (r, s, c) => {
+    frameCalls = r.info.render.calls;
+    frameTris = r.info.render.triangles;
+    if (prevAfterRender) prevAfterRender(r, s, c);
+  };
 
   function onResize() {
     const { w, h } = viewSize();
@@ -160,9 +175,8 @@ export function createEngine({ canvas, quality = {} } = {}) {
       stats.fps = frame / acc;
       frame = 0;
       acc = 0;
-      const info = renderer.info.render;
-      stats.calls = info.calls;
-      stats.tris = info.triangles;
+      stats.calls = frameCalls;
+      stats.tris = frameTris;
     }
   }
 

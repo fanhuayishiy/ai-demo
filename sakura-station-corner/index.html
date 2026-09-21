@@ -144,11 +144,53 @@
         color: #f2a9be;
         background: rgba(255, 255, 255, 0.13);
       }
+      /* 右上角帧率读数（src/core/fps-hud.js）。pointer-events: none —— 读数永远不该
+         挡住拖拽观景。默认显示，?fps=0 关掉；实拍/像素基线走的是关掉的那条路。 */
+      #fps {
+        position: fixed;
+        top: 14px;
+        right: 16px;
+        padding: 3px 8px;
+        border-radius: 7px;
+        font: 400 11px/1.5 ui-monospace, "SFMono-Regular", Consolas, monospace;
+        letter-spacing: 0.06em;
+        color: rgba(58, 70, 82, 0.86);
+        background: rgba(252, 253, 255, 0.3);
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+        opacity: 0.82;
+        pointer-events: none;
+        transition: color 0.5s ease, background 0.5s ease;
+        white-space: nowrap;
+      }
+      #fps .fps-val {
+        font-weight: 600;
+      }
+      /* 次要字段的可见度要连着容器一起算：容器自身还有 0.82 不透明度，
+         叠下来 0.45 的灰在夜景上基本糊掉（第一版实测如此）。 */
+      #fps .fps-dim {
+        color: rgba(58, 70, 82, 0.62);
+      }
+      /* 掉到 25 fps 以下时读数自己变醒目一点：需要被看见的正是这个区间 */
+      #fps.is-low .fps-val {
+        color: #b8536f;
+      }
+      #fps.is-dark {
+        color: rgba(222, 232, 244, 0.94);
+        background: rgba(16, 22, 34, 0.52);
+      }
+      #fps.is-dark .fps-dim {
+        color: rgba(222, 232, 244, 0.78);
+      }
+      #fps.is-dark.is-low .fps-val {
+        color: #f2a9be;
+      }
     </style>
   </head>
   <body>
     <canvas id="stage"></canvas>
     <div id="wxbar" aria-label="天气"></div>
+    <div id="fps" aria-hidden="true"></div>
     <div id="boot">
       <div class="boot-inner">
         <div class="boot-title">樱花街角</div>

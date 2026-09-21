@@ -2,6 +2,7 @@
 // 成品画面零 UI / 零文字 / 零控件；唯一的例外是装配期的加载状态，它在首帧画出来后即摘除。
 import { createEngine, BOOT_PHASES } from './core/engine.js';
 import { attachBootScreen } from './core/boot-screen.js';
+import { attachFpsHud } from './core/fps-hud.js';
 import { texCacheInfo } from './core/textures.js';
 import { TRACE } from './core/kit.js';
 import { buildWorld } from './world/index.js';
@@ -72,6 +73,8 @@ async function boot() {
   engine.setWeather = (n) => engine.weather && engine.weather.set(n);
   engine.markProgress(BOOT_PHASES.weather, '调好天光');
   mark('weather');
+  // 右上角帧率读数（?fps=0 关）。放在天气之后：它要跟着天气切亮/暗配色。
+  engine.fpsHud = attachFpsHud(engine);
   // 猜错的档位由真实帧率兜底：装配完成、画面稳定 3 秒后才开始数帧，
   // 不达标就单向降一档（dpr / 阴影贴图 / LOD 阈值一起动），最多降到 lo。
   installAdapt(engine);

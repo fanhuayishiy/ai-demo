@@ -32,9 +32,13 @@ const rep = await p.evaluate(async ([ua, ub, crop, want]) => {
       let mx = 0;
       for (let k = 0; k < 3; k++) {
         const dd = Math.abs(A[i + k] - B[i + k]);
-        sum += dd; n++; if (dd > max) max = dd; if (dd > 24) big++;
+        sum += dd; n++; if (dd > max) max = dd;
         if (dd > mx) mx = dd;
       }
+      /* big 必须按**像素**计，不是按通道：旧版在通道循环里 ++，分母却是像素数，
+         于是 pctPixelsOver24 恒等于真实像素占比的约 3 倍（完全一致的像素能算出 300%）。
+         历史读数之间仍可互相比较，但绝对值要除以 3 才是「多少比例的像素超 24 级」。 */
+      if (mx > 24) big++;
       if (d) {
         const v = Math.min(255, mx * 8);           // 放大 8 倍：0.5 级的抖动也看得见
         d.data[i] = v; d.data[i + 1] = v >> 1; d.data[i + 2] = 0; d.data[i + 3] = 255;

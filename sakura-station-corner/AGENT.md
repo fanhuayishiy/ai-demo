@@ -124,20 +124,26 @@
 ## 8. 交付定义（完成 = 全部满足）
 
 - [x] `npm run dev` 可直接运行，控制台零 error；warning 仅剩 1 条 ANGLE 对 three 自带着色器的 X4122 双精度字面量注记（非本项目代码，不可在不 patch three 的前提下消除）。
-- [x] `npm run check`（离线逐资产 smoke test）全绿：138 个模块文件全部通过。
+- [x] `npm run check`（离线逐资产 smoke test）全绿：143 个模块文件全部通过。
 - [x] `npm run check:placed` 对账装配表 ↔ 场景：141 条中缺席的 18 条**全部**是取景框外的
   合法裁剪（含 P3/P4 与其上的 wire-2/wire-3 同时缺席）。加这条是因为 `check` 跑在 Node，
   `HAS_DOM === false` 使所有 canvas 代码不被执行，而装配层吞掉构建异常 —— 浏览器里一句
   ReferenceError 就能让整台资产静默消失（实测丢过整列电车）。
-- [x] **成品画面不出现文字标注、水印、浮层与调试信息**；控件只有一个：底部一条低对比度天气条
-  （0.42 透明度，指针靠近才实，夜景自动换暗色配色）。
+- [x] **成品画面不出现文字标注、水印与浮层**；常驻元素两条：底部一条低对比度天气条
+  （0.42 透明度，指针靠近才实，夜景自动换暗色配色），右上角一行帧率读数
+  （`src/core/fps-hud.js`：`20 fps · 49.5 ms · 4.1k draw`，`pointer-events: none` 绝不挡拖拽，
+  4 Hz 刷新以免逐帧写 DOM 反过来污染被测量，随天气切亮/暗配色，低于 25 fps 时主数字变粉）。
   2026-09-20 两次修订：先是装配期加了一层加载状态（`#boot`，首帧后从 DOM 整块摘除），
-  随后用户明确要求「切换增加ui」，所以天气条成为唯一常驻控件 —— 「零 UI」现在约束的是
-  *除这一条以外*的画面。`npm run check:boot` 断言加载层确实消失且进度报满。
+  随后用户明确要求「切换增加ui」，天气条成为常驻控件；2026-09-21 用户再点名要帧数，
+  于是有了第三条 —— 「零 UI」现在约束的是*除这几条以外*的画面。
+  `npm run check:boot` 断言加载层确实消失且进度报满。
+  **像素基线一律带 `?fps=0` 关掉读数拍摄**（`tools/shoot.mjs` 默认就加），
+  否则右上角那块会永久出现在 diff 里；`--fps=1` 才带着拍。
 - [x] 拖拽 / 360° 旋转 / 无极缩放均流畅；缩放至近景仍保持细节密度（LOD 按投影像素隐藏，靠近即回归）。
 - [x] `docs/ASSET_CHECKLIST.md` 全部条目已勾选；实拍时 `missing: []`（无占位、无 TODO）。
 - [x] 每个资产一个独立模块文件；**建模层**不合并网格（autoInstance 只做 GPU 实例化，几何不改写）；
-  提交层按组批处理见 `core/canonical-shapes.js` + `core/merge-static.js`（`?shape=off` / `?merge=off` 可逐项消融）；index.html 仅入口。
+  提交层按组批处理见 `core/canonical-shapes.js` + `core/merge-static.js` + `core/sway-gpu.js`
+  （`?shape=off` / `?merge=off` / `?sway=off` 可逐项消融）；index.html 仅入口。
 - [x] 八套动效全部生效且柔和（落樱 / 花枝微风 / 灯光呼吸 / 玻璃流光 / 信号渐变 / 空气光晕 / 雨丝 / 雨滴水花）；
   1600×900 持续拖拽实测中位 **19.5–19.9 fps**（2026-09-21 阶段 34：在阶段 33 的 18.7 之上再加
   「摆动件合并」`core/sway-gpu.js`；A-B-A-B 交错、每次之间静置 60 s 的成对复测 ——

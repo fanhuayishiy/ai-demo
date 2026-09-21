@@ -1,4 +1,4 @@
-// 多机位实拍校验工具：node tools/shoot.mjs [--url=...] [--views=hero,store] [--out=shots] [--w=1600] [--h=900]
+// 多机位实拍校验工具：node tools/shoot.mjs [--url=...] [--views=hero,store] [--out=shots] [--w=1600] [--h=900] [--time=3.4] [--fps=1]
 import { chromium } from 'playwright';
 import { mkdirSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -9,7 +9,10 @@ const arg = (k, d) => {
   return hit ? hit.split('=').slice(1).join('=') : d;
 };
 
-const BASE = arg('url', 'http://127.0.0.1:5173/');
+// 实拍默认关掉右上角帧率读数：它是常驻 DOM 覆盖层，留在画面里会让每一次像素基线
+// 都多出一块恒定差异（--fps=1 才带着拍，用来确认读数本身长什么样）。
+const BASE_RAW = arg('url', 'http://127.0.0.1:5173/');
+const BASE = arg('fps', '0') === '1' ? BASE_RAW : BASE_RAW + (BASE_RAW.includes('?') ? '&' : '?') + 'fps=0';
 const W = Number(arg('w', 1600));
 const H = Number(arg('h', 900));
 const OUT = resolve(arg('out', 'shots'));
