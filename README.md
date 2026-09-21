@@ -10,7 +10,7 @@ https://fanhuayishiy.github.io/ai-demo
 
 | 项目 | 简介 | 状态 |
 | --- | --- | --- |
-| [habitat-interactive-home](./habitat-interactive-home/) | 栖居 HABITAT 可探索家庭 3D 模型，支持多灯独立控制、家电交互与智能隐墙 | 可交互 |
+| [habitat-interactive-home](./habitat-interactive-home/) | 栖居 HABITAT 可探索家庭 3D 模型，支持多灯独立控制、家电交互与智能隐墙 | [在线预览](https://fanhuayishiy.github.io/ai-demo/habitat-interactive-home/) |
 | [hydrogen-energy-system](./hydrogen-energy-system/) | H₂ NEXUS 含氢综合能源数字孪生，五类能流动态可视化与守恒仿真 | 可交互 |
 | [campus-3d-dashboard](./campus-3d-dashboard/) | 智慧校园 3D 数据大屏（单 HTML 文件） | 可运行 |
 | [mcb-2p-c16-blender-animation](./mcb-2p-c16-blender-animation/) | 双极空气开关 Blender 精细建模与工程动画（主提示：调研空气开关，作为参考，然后使用 Blender 精细建模，我的标准很高，都要有动画） | 可交互 |

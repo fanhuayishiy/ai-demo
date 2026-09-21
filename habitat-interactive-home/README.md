@@ -2,6 +2,8 @@
 
 一个可以环绕探索、逐个控制灯光与家电的 3D 家庭前端项目。以温暖木色、低饱和绿色和清晰的空间层次组织交互，使用 React、TypeScript、Three.js 和 Vite 实现。
 
+在线预览：<https://fanhuayishiy.github.io/ai-demo/habitat-interactive-home/>
+
 ## 运行
 
 建议使用 Node.js 22.6 或更新版本。首次运行：
@@ -19,7 +21,7 @@ npm run preview  # 本地预览生产构建
 npm test         # 设备状态、场景与持久化测试
 ```
 
-项目不依赖后端、账户、外部 3D 模型下载或 API 密钥；构建后的 `dist/` 可部署到静态站点服务。
+项目不依赖后端、账户、外部 3D 模型下载或 API 密钥；`dist/` 是已提交的 GitHub Pages 预览产物。
 
 ## 使用方法
 

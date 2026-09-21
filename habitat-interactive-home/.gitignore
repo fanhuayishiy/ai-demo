@@ -1,5 +1,5 @@
 node_modules/
-dist/
+# The static preview is committed for GitHub Pages.
 *.local
 *.tsbuildinfo
 test-results/

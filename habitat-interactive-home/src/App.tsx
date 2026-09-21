@@ -1031,7 +1031,7 @@ export default function App() {
           <>
             <img
               className="floor-plan"
-              src="/floorplan.svg"
+              src="./floorplan.svg"
               alt="108平方米原创示例户型图：主卧、书房、餐厨、卫浴、客厅与阳台的位置和尺寸"
             />
             <p className="dialog-note">
