@@ -561,13 +561,14 @@ export function buildHouse(): HouseModel {
     [0, 1.3, 4.5],
     [
       [-4, 1.325, 4.5, 4, 2.65, 0.16],
-      [-1.55, 1.325, 4.5, 0.9, 2.65, 0.16],
-      [0.6, 0.35, 4.5, 3.4, 0.7, 0.16],
-      [0.6, 2.57, 4.5, 3.4, 0.16, 0.16],
+      [-1.45, 1.325, 4.5, 1.1, 2.65, 0.16],
+      [0.15, 0.35, 4.5, 2.1, 0.7, 0.16],
+      [0.15, 2.57, 4.5, 2.1, 0.16, 0.16],
+      [1.74, 1.325, 4.5, 1.12, 2.65, 0.16],
       [4.15, 0.43, 4.5, 3.7, 0.86, 0.14],
     ],
   );
-  windowFrame(south, 0.58, 4.5, 3.3, 0);
+  windowFrame(south, 0.15, 4.5, 2.05, 0);
   // Balcony glass balustrade sits inside the cutaway facade.
   box(south, 3.6, 0.65, 0.025, glass, 4.15, 1.18, 4.48);
   box(south, 3.8, 0.025, 0.065, charcoal, 4.15, 1.52, 4.48);
@@ -584,10 +585,8 @@ export function buildHouse(): HouseModel {
     "Bedroom bathroom partition",
     [0, 0, 1],
     [-4, 1.3, 0.6],
-    [
-      [-4.5, 1.325, 0.6, 3, 2.65, 0.14],
-      [-2.5, 2.43, 0.6, 1, 0.44, 0.14],
-    ],
+    // Bedroom and bathroom have separate entrances from the living room.
+    [[-4, 1.325, 0.6, 4, 2.65, 0.14]],
   );
   wall(
     "Bathroom partition",
@@ -602,10 +601,8 @@ export function buildHouse(): HouseModel {
     "Living study partition",
     [0, 0, 1],
     [0.15, 1.3, -0.8],
-    [
-      [-0.35, 1.325, -0.8, 3.3, 2.65, 0.13],
-      [1.8, 2.43, -0.8, 1, 0.44, 0.13],
-    ],
+    // A continuous TV backing wall; there is no doorway to the study here.
+    [[0.15, 1.325, -0.8, 4.3, 2.65, 0.13]],
   );
   wall(
     "Kitchen partition",
@@ -623,9 +620,9 @@ export function buildHouse(): HouseModel {
     [0, 0, 1],
     [4.15, 1.3, 2.5],
     [
-      [2.55, 1.325, 2.5, 0.5, 2.65, 0.13],
-      [5.7, 1.325, 2.5, 0.6, 2.65, 0.13],
-      [4.1, 2.49, 2.5, 2.6, 0.32, 0.13],
+      [2.775, 1.325, 2.5, 0.95, 2.65, 0.13],
+      [5.475, 1.325, 2.5, 1.05, 2.65, 0.13],
+      [4.1, 2.49, 2.5, 1.7, 0.32, 0.13],
     ],
   );
 

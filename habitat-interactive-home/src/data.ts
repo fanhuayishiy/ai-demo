@@ -268,7 +268,7 @@ export const initialDevices: Device[] = [
     value: 45,
     mode: "节能",
     watts: 1200,
-    position: [-2.3, 2.1, 0.92],
+    position: [-3.15, 2.1, 0.92],
   },
   {
     id: "balcony-main",

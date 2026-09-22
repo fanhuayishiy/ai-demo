@@ -74,12 +74,14 @@
       <path d="M0 0H720V540H0Z"/>
       <path d="M240 0V237M240 292V360M240 415V540"/>
       <path d="M0 306H240"/>
-      <path d="M240 222H398M453 222H498"/>
-      <path d="M498 0V252M498 382V540"/>
+      <path d="M240 222H498"/>
+      <!-- Study entrance faces the kitchen; the TV backing wall stays continuous. -->
+      <path d="M498 0V120M498 222V252M498 382V540"/>
       <path d="M498 420H555M657 420H720"/>
     </g>
     <g stroke="#849083" stroke-width="1.2" fill="none">
-      <path d="M240 237H185A55 55 0 0 0 240 292M240 415H185A55 55 0 0 1 240 360M398 222V167A55 55 0 0 1 453 222"/>
+      <path d="M240 237H185A55 55 0 0 0 240 292M240 415H185A55 55 0 0 1 240 360"/>
+      <path d="M498 120H396A102 102 0 0 0 498 222"/>
     </g>
     <g stroke="#afc5c0" stroke-width="8"><path d="M0 87V222M306 0H431M570 540H635"/></g>
     <g stroke="#f3f5ef" stroke-width="2"><path d="M0 87V222M306 0H431M570 540H635"/></g>

@@ -11,6 +11,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { rooms } from "../data";
 import type { Device, HomeSceneProps, SceneHandle } from "../types";
 import { buildHouse } from "./house";
+import { createRenderLoop } from "./renderLoop";
 
 type Surface = {
   material: THREE.MeshStandardMaterial;
@@ -208,6 +209,18 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
       capture: () => "",
     });
     const [error, setError] = useState("");
+    const invalidateRef = useRef(() => {});
+    useEffect(() => {
+      invalidateRef.current();
+    }, [
+      props.devices,
+      props.selectedId,
+      props.room,
+      props.wallMode,
+      props.time,
+      props.view,
+      props.showLabels,
+    ]);
     useImperativeHandle(
       forwardedRef,
       () => ({
@@ -229,7 +242,6 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
         renderer = new THREE.WebGLRenderer({
           antialias: true,
           alpha: true,
-          preserveDrawingBuffer: true,
           powerPreference: "high-performance",
         });
       } catch {
@@ -244,12 +256,15 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
       ).matches;
       const scene = new THREE.Scene();
       renderer.setClearColor(0x000000, 0);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = palettes.day.exposure;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      // The sun is fixed: only moving shadow casters need a fresh shadow map.
+      renderer.shadowMap.autoUpdate = false;
+      renderer.shadowMap.needsUpdate = true;
       const environmentRoom = new RoomEnvironment();
       const environmentGenerator = new THREE.PMREMGenerator(renderer);
       const environmentTarget = environmentGenerator.fromScene(
@@ -345,7 +360,7 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.target.set(0, 0.4, 0);
       controls.enableDamping = !reducedMotion;
-      controls.dampingFactor = 0.075;
+      controls.dampingFactor = 0.14;
       controls.minPolarAngle = 0.02;
       controls.maxPolarAngle = Math.PI / 2.2;
       controls.minZoom = 0.6;
@@ -524,10 +539,16 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
       let lastSelectedId: string | null = null;
       let previousRoom = propsRef.current.room;
       let previousView = propsRef.current.view;
-      let lastFrameTime = 0;
       let ready = false;
       let disposed = false;
-      let frameId = 0;
+      let labelsDirty = true;
+      let pendingHover: Pick<PointerEvent, "clientX" | "clientY"> | null = null;
+      let selectionStarted = -Infinity;
+      const renderLoop = createRenderLoop(frame);
+      invalidateRef.current = () => {
+        labelsDirty = true;
+        renderLoop.invalidate();
+      };
 
       function fitZoom() {
         const aspect = width / Math.max(1, height);
@@ -556,6 +577,7 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
         controls.enableRotate = current.view !== "top";
         controls.minPolarAngle = current.view === "top" ? 0 : 0.02;
         cameraMoving = true;
+        renderLoop.invalidate();
       }
       function resize() {
         const bounds = host!.getBoundingClientRect();
@@ -568,6 +590,8 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
         camera.bottom = -7.2;
         camera.updateProjectionMatrix();
         renderer.setSize(width, height, false);
+        labelsDirty = true;
+        renderLoop.invalidate();
         if (propsRef.current.room === "all") {
           desiredZoom = fitZoom();
           camera.zoom = desiredZoom;
@@ -585,7 +609,7 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
       controls.update();
       cameraMoving = false;
 
-      function hitDevice(event: PointerEvent) {
+      function hitDevice(event: Pick<PointerEvent, "clientX" | "clientY">) {
         const rect = renderer.domElement.getBoundingClientRect();
         pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -642,11 +666,14 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
           moved = true;
         if (event.buttons) {
           renderer.domElement.style.cursor = "grabbing";
+          pendingHover = null;
+          if (hoverId) renderLoop.invalidate();
           hoverId = null;
           return;
         }
-        hoverId = hitDevice(event);
-        renderer.domElement.style.cursor = hoverId ? "pointer" : "grab";
+        // Coalesce high-frequency pointer events into at most one pick per frame.
+        pendingHover = { clientX: event.clientX, clientY: event.clientY };
+        renderLoop.invalidate();
       }
       function pointerUp(event: PointerEvent) {
         activePointers.delete(event.pointerId);
@@ -663,17 +690,24 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
         activePointers.clear();
         pointerStart = null;
         hoverId = null;
+        pendingHover = null;
+        renderLoop.invalidate();
       }
       function pointerLeave() {
         hoverId = null;
+        pendingHover = null;
         renderer.domElement.style.cursor = "grab";
+        renderLoop.invalidate();
       }
       function startControl() {
         cameraMoving = false;
         desiredZoom = camera.zoom;
+        renderLoop.invalidate();
       }
       function changeControl() {
         if (!cameraMoving) desiredZoom = camera.zoom;
+        labelsDirty = true;
+        renderLoop.invalidate();
       }
       function keyDown(event: KeyboardEvent) {
         if (
@@ -694,7 +728,13 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
       }
       function contextLost(event: Event) {
         event.preventDefault();
+        renderLoop.setActive(false);
         setError("3D 图形连接已中断，请刷新页面重新进入你的家。");
+      }
+      function visibilityChanged() {
+        renderLoop.setActive(
+          !document.hidden && !renderer.getContext().isContextLost(),
+        );
       }
       renderer.domElement.addEventListener("pointerdown", pointerDown);
       renderer.domElement.addEventListener("pointermove", pointerMove);
@@ -703,6 +743,7 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
       renderer.domElement.addEventListener("pointerleave", pointerLeave);
       renderer.domElement.addEventListener("webglcontextlost", contextLost);
       window.addEventListener("keydown", keyDown);
+      document.addEventListener("visibilitychange", visibilityChanged);
       controls.addEventListener("start", startControl);
       controls.addEventListener("change", changeControl);
       renderer.domElement.style.cursor = "grab";
@@ -716,6 +757,8 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
           );
           camera.zoom = desiredZoom;
           camera.updateProjectionMatrix();
+          labelsDirty = true;
+          renderLoop.invalidate();
         },
         reset: () => navigate(true),
         capture: () => {
@@ -730,6 +773,25 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
       const screenOff = new THREE.Color("#141b1c");
       const screenOn = new THREE.Color("#ffffff");
       const black = new THREE.Color("#000000");
+      let transitioning = false;
+      function approach(value: number, target: number, step: number) {
+        if (Math.abs(value - target) < 0.001) return target;
+        const next = THREE.MathUtils.lerp(value, target, step);
+        if (Math.abs(next - target) < 0.001) return target;
+        transitioning = true;
+        return next;
+      }
+      function approachColor(
+        color: THREE.Color,
+        target: THREE.Color,
+        step: number,
+      ) {
+        color.setRGB(
+          approach(color.r, target.r, step),
+          approach(color.g, target.g, step),
+          approach(color.b, target.b, step),
+        );
+      }
 
       function updateLabels(devices: Device[]) {
         const { selectedId, showLabels, room } = propsRef.current;
@@ -796,11 +858,10 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
         }
       }
 
-      function frame(time: number) {
-        if (disposed) return;
-        frameId = requestAnimationFrame(frame);
-        const dt = Math.min((time - lastFrameTime) / 1000 || 0.016, 0.05);
-        lastFrameTime = time;
+      function frame(time: number, dt: number) {
+        if (disposed) return false;
+        transitioning = false;
+        let animated = false;
         const step = reducedMotion ? 1 : 1 - Math.exp(-dt * 8);
         const current = propsRef.current;
         if (previousRoom !== current.room || previousView !== current.view) {
@@ -826,32 +887,29 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
             cameraMoving = false;
           }
         }
-        controls.update();
+        const controlsMoving = controls.update();
+        if (pendingHover) {
+          hoverId = hitDevice(pendingHover);
+          pendingHover = null;
+          renderer.domElement.style.cursor = hoverId ? "pointer" : "grab";
+        }
         const palette = palettes[current.time];
-        hemi.color.lerp(skyTarget.set(palette.sky), step);
-        hemi.groundColor.lerp(groundTarget.set(palette.ground), step);
-        sunlight.color.lerp(sunTarget.set(palette.sun), step);
-        hemi.intensity = THREE.MathUtils.lerp(
-          hemi.intensity,
-          palette.ambient,
-          step,
-        );
-        sunlight.intensity = THREE.MathUtils.lerp(
+        approachColor(hemi.color, skyTarget.set(palette.sky), step);
+        approachColor(hemi.groundColor, groundTarget.set(palette.ground), step);
+        approachColor(sunlight.color, sunTarget.set(palette.sun), step);
+        hemi.intensity = approach(hemi.intensity, palette.ambient, step);
+        sunlight.intensity = approach(
           sunlight.intensity,
           palette.direct,
           step,
         );
-        fill.intensity = THREE.MathUtils.lerp(
-          fill.intensity,
-          palette.fill,
-          step,
-        );
-        scene.environmentIntensity = THREE.MathUtils.lerp(
+        fill.intensity = approach(fill.intensity, palette.fill, step);
+        scene.environmentIntensity = approach(
           scene.environmentIntensity,
           current.time === "day" ? 0.2 : current.time === "dusk" ? 0.1 : 0.025,
           step,
         );
-        renderer.toneMappingExposure = THREE.MathUtils.lerp(
+        renderer.toneMappingExposure = approach(
           renderer.toneMappingExposure,
           palette.exposure,
           step,
@@ -871,12 +929,15 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
           if (current.view === "top" || current.wallMode === "hide")
             visible = false;
           const state = wallSurfaces[index];
-          state.opacity = THREE.MathUtils.lerp(
+          state.opacity = approach(
             state.opacity,
             visible ? 1 : 0,
             step,
           );
-          wall.group.visible = state.opacity > 0.015;
+          const wallVisible = state.opacity > 0.015;
+          if (wall.group.visible !== wallVisible)
+            renderer.shadowMap.needsUpdate = true;
+          wall.group.visible = wallVisible;
           surfaces.forEach((surface) => {
             surface.material.opacity = surface.opacity * state.opacity;
             surface.material.depthWrite = state.opacity > 0.8;
@@ -910,45 +971,49 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
             const power = device.on
               ? ((device.watts * 0.82 + 8) * device.value) / 100
               : 0;
-            source.light.intensity = THREE.MathUtils.lerp(
+            source.light.intensity = approach(
               source.light.intensity,
               power,
               step,
             );
-            source.light.color.lerp(lightColor, step);
+            approachColor(source.light.color, lightColor, step);
           }
           (emissionSurfaces.get(device.id) ?? []).forEach((surface) => {
             if (device.type === "light") {
-              surface.material.emissive.lerp(
+              approachColor(
+                surface.material.emissive,
                 device.on ? lightColor : black,
                 step,
               );
-              surface.material.emissiveIntensity = THREE.MathUtils.lerp(
+              surface.material.emissiveIntensity = approach(
                 surface.material.emissiveIntensity,
                 device.on ? 0.4 + (device.value / 100) * 1.7 : 0,
                 step,
               );
             } else if (device.type === "tv") {
-              surface.material.color.lerp(
+              approachColor(
+                surface.material.color,
                 device.on ? screenOn : screenOff,
                 step,
               );
-              surface.material.emissive.lerp(
+              approachColor(
+                surface.material.emissive,
                 device.on ? screenOn : black,
                 step,
               );
-              surface.material.emissiveIntensity = THREE.MathUtils.lerp(
+              surface.material.emissiveIntensity = approach(
                 surface.material.emissiveIntensity,
                 device.on ? 0.6 : 0,
                 step,
               );
             } else {
-              surface.material.emissiveIntensity = THREE.MathUtils.lerp(
+              surface.material.emissiveIntensity = approach(
                 surface.material.emissiveIntensity,
                 device.on ? Math.max(0.5, surface.strength) : 0,
                 step,
               );
-              surface.material.emissive.lerp(
+              approachColor(
+                surface.material.emissive,
                 device.on
                   ? surface.emissive.getHex()
                     ? surface.emissive
@@ -958,39 +1023,53 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
               );
             }
           });
-          const animated = house.animated.get(device.id) ?? [];
+          const animatedObjects = house.animated.get(device.id) ?? [];
           if (device.type === "curtain") {
-            animated.forEach((object, index) => {
+            animatedObjects.forEach((object, index) => {
               const origin = animatedOrigins.get(object)!;
               const openness = device.on ? device.value / 100 : 0;
-              object.scale.z = THREE.MathUtils.lerp(
+              const previousScale = object.scale.z;
+              const previousPosition = object.position.z;
+              object.scale.z = approach(
                 object.scale.z,
                 origin.scale.z * (1 - openness * 0.83),
                 step,
               );
-              object.position.z = THREE.MathUtils.lerp(
+              object.position.z = approach(
                 object.position.z,
                 origin.position.z + (index === 0 ? -1 : 1) * openness * 0.53,
                 step,
               );
+              if (
+                previousScale !== object.scale.z ||
+                previousPosition !== object.position.z
+              )
+                renderer.shadowMap.needsUpdate = true;
             });
           }
-          if (device.type === "washer" && device.on && !reducedMotion)
-            animated.forEach((object) => {
+          if (device.type === "washer" && device.on && !reducedMotion) {
+            animated = true;
+            animatedObjects.forEach((object) => {
               object.rotation.z += dt * 1.3;
             });
+            renderer.shadowMap.needsUpdate = true;
+          }
           if (device.type === "robot")
-            animated.forEach((object) => {
+            animatedObjects.forEach((object) => {
               const origin = animatedOrigins.get(object)!;
+              if (device.on && !reducedMotion) animated = true;
               const offset =
                 device.on && !reducedMotion
                   ? Math.sin(time * 0.0005) * 0.35
                   : 0;
-              object.position.x = THREE.MathUtils.lerp(
+              const previousPosition = object.position.x;
+              object.position.x = approach(
                 object.position.x,
                 origin.position.x + offset,
                 step,
               );
+              if (previousPosition !== object.position.x)
+                renderer.shadowMap.needsUpdate = true;
             });
         });
         const selectedDevice = current.devices.find(
@@ -1017,11 +1096,16 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
             );
             selection.scale.setScalar(scale);
             lastSelectedId = selectedDevice.id;
+            selectionStarted = time;
           }
-          selectionMaterial.opacity = reducedMotion
-            ? 0.7
-            : 0.58 + Math.sin(time * 0.003) * 0.13;
-        }
+          // A short selection response must not keep an otherwise idle room rendering.
+          const selectionAge = time - selectionStarted;
+          const pulsing = !reducedMotion && selectionAge < 650;
+          selectionMaterial.opacity = pulsing
+            ? 0.7 + Math.sin(selectionAge / 650 * Math.PI) * 0.13
+            : 0.7;
+          animated ||= pulsing;
+        } else lastSelectedId = null;
         const hoveredDevice = current.devices.find(
           (device) => device.id === hoverId,
         );
@@ -1032,27 +1116,34 @@ const HomeScene = forwardRef<SceneHandle, HomeSceneProps>(
             0.105,
             hoveredDevice.position[2],
           );
-        updateLabels(current.devices);
-        compassNeedle?.setAttribute(
-          "transform",
-          `rotate(${THREE.MathUtils.radToDeg(controls.getAzimuthalAngle())} 21 21)`,
-        );
+        if (labelsDirty) {
+          updateLabels(current.devices);
+          compassNeedle?.setAttribute(
+            "transform",
+            `rotate(${THREE.MathUtils.radToDeg(controls.getAzimuthalAngle())} 21 21)`,
+          );
+          labelsDirty = false;
+        }
         renderer.render(scene, camera);
         if (!ready) {
           ready = true;
           propsRef.current.onReady();
         }
+        return cameraMoving || controlsMoving || transitioning || animated;
       }
-      frameId = requestAnimationFrame(frame);
+      visibilityChanged();
+      renderLoop.invalidate();
 
       return () => {
         disposed = true;
-        cancelAnimationFrame(frameId);
+        renderLoop.dispose();
+        invalidateRef.current = () => {};
         observer.disconnect();
         controls.removeEventListener("start", startControl);
         controls.removeEventListener("change", changeControl);
         controls.dispose();
         window.removeEventListener("keydown", keyDown);
+        document.removeEventListener("visibilitychange", visibilityChanged);
         renderer.domElement.removeEventListener("pointerdown", pointerDown);
         renderer.domElement.removeEventListener("pointermove", pointerMove);
         renderer.domElement.removeEventListener("pointerup", pointerUp);
