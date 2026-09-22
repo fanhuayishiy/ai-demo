@@ -610,8 +610,10 @@ export function buildHouse(): HouseModel {
     [2.3, 1.3, -1],
     [
       [2.3, 1.325, -3.5, 0.14, 2.65, 2],
-      [2.3, 2.43, -1.55, 0.14, 0.44, 1.9],
-      [2.3, 1.325, 0.9, 0.14, 2.65, 3.2],
+      [2.3, 2.43, -1.65, 0.14, 0.44, 1.7],
+      // The floor plan leaves a broad opening between the kitchen and living room.
+      [2.3, 1.325, -0.55, 0.14, 2.65, 0.5],
+      [2.3, 1.325, 2.225, 0.14, 2.65, 0.55],
     ],
   );
   // The living room and balcony are separated by a full-height side wall.
