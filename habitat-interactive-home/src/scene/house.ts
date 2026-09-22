@@ -614,6 +614,14 @@ export function buildHouse(): HouseModel {
       [2.3, 1.325, 0.9, 0.14, 2.65, 3.2],
     ],
   );
+  // The living room and balcony are separated by a full-height side wall.
+  // Keep it as its own segment so the 3D model matches the floor-plan partition.
+  wall(
+    "Living balcony partition",
+    [1, 0, 0],
+    [2.3, 1.3, 3.5],
+    [[2.3, 1.325, 3.5, 0.14, 2.65, 2]],
+  );
   // A broad passage connects the dining room and conservatory.
   wall(
     "Balcony threshold",
