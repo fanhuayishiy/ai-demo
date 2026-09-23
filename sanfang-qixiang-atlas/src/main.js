@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { createDistrict } from "./district.js";
+import { loadPhotos, photoMarkup } from "./photos.js";
 import { icon, courtyardArt } from "./icons.js";
 import "./style.css";
 
@@ -209,18 +210,19 @@ function selectPlace(id, fromTour = false) {
   if (!fromTour && tour.active) stopTour(false);
   activePoint = p;
   inOverview = false;
-  const target = new THREE.Vector3(p.x, 8, p.z);
+  const target = new THREE.Vector3(p.x, p.id === "heart-tree" ? 12 : 8, p.z);
   const offset = isTopDown
     ? new THREE.Vector3(0, 330, 0.1)
-    : new THREE.Vector3(155, 205, 215);
+    : p.id === "heart-tree" ? new THREE.Vector3(16, 17, 52) : new THREE.Vector3(155, 205, 215);
   flyTo(target, target.clone().add(offset));
   selectionRing.visible = true;
+  selectionRing.scale.setScalar(p.id === "heart-tree" ? 0.2 : 1);
   selectionRing.position.set(p.x, 2.6, p.z);
   markers.forEach((m) =>
     m.element.classList.toggle("selected", m.point.id === id),
   );
   $(".selection-card").innerHTML =
-    `<button class="selection-close icon-button" data-action="close-selection" aria-label="关闭景点详情">${icon("close")}</button><span class="overline">${categoryName[p.category]} <i>／</i> SANFANG QIXIANG</span><h2>${esc(p.name)}</h2><p>${esc(p.description)}</p><span class="place-address">${icon("pin")}${esc(p.address)}${p.coordinateAccuracy === "approximate" ? '<span class="approximate-label" title="根据公开地址定位至相应街段，非入口实测坐标">位置示意</span>' : ""}</span><div class="selection-footer"><span>${icon("eye")}正在探索此处</span><button data-action="home">返回全景 ${icon("arrow")}</button></div>`;
+    `<button class="selection-close icon-button" data-action="close-selection" aria-label="关闭景点详情">${icon("close")}</button><span class="overline">${categoryName[p.category]} <i>／</i> SANFANG QIXIANG</span><h2>${esc(p.name)}</h2>${photoMarkup(p.id)}<p>${esc(p.description)}</p><span class="place-address">${icon("pin")}${esc(p.address)}${p.coordinateAccuracy === "approximate" ? '<span class="approximate-label" title="根据公开地址定位至相应街段，非入口实测坐标">位置示意</span>' : ""}</span><div class="selection-footer"><span>${icon("eye")}正在探索此处</span><button data-action="home">返回全景 ${icon("arrow")}</button></div>`;
   $(".selection-card").classList.remove("hidden");
   if (window.innerWidth <= 720) $(".explorer").classList.remove("mobile-open");
   $("#view-state").textContent = "景点近览";
@@ -380,7 +382,7 @@ function openDialog(kind) {
   const content = {
     help: `<span class="overline">YOUR GUIDE TO EXPLORING</span><h2>自在漫游，从这里开始</h2><div class="help-grid"><span>${icon("mouse")}<strong>滚轮缩放</strong><p>滚动鼠标滚轮，拉近细节或俯瞰全景。</p></span><span>${icon("move")}<strong>拖拽探索</strong><p>左键拖拽旋转，右键拖拽平移。触屏可单指旋转、双指缩放。</p></span><span>${icon("pin")}<strong>点击飞往</strong><p>点击地图标记或景点目录，镜头将自动飞到目的地。</p></span><span>${icon("route")}<strong>空中漫游</strong><p>沿精选地标依次游览，可随时暂停、跳转下一站或结束。</p></span></div><p class="dialog-note">键盘：方向键平移，+ / − 缩放，Home 恢复全景，/ 搜索，Esc 关闭弹窗。</p>`,
     about: `<span class="overline">A CITY'S MEMORY, IN ITS LANES</span><h2>三坊七巷，千年福州的缩影。</h2><div class="about-art">${courtyardArt(2)}<span>白墙黛瓦<br>榕荫深巷</span></div><p>以南后街为轴，西侧是衣锦坊、文儒坊、光禄坊，东侧是杨桥巷、郎官巷、塔巷、黄巷、安民巷、宫巷、吉庇巷。坊与巷相连，古厝与庭院相望。</p><p>这里保留着福州传统里坊街区的历史肌理，也与林则徐、严复、林觉民、冰心等人的故事紧紧相连。</p><div class="about-facts"><span><strong>3</strong>座历史坊</span><span><strong>7</strong>条古街巷</span><span><strong>1</strong>条南后街</span></div><p class="dialog-note">本页面是交互式文化导览。建筑采用风格化复原，具体开放时间和游览安排请以景区现场公告为准。</p>`,
-    sources: `<span class="overline">MAP & REFERENCE</span><h2>有据可循的坊巷</h2><p>道路与建筑平面轮廓来自 OpenStreetMap，街区历史格局参考 UNESCO 与公开文献。建筑高度、屋顶和植被为艺术化表达；近似景点坐标已在详情中标注“位置示意”。</p><ul class="source-links"><li><a href="https://www.openstreetmap.org/#map=17/26.085/119.2916" target="_blank" rel="noopener noreferrer">OpenStreetMap · 三坊七巷区域 ${icon("arrow")}</a></li><li><a href="https://whc.unesco.org/en/tentativelists/5808/" target="_blank" rel="noopener noreferrer">UNESCO · 三坊七巷历史格局 ${icon("arrow")}</a></li><li><a href="/sources.md" target="_blank" rel="noopener noreferrer">查看本项目的数据与建模说明 ${icon("arrow")}</a></li></ul><p class="dialog-note">地图数据 © OpenStreetMap contributors，采用 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL 许可</a>。本图不是实景摄影或测绘模型，虚线表示景点参观顺序，不代表步行路径。</p>`,
+    sources: `<span class="overline">MAP & REFERENCE</span><h2>有据可循的坊巷</h2><p>道路与建筑平面轮廓来自 OpenStreetMap，街区历史格局参考 UNESCO 与公开文献。建筑高度、屋顶和植被为艺术化表达；近似景点坐标已在详情中标注“位置示意”。</p><ul class="source-links"><li><a href="https://www.openstreetmap.org/#map=17/26.085/119.2916" target="_blank" rel="noopener noreferrer">OpenStreetMap · 三坊七巷区域 ${icon("arrow")}</a></li><li><a href="https://whc.unesco.org/en/tentativelists/5808/" target="_blank" rel="noopener noreferrer">UNESCO · 三坊七巷历史格局 ${icon("arrow")}</a></li><li><a href="${import.meta.env.BASE_URL}sources.md" target="_blank" rel="noopener noreferrer">查看本项目的数据与建模说明 ${icon("arrow")}</a></li></ul><p class="dialog-note">地图数据 © OpenStreetMap contributors，采用 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">ODbL 许可</a>。本图不是实景摄影或测绘模型，虚线表示景点参观顺序，不代表步行路径。</p>`,
   };
   $("#dialog-content").innerHTML = content[kind] || content.help;
   if (!$("#info-dialog").open) $("#info-dialog").showModal();
@@ -537,7 +539,7 @@ function animate(time) {
   controls.update();
   if (selectionRing.visible && !reducedMotion) {
     const scale = 1 + Math.sin(time / 550) * 0.06;
-    selectionRing.scale.setScalar(scale);
+    selectionRing.scale.setScalar(scale * (activePoint?.id === "heart-tree" ? 0.2 : 1));
   }
   if (tour.active && !tour.paused && !document.hidden) {
     tour.elapsed += delta;
@@ -624,7 +626,9 @@ async function init() {
           typeof message === "string" ? message : "正在铺展坊巷与院落…";
       },
     });
+    await loadPhotos();
     const preferred = [
+      /爱心树/,
       /林觉民|冰心/,
       /严复/,
       /水榭/,

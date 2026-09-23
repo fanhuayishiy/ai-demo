@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { createHeartTree } from "./heart-tree.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 // Street centerlines and landmark coordinates come from the map data. Courtyard
@@ -296,10 +297,9 @@ async function loadJson(url) {
 
 export async function createDistrict({ scene, onProgress = () => {} }) {
   onProgress(0.08);
-  const dataBase = import.meta.env.BASE_URL;
   const [map, placesData] = await Promise.all([
-    loadJson(`${dataBase}data/map.geojson`),
-    loadJson(`${dataBase}data/places.json`),
+    loadJson(`${import.meta.env.BASE_URL}data/map.geojson`),
+    loadJson(`${import.meta.env.BASE_URL}data/places.json`),
   ]);
   if (!map.features?.length || !placesData.length)
     throw new Error("地图数据不完整，请检查 data 目录。");
@@ -1192,6 +1192,7 @@ export async function createDistrict({ scene, onProgress = () => {} }) {
   } else {
     // Give named houses a richer courtyard while keeping the verified road clear.
     for (const point of points) {
+      if (point.id === "heart-tree") continue;
       if (
         /街|巷|坊$|入口|出口/.test(point.name) &&
         !/故居|水榭|吟台|小黄楼|衣锦坊/.test(point.name)
@@ -1295,6 +1296,12 @@ export async function createDistrict({ scene, onProgress = () => {} }) {
           }
         }
     }
+  const heartPoint = points.find((p) => p.id === "heart-tree");
+  if (heartPoint) {
+    const heartTree = createHeartTree();
+    heartTree.position.set(heartPoint.x, 0, heartPoint.z);
+    group.add(heartTree);
+  }
   finish();
   onProgress(1);
   return {
@@ -1307,6 +1314,10 @@ export async function createDistrict({ scene, onProgress = () => {} }) {
     dispose() {
       group.traverse((object) => {
         object.geometry?.dispose();
+        if (object.material) {
+          const list = Array.isArray(object.material) ? object.material : [object.material];
+          list.forEach((material) => material.dispose());
+        }
       });
       Object.values(materials).forEach((material) => material.dispose());
       roofMap.dispose();

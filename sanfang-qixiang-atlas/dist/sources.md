@@ -37,3 +37,32 @@ Overpass 主站及部分备用端点访问失败，本项目改用成功返回�
 | 光禄吟台 | 公开文献核实与光禄坊名称及程师孟题咏有关 | **近似街段标记**，未核实独立园林边界；园林模型只能作为示意 |
 
 每个 `places.json` 条目均保留 `source` 和 `coordinateAccuracy`。标注 `approximate` 的地点，应在地点详情中说明“位置示意”。三坊七巷并无完整、统一的实时开放信息，本项目不声称门票、营业时间或馆内展陈为实时信息；建议停留时长是产品编辑建议。
+
+## 景点实景照片与爱心树
+
+新增爱心树游览点，共 20 处景点。爱心树采用心形双叶树冠、分叉树干、板根与下垂气根；位置为南后街 OSM 中心线附近示意，不是实测坐标。
+
+详情照片来自 Wikimedia Commons，作者、来源与独立许可记录于 `data/photos.json`，并在详情及大图中展示。照片经过缩放和 JPEG 压缩，预览按容器裁切，大图保持完整比例。照片不适用项目代码的 MIT 许可；按各自 CC BY-SA 许可使用。
+
+| 景点 ID | 照片 / 原始来源 | 作者 | 许可 |
+| --- | --- | --- | --- |
+| anmin | [安民巷街景](https://commons.wikimedia.org/wiki/File:%E5%AE%89%E6%B0%91%E5%B7%B7%E5%8D%97%E5%90%8E%E8%A1%97%E4%B8%9C.jpg) | 董辰兴 | CC BY-SA 4.0 |
+| bingxin | [林觉民·冰心故居](https://commons.wikimedia.org/wiki/File:Former_Residence_of_Lin_Juemin%2C_2019-09-29_05.jpg) | Siyuwj | CC BY-SA 4.0 |
+| ermei | [二梅书屋](https://commons.wikimedia.org/wiki/File:Ermei_House%2C_2019-09-29_02.jpg) | Siyuwj | CC BY-SA 4.0 |
+| gongxiang | [宫巷街景](https://commons.wikimedia.org/wiki/File:Gung-haeng.jpg) | LuHungnguong | CC BY-SA 3.0 |
+| guanglu | [光禄坊刘家大院](https://commons.wikimedia.org/wiki/File:Residence_of_Liu_Family_at_Guanglu_Lane%2C_2019-09-29_01.jpg) | Siyuwj | CC BY-SA 4.0 |
+| guanglu-garden | [光禄吟台所在的玉尺山园林](https://commons.wikimedia.org/wiki/File:%E7%A6%8F%E5%B7%9E%E5%8D%97%E5%90%8E%E8%A1%97%E7%8E%89%E5%B0%BA%E5%B1%B1%EF%BC%88%E7%9F%B3%E5%88%BB%E3%80%81%E5%8F%A4%E6%B1%A0%E3%80%81%E6%A1%A5%EF%BC%89_-_panoramio.jpg) | 中国郑开亮 | CC BY-SA 3.0 |
+| heart-tree | [南后街爱心树 · 2023年8月](https://commons.wikimedia.org/wiki/File:Tree_of_Heart%2C_Sanfang_Qixiang_20230825.jpg) | JULIANISME | CC BY-SA 4.0 |
+| huangxiang | [黄巷入口](https://commons.wikimedia.org/wiki/File:%E9%BB%84%E5%B7%B7%E5%85%A5%E5%8F%A3.jpg) | 徐然宽 | CC BY-SA 3.0 |
+| intangible | [非遗博览苑所在的叶氏民居](https://commons.wikimedia.org/wiki/File:Residence_of_Ye_Family_at_Nanhou_Street%2C_2019-09-29_01.jpg) | Siyuwj | CC BY-SA 4.0 |
+| jipi | [吉庇巷谢家祠](https://commons.wikimedia.org/wiki/File:Ancestral_Home_of_Xie_Family_at_Jibi_Alley%2C_2019-09-31.jpg) | Siyuwj | CC BY-SA 4.0 |
+| langguan | [郎官巷街景](https://commons.wikimedia.org/wiki/File:Langguan_alley.JPG) | Fanghong | CC BY-SA 3.0 |
+| linzexu | [林则徐纪念馆 · 林文忠公祠屏门](https://commons.wikimedia.org/wiki/File:%E6%9E%97%E6%96%87%E5%BF%A0%E5%85%AC%E7%A5%A0%E5%B1%8F%E9%97%A8.jpg) | 董辰兴 | CC BY-SA 4.0 |
+| nanhou | [南后街街景](https://commons.wikimedia.org/wiki/File:20231020_Nanhou_Jie.jpg) | Yumeto | CC BY-SA 4.0 |
+| shuixie | [衣锦坊水榭戏台](https://commons.wikimedia.org/wiki/File:Water-side_Performing_Stage_at_Yijin_Lane%2C_2019-09-29_20.jpg) | Siyuwj | CC BY-SA 4.0 |
+| taxiang | [塔巷入口](https://commons.wikimedia.org/wiki/File:%E5%A1%94%E5%B7%B7%E5%85%A5%E5%8F%A3.jpg) | 徐然宽 | CC BY-SA 3.0 |
+| wenru | [文儒坊街景](https://commons.wikimedia.org/wiki/File:Wenlufang_in_Fuzhou_in_March_21%2C2015.JPG) | 中國之新民（THE NEW CITIZEN OF CHINA） | CC BY-SA 3.0 |
+| xiaohuang | [黄巷小黄楼](https://commons.wikimedia.org/wiki/File:House_of_Huang_Family_at_Huang_Alley%2C_2019-09-29_27.jpg) | Siyuwj | CC BY-SA 4.0 |
+| yanfu | [严复故居](https://commons.wikimedia.org/wiki/File:Former_Residence_of_Yan_Fu_in_Langguan_Alley%2C_2019-09-29_03.jpg) | Siyuwj | CC BY-SA 4.0 |
+| yangqiao | [杨桥路沿线 · 林觉民故居](https://commons.wikimedia.org/wiki/File:Former_Residence_of_Lin_Juemin%2C_2019-09-29_05.jpg) | Siyuwj | CC BY-SA 4.0 |
+| yijin | [衣锦坊欧阳氏民居](https://commons.wikimedia.org/wiki/File:Residence_of_Ouyang_Family_at_Yijin_Lane%2C_2019-09-29.jpg) | Siyuwj | CC BY-SA 4.0 |
