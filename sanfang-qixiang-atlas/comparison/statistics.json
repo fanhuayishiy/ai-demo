@@ -1,0 +1,14 @@
+{
+  "export_features": 1205,
+  "common_extent_m2": 671542,
+  "osm_polygons": 899,
+  "topo_polygons": 1115,
+  "topo_less_than_10_percent_overlap": 216,
+  "topo_10_to_80_percent_overlap": 0,
+  "topo_at_least_80_percent_overlap": 899,
+  "osm_covered_area_m2": 205090,
+  "topo_covered_area_m2": 254285,
+  "topo_area_outside_osm_m2": 49195,
+  "osm_area_outside_topo_m2": 0,
+  "missing_inside_core": 63
+}

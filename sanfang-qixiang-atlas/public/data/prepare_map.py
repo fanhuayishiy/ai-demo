@@ -156,16 +156,23 @@ for rel in root.findall('relation'):
         holes = [hole for hole in inner if inside(hole[0], ring)]
         add('relation/' + rel.attrib['id'], 'building', {'type': 'Polygon', 'coordinates': [ring] + holes}, dict(t, component=i, courtyardCount=len(holes)))
 
+# Independently compared Overture footprints: no overlap with the OSM snapshot.
+# Keep the source overlay separate so rerunning this converter is reproducible.
+supplement_file = HERE / 'topoexport-supplement.geojson'
+if supplement_file.exists():
+    supplement = json.loads(supplement_file.read_text(encoding='utf-8'))
+    features.extend(supplement['features'])
 counts = dict(Counter(f['properties']['kind'] for f in features))
 geojson = {
     'type': 'FeatureCollection', 'bbox': BBOX,
     'metadata': {
-        'title': '三坊七巷 OpenStreetMap 实际街巷与建筑轮廓',
+        'title': '三坊七巷 OSM 街巷与建筑轮廓 + Overture 建筑补充',
         'origin': ORIGIN, 'displayBounds': BBOX, 'bounds': BBOX,
         'coordinateSystem': 'WGS84 / EPSG:4326',
         'downloadedAt': '2026-09-20',
         'sourceUrl': 'https://api.openstreetmap.org/api/0.6/map?bbox=119.286,26.081,119.296,26.091',
-        'attribution': '© OpenStreetMap contributors',
+        'attribution': '© OpenStreetMap contributors; Overture Maps Foundation / TopoExport',
+        'buildingSupplement': 'topoexport-supplement.geojson (216 disjoint footprints, 2026-09-23)',
         'license': 'ODbL-1.0', 'licenseUrl': 'https://www.openstreetmap.org/copyright',
         'counts': counts,
         'note': '街道及建筑平面轮廓为公开地图数据；渲染中的高度、屋顶、材质及装饰为风格化示意。非测绘或实时导航产品。'
