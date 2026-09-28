@@ -1,0 +1,9 @@
+.water-tools{position:absolute;top:103px;right:44px;z-index:4;width:223px}
+.water-tools>button{width:100%;display:flex;justify-content:space-between;align-items:center;padding:10px 0;color:#bfa78a;border-bottom:1px solid #c5a78635;font-size:11px;letter-spacing:1px}
+.water-tools>button span{font-size:19px}.water-tools>div{display:flex;gap:12px;margin-top:9px}
+.water-tools>div button{font-size:10px;color:#8dacad;padding:6px 0;letter-spacing:.5px}.water-tools>div button.is-active{color:#dfcab0}
+.water-tools>div button+button{border-left:1px solid #7e928c44;padding-left:12px}
+@media(min-width:1600px){.water-tools{right:56px;width:246px}}
+@media(max-width:1200px){.water-tools{right:30px;width:195px}}
+@media(max-width:900px){.water-tools{right:26px;width:172px}}
+@media(max-width:600px){.water-tools{right:20px;top:93px;width:125px}.water-tools>button{font-size:9px;letter-spacing:.3px;padding:5px 0}.water-tools>div{gap:7px;margin-top:5px}.water-tools>div button{font-size:8px}.water-tools>div button+button{padding-left:7px}}

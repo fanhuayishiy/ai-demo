@@ -1,0 +1,3 @@
+# Vite output includes third-party GLSL template strings; preserve their bytes.
+dist/** linguist-generated=true
+dist/assets/*.js -whitespace

@@ -15,6 +15,7 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 
 | 项目 | 一句话简介 | 预览 | 详细文档 |
 | --- | --- | --- | --- |
+| orbit-heatpump-washer-dryer | ORBIT 热泵洗烘一体机，3D 爆炸拆解、热循环与进排水结构交互 | [在线](https://fanhuayishiy.github.io/ai-demo/orbit-heatpump-washer-dryer/dist/) | [README](./orbit-heatpump-washer-dryer/README.md) |
 | habitat-interactive-home | 栖居 HABITAT 可探索家庭 3D 模型，多灯独立控制、家电交互与智能隐墙 | [在线](https://fanhuayishiy.github.io/ai-demo/habitat-interactive-home/dist/) | [README](./habitat-interactive-home/README.md) |
 | hydrogen-energy-system | H₂ NEXUS 含氢综合能源数字孪生，五类能流动态可视化与守恒仿真 | [在线](https://fanhuayishiy.github.io/ai-demo/hydrogen-energy-system/) | [README](./hydrogen-energy-system/README.md) |
 | campus-3d-dashboard | 智慧校园 3D 数据大屏（单 HTML 文件） | [在线](https://fanhuayishiy.github.io/ai-demo/campus-3d-dashboard/) | [README](./campus-3d-dashboard/README.md) |
@@ -26,6 +27,12 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 | terra-728-tractor-blender-animation | 现代四驱拖拉机 Blender 精细建模与 15 秒机械动画 | [在线](https://fanhuayishiy.github.io/ai-demo/terra-728-tractor-blender-animation/) | [README](./terra-728-tractor-blender-animation/README.md) |
 
 ---
+
+## orbit-heatpump-washer-dryer — ORBIT 热泵洗烘结构实验室
+
+程序化生成的热泵式洗烘一体机概念模型：19 个装配组、13 类中文部件说明，支持整机、分层爆炸、内部拆解与热泵循环四种视图。侧板平行移出，直驱电机保持筒体同轴，进排水接口与连接软管可从背面查看；附五张 3K 渲染图及 13 秒拆装动画 GLB。结构与管路为概念示意，不是制造 CAD 或维修指导。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/orbit-heatpump-washer-dryer/dist/) · [README（含主生成提示原文）](./orbit-heatpump-washer-dryer/README.md)
 
 ## habitat-interactive-home — 栖居 HABITAT 家庭 3D 空间
 

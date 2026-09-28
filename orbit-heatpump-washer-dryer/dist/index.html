@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#15191c" />
+    <link rel="icon" type="image/svg+xml" href="./orbit.svg" />
+    <meta name="description" content="以交互式三维视角，探索热泵洗烘一体机的精密内部结构。" />
+    <title>ORBIT — 热泵洗烘 · 结构实验室</title>
+    <script type="module" crossorigin src="./assets/index-DNq1swFi.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/three-core-D6hWrpCR.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-D0oq9qHn.css">
+  </head>
+  <body>
+    <div id="scene-container" aria-label="可旋转、缩放的热泵洗烘一体机三维结构"></div>
+    <div class="scene-vignette" aria-hidden="true"></div>
+    <div id="labels" class="scene-labels" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="ORBIT 结构实验室首页">
+        <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="11.5" stroke="currentColor" stroke-width="1.2"/><ellipse cx="16" cy="16" rx="6" ry="15" transform="rotate(43 16 16)" stroke="currentColor" stroke-width="1.2"/><circle cx="23.8" cy="8" r="2.1" fill="currentColor"/></svg>
+        <span class="brand-name">ORBIT<span class="brand-caption">FORM &amp; FUNCTION</span></span>
+      </a>
+      <div class="header-context"><span class="header-divider"></span><span>产品结构实验室</span><span class="edition">VOL. 001</span></div>
+      <nav class="header-actions" aria-label="体验与帮助">
+        <button id="tour-button" class="tour-button" type="button"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m6 4 6 4-6 4V4Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg><span>自动拆解</span></button>
+        <button id="info-button" class="icon-button help-button" type="button" aria-label="查看交互指南" title="交互指南"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.1"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.2"/><circle cx="10" cy="6.1" r=".8" fill="currentColor"/></svg></button>
+      </nav>
+    </header>
+
+    <main class="experience-ui">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="eyebrow hero-eyebrow"><span class="status-dot"></span>BEYOND THE SURFACE</div>
+        <h1 id="hero-title">每一层，<br />皆有讲究<span class="heading-dot">。</span></h1>
+        <p class="hero-subtitle">热泵洗烘一体机<span>HEAT PUMP / WASHER–DRYER</span></p>
+        <div class="hero-rule"></div>
+        <p class="hero-description">从一体外观，到精密内核。<br />让看不见的巧思，逐层呈现。</p>
+        <div class="hero-coordinate" aria-hidden="true"><span>01</span><span>ENGINEERED<br />FROM WITHIN</span></div>
+      </section>
+
+      <nav class="system-selector" aria-label="探索子系统">
+        <div class="directory-heading"><span>结构索引</span><span>EXPLORE / 06</span></div>
+        <button type="button" class="part-button" data-part="drum" aria-pressed="false"><span class="part-number">01</span><span>洗涤内筒</span><span class="part-arrow" aria-hidden="true">↗</span></button>
+        <button type="button" class="part-button is-active" data-part="heatpump" aria-pressed="true"><span class="part-number">02</span><span>热泵系统</span><span class="part-arrow" aria-hidden="true">↗</span></button>
+        <button type="button" class="part-button" data-part="motor" aria-pressed="false"><span class="part-number">03</span><span>驱动电机</span><span class="part-arrow" aria-hidden="true">↗</span></button>
+        <button type="button" class="part-button" data-part="door" aria-pressed="false"><span class="part-number">04</span><span>舱门组件</span><span class="part-arrow" aria-hidden="true">↗</span></button>
+        <button type="button" class="part-button" data-part="control" aria-pressed="false"><span class="part-number">05</span><span>控制模块</span><span class="part-arrow" aria-hidden="true">↗</span></button>
+        <button type="button" class="part-button" data-part="cabinet" aria-pressed="false"><span class="part-number">06</span><span>机身框架</span><span class="part-arrow" aria-hidden="true">↗</span></button>
+      </nav>
+
+      <aside class="inspector" aria-label="部件详情" aria-live="polite">
+        <div class="inspector-kicker"><span>COMPONENT</span><span id="part-index">/ 02</span></div>
+        <div class="inspector-symbol" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><path d="m24 5 17 10v19L24 44 7 34V15L24 5Z" stroke="currentColor" stroke-width=".8"/><path d="m7 15 17 10 17-10M24 25v19M15.5 10l17 10v19M15.5 20l17-10M7 24l17 10 17-10" stroke="currentColor" stroke-width=".8"/></svg></div>
+        <h2 id="part-name">热泵系统</h2>
+        <p id="part-en" class="part-english">HEAT PUMP SYSTEM</p>
+        <p id="part-desc" class="part-description">让热量循环，让衣物柔软。冷凝、蒸发与压缩协同运转，在闭合风道中完成温和烘干。</p>
+        <div id="part-specs" class="part-specs"><div class="spec"><span>运行方式</span><strong>热量循环</strong></div><div class="spec"><span>结构特征</span><strong>闭环风道</strong></div></div>
+        <div class="inspector-hint"><span class="tiny-cross" aria-hidden="true">+</span>点击模型部件，探索更多细节</div>
+      </aside>
+
+      <div class="viewport-caption" aria-hidden="true"><span class="caption-line"></span><span id="view-title">结构分解视图</span><span class="caption-separator">/</span><span id="view-description">EXPLODED VIEW</span></div>
+      <div class="material-legend" aria-label="部件材质图例"><span><i class="legend-copper"></i>热能循环</span><span><i class="legend-steel"></i>机械结构</span></div>
+    </main>
+
+    <section class="control-dock" aria-label="三维视图控制">
+      <div class="view-switcher" role="group" aria-label="选择视图模式">
+        <button type="button" data-view="assembled" aria-pressed="false"><span class="view-number">01</span><span>整机</span></button>
+        <button type="button" data-view="exploded" class="is-active" aria-pressed="true"><span class="view-number">02</span><span>分解</span></button>
+        <button type="button" data-view="cutaway" aria-pressed="false"><span class="view-number">03</span><span>剖面</span></button>
+        <button type="button" data-view="thermal" aria-pressed="false"><span class="view-number">04</span><span>热循环</span></button>
+      </div>
+      <div class="explosion-control">
+        <div class="range-heading"><label for="explode-range">拆解程度<span>EXPANSION</span></label><output id="explode-value" for="explode-range">62<span>%</span></output></div>
+        <div class="range-track"><span aria-hidden="true">−</span><input id="explode-range" type="range" min="0" max="100" value="62" aria-label="拆解程度" /><span aria-hidden="true">+</span></div>
+      </div>
+      <div class="viewport-tools" role="group" aria-label="辅助工具">
+        <button id="toggle-labels" type="button" class="icon-button is-active" aria-pressed="true" aria-label="显示或隐藏部件标注" title="部件标注"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3.5 5.5h11l6 6-9 9-8-8v-7Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="8.3" cy="10.1" r="1.4" stroke="currentColor" stroke-width="1.2"/></svg></button>
+        <button id="toggle-rotate" type="button" class="icon-button" aria-pressed="false" aria-label="开启或暂停自动旋转" title="自动旋转"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19.2 9A7.5 7.5 0 0 0 5.9 6.6L3.5 9M4.8 15a7.5 7.5 0 0 0 13.3 2.4l2.4-2.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M3.5 4.5V9H8M20.5 19.5V15H16" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></button>
+        <button id="reset-view" type="button" class="icon-button" aria-label="重置观察视角" title="重置视角"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="square"/><circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.2"/></svg></button>
+        <span class="tools-divider" aria-hidden="true"></span>
+        <button id="export-image" type="button" class="icon-button" aria-label="保存当前模型图像" title="保存图像"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 6.5 9.5 4h5L16 6.5h4v13H4v-13h4Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="12" cy="12.5" r="3.5" stroke="currentColor" stroke-width="1.2"/></svg></button>
+      </div>
+    </section>
+
+    <footer class="page-footer"><span class="interaction-hint"><svg viewBox="0 0 14 17" fill="none" aria-hidden="true"><rect x="2.5" y="1.5" width="9" height="14" rx="4.5" stroke="currentColor"/><path d="M7 4v3" stroke="currentColor" stroke-linecap="round"/></svg>拖拽旋转<span>·</span>滚轮缩放<span>·</span>点击探索</span><span class="footer-center">DESIGNED TO BE DISCOVERED</span><span class="concept-note">结构概念 <span>/</span> 非维修指引</span></footer>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="loading" class="loading-screen"><div class="loading-orbit" aria-hidden="true"></div><div class="loading-wordmark">ORBIT</div><p>正在构建精密视界<span>ASSEMBLING THE EXPERIENCE</span></p></div>
+    <dialog id="help-dialog" class="help-dialog" aria-labelledby="help-title"><button id="close-help" class="icon-button dialog-close" type="button" aria-label="关闭交互指南"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="1.2"/></svg></button><span class="eyebrow">A CLOSER LOOK</span><h2 id="help-title">从这里，探索内部。</h2><p class="dialog-intro">自由观察每个角度，了解各个部件如何协同工作。</p><dl class="help-instructions"><div><dt>拖拽模型</dt><dd>绕机身旋转观察</dd></div><div><dt>滚动滚轮 / 双指缩放</dt><dd>拉近或远离细节</dd></div><div><dt>点击部件 / 结构索引</dt><dd>查看子系统介绍</dd></div><div><dt>拖动拆解滑块</dt><dd>连续调整部件分离程度</dd></div><div><dt>切换底部视图</dt><dd>整机、分解、剖面与热循环</dd></div></dl><p class="dialog-disclaimer">本作品为热泵洗烘一体机的交互式结构概念演示。部件形态、位置与热循环路径经过视觉化简化，不代表特定产品的真实规格，不作为拆机或维修操作指引。</p><div class="dialog-footer">ORBIT <span>FORM &amp; FUNCTION</span></div></dialog>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+node_modules/
+# dist/ is committed for the repository's GitHub Pages preview.
+test-results/
+.DS_Store
+*.local
+*.log
+output/verification.json
+output/ORBIT-rear-connections.png
+output/plumbing-debug.png
+output/preview-*.png
