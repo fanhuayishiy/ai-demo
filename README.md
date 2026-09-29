@@ -15,8 +15,8 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 
 | 项目 | 一句话简介 | 预览 | 详细文档 |
 | --- | --- | --- | --- |
-| orbit-heatpump-washer-dryer | ORBIT 热泵洗烘一体机，3D 爆炸拆解、热循环与进排水结构交互 | [在线](https://fanhuayishiy.github.io/ai-demo/orbit-heatpump-washer-dryer/dist/) | [README](./orbit-heatpump-washer-dryer/README.md) |
 | habitat-interactive-home | 栖居 HABITAT 可探索家庭 3D 模型，多灯独立控制、家电交互与智能隐墙 | [在线](https://fanhuayishiy.github.io/ai-demo/habitat-interactive-home/dist/) | [README](./habitat-interactive-home/README.md) |
+| orbit-heatpump-washer-dryer | ORBIT 热泵洗烘一体机，3D 爆炸拆解、热循环与进排水结构交互 | [在线](https://fanhuayishiy.github.io/ai-demo/orbit-heatpump-washer-dryer/dist/) | [README](./orbit-heatpump-washer-dryer/README.md) |
 | hydrogen-energy-system | H₂ NEXUS 含氢综合能源数字孪生，五类能流动态可视化与守恒仿真 | [在线](https://fanhuayishiy.github.io/ai-demo/hydrogen-energy-system/) | [README](./hydrogen-energy-system/README.md) |
 | campus-3d-dashboard | 智慧校园 3D 数据大屏（单 HTML 文件） | [在线](https://fanhuayishiy.github.io/ai-demo/campus-3d-dashboard/) | [README](./campus-3d-dashboard/README.md) |
 | mcb-2p-c16-blender-animation | 双极空气开关 Blender 精细建模与 22 秒 8 章节工程动画 | [在线](https://fanhuayishiy.github.io/ai-demo/mcb-2p-c16-blender-animation/) | [README](./mcb-2p-c16-blender-animation/README.md) |
@@ -98,6 +98,8 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 2. 功能亮点 / 技术栈 / 运行方式 / 目录结构 / 验证与边界。
 
 本文件只补两样：「项目列表」表格加一行（预览链接指向可交互页面，不要指向 `.mp4` 等媒体文件），以及上方一段 2-4 句的速览（简介 + 预览/文档链接）。
+
+排序约定：「项目列表」中的 `habitat-interactive-home` 固定为第一项，新增项目不得插入它之前。
 
 ---
 
