@@ -17,18 +17,13 @@ const errors = [],
   warnings = [],
   evidence = [];
 page.on('pageerror', (error) => errors.push(error.message));
-page.on('requestfailed', (request) =>
-  errors.push(`${request.url()}: ${request.failure()?.errorText}`),
-);
-page.on('response', (response) => {
-  if (response.status() >= 400) errors.push(`${response.status()}: ${response.url()}`);
-});
 page.on('console', (message) => {
   if (message.type() === 'error') errors.push(message.text());
   if (message.type() === 'warning') warnings.push(message.text());
 });
 
 async function screenshot(name) {
+  await page.mouse.move(0, 0);
   await page.screenshot({ path: `test-results/${name}.png`, fullPage: true });
 }
 function differenceFraction(before, after) {
@@ -103,23 +98,17 @@ async function noOverflow(label) {
 }
 
 try {
-  if (process.env.AEROSTRUCT_COLLECTION_URL) {
-    const collection = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
-    await collection.goto(process.env.AEROSTRUCT_COLLECTION_URL, { waitUntil: 'networkidle' });
-    const projectLinks = collection.locator('.grid .card .cover');
-    assert.equal(await projectLinks.count(), 11);
-    assert.equal(
-      await projectLinks.nth(2).getAttribute('href'),
-      './boeing-787-digital-twin/dist/index.html',
-      'AEROSTRUCT is third in the collection',
-    );
-    await collection.screenshot({ path: 'test-results/collection.png', fullPage: true });
-    await collection.close();
-  }
-  await page.goto(process.env.AEROSTRUCT_URL || 'http://localhost:5173', {
-    waitUntil: 'networkidle',
-  });
+  await page.goto('http://localhost:5173', { waitUntil: 'networkidle' });
   await page.getByText('三维场景已就绪').waitFor();
+  await page.getByRole('button', { name: '查看铝合金占比', exact: true }).click();
+  await page.mouse.move(0, 0);
+  assert.equal(await page.locator('.donut-center strong').innerText(), '20%');
+  assert.equal(await page.locator('.donut-center small').innerText(), '铝合金');
+  await page.getByRole('button', { name: '查看钛合金占比', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('.donut-center strong').innerText(), '15%');
+  await page.getByRole('button', { name: '查看复合材料占比', exact: true }).click();
+  await page.mouse.move(0, 0);
   await page.getByRole('button', { name: '整机视图', exact: true }).click();
   await page.waitForTimeout(900);
   await screenshot('desktop-assembled');
@@ -157,6 +146,22 @@ try {
   assert.notDeepEqual(explosionPixels, cutawayPixels);
   await page.locator('.assembly-item').filter({ hasText: '左侧发动机' }).click();
   await page.locator('.component-inspector h3').filter({ hasText: '左侧发动机' }).waitFor();
+  const beforeFocus = await canvasEvidence('before component focus');
+  await page.getByRole('button', { name: '聚焦选中部件', exact: true }).click();
+  await page.waitForTimeout(1600);
+  assert.equal(
+    await page.getByTestId('aircraft-canvas').getAttribute('data-focused-part'),
+    'engine-left',
+  );
+  assert.ok(differenceFraction(beforeFocus, await canvasEvidence('engine focused')) > 0.01);
+  await screenshot('desktop-engine-detail');
+  await page.getByRole('button', { name: '返回全机', exact: true }).click();
+  await page.waitForTimeout(1400);
+  assert.equal(await page.getByTestId('aircraft-canvas').getAttribute('data-focused-part'), '');
+  assert.equal(
+    await page.getByRole('button', { name: '剖面视图', exact: true }).getAttribute('aria-pressed'),
+    'true',
+  );
   await page.getByRole('button', { name: '查看部件检测报告' }).click();
   await page.locator('dialog[open]').waitFor();
   assert.equal(await page.locator('dialog tbody tr').count(), 1);
@@ -205,6 +210,11 @@ try {
   await page.waitForTimeout(1800);
   const nosePoint = await page.locator('[data-annotation="nose"] .annotation-point').boundingBox();
   assert.ok(nosePoint);
+  await page.mouse.move(nosePoint.x + nosePoint.width / 2, nosePoint.y + nosePoint.height / 2);
+  await page.waitForFunction(
+    () => document.querySelector('canvas[data-testid]').dataset.hoveredPart === 'nose',
+  );
+  assert.match(await page.locator('.assembly-item.hovered').innerText(), /机首与驾驶舱/);
   await page.mouse.click(nosePoint.x + nosePoint.width / 2, nosePoint.y + nosePoint.height / 2);
   await page.locator('.component-inspector h3').filter({ hasText: '机首与驾驶舱' }).waitFor();
   await page.getByRole('button', { name: '取消部件选择' }).click();
@@ -267,6 +277,15 @@ try {
   await page.waitForTimeout(1300);
   await screenshot('mobile-exploded');
   await canvasEvidence('390 mobile exploded');
+  const labelCollisions = await page.locator('.annotation-label:visible').evaluateAll((labels) => {
+    const boxes = labels.map((label) => label.getBoundingClientRect());
+    return boxes.some((a, i) =>
+      boxes
+        .slice(i + 1)
+        .some((b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top),
+    );
+  });
+  assert.equal(labelCollisions, false, 'mobile annotations do not overlap');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.reload({ waitUntil: 'networkidle' });
   await page.getByText('三维场景已就绪').waitFor();

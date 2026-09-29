@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
+import { FlightControls } from './components/FlightControls';
 import {
   Activity,
   ArrowDownToLine,
@@ -29,6 +30,7 @@ import {
   SquareStack,
   Tag,
   Wind,
+  Undo2,
   X,
 } from 'lucide-react';
 import { Scene } from './scene/Scene';
@@ -169,6 +171,12 @@ export default function App() {
   const [toast, setToast] = useState(''),
     [report, setReport] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
+  const [hovered, setHovered] = useState(null);
+  const [focused, setFocused] = useState(null);
+  const [flight, setFlight] = useState(null);
+  useEffect(() => {
+    setFlight(null);
+  }, [state.mode, state.selected, state.resetId, state.playing]);
   const sceneRef = useRef(null),
     toastTimer = useRef(null);
   const selected = components.find((c) => c.id === state.selected);
@@ -208,6 +216,12 @@ export default function App() {
     if (state.playing)
       dispatch({ type: 'explosion', value: sceneRef.current?.getExplosion() ?? state.explosion });
     dispatch({ type: 'toggle', key: 'playing' });
+  }
+  function focusSelected() {
+    if (!selected) return;
+    if (state.playing) togglePlayback();
+    if (state.autoRotate) dispatch({ type: 'toggle', key: 'autoRotate' });
+    sceneRef.current?.focus(selected.id);
   }
   function download(url, name) {
     const link = document.createElement('a');
@@ -375,7 +389,7 @@ export default function App() {
                 <button
                   key={component.id}
                   aria-pressed={state.selected === component.id}
-                  className={`assembly-item ${state.selected === component.id ? 'selected' : ''}`}
+                  className={`assembly-item ${state.selected === component.id ? 'selected' : ''} ${hovered === component.id ? 'hovered' : ''}`}
                   onClick={() =>
                     dispatch({
                       type: 'select',
@@ -404,7 +418,7 @@ export default function App() {
           </section>
         </aside>
 
-        <section className="viewer" aria-label="飞机三维视图">
+        <section className={`viewer ${flight ? 'flight-active' : ''}`} aria-label="飞机三维视图">
           <div className="viewer-heading">
             <div>
               <div className="viewer-eyebrow">
@@ -423,14 +437,16 @@ export default function App() {
             <div className="viewer-status">
               <span className="live-dot" />
               <span>{ready ? '三维场景已就绪' : '正在构建三维场景'}</span>
-              <small>LOD 01 · HIGH DETAIL</small>
+              <small>{focused ? 'COMPONENT FOCUS · HIGH DETAIL' : 'LOD 01 · HIGH DETAIL'}</small>
             </div>
           </div>
           <Scene
             ref={sceneRef}
-            state={state}
+            state={{ ...state, flight }}
             onSelect={(id) => dispatch({ type: 'select', id })}
             onReady={() => setReady(true)}
+            onHover={setHovered}
+            onFocusChange={setFocused}
           />
           {!ready && (
             <div className="loading-state">
@@ -439,6 +455,11 @@ export default function App() {
             </div>
           )}
           <div className="viewer-side-tools">
+            {focused && (
+              <IconButton label="返回全机" onClick={() => sceneRef.current?.overview()}>
+                <Undo2 size={17} />
+              </IconButton>
+            )}
             <IconButton label="放大" onClick={() => sceneRef.current?.zoom(0.85)}>
               <Plus size={17} />
             </IconButton>
@@ -449,6 +470,10 @@ export default function App() {
             <IconButton
               label="重置视图"
               onClick={() => {
+                if (flight) {
+                  sceneRef.current?.overview();
+                  return;
+                }
                 dispatch({ type: 'reset' });
                 setTab('overview');
               }}
@@ -493,6 +518,7 @@ export default function App() {
             <b />
             <em />
           </div>
+          <FlightControls flight={flight} setFlight={setFlight} />
           <div className="viewer-bottom">
             <div
               className={`explosion-control ${state.mode === 'exploded' ? 'visible' : ''}`}
@@ -603,7 +629,12 @@ export default function App() {
                   {selected.code}
                   <span>SELECTED</span>
                 </div>
-                <h3>{selected.name}</h3>
+                <div className="component-title">
+                  <h3>{selected.name}</h3>
+                  <IconButton label="聚焦选中部件" onClick={focusSelected} disabled={!ready}>
+                    <Focus size={17} />
+                  </IconButton>
+                </div>
                 <small>{selected.en}</small>
                 <p>{selected.description}</p>
                 <div className="component-properties">

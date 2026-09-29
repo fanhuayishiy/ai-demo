@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { cylinderBetween, line, profileAt, shellGeometry, wingGeometry } from './geometry.js';
+import { addCockpit } from './cockpit.js';
 
 const BODY = [
   [-15.7, 0.03],
@@ -15,7 +16,7 @@ const BODY = [
   [14.6, 0.36],
   [15.7, 0.03],
 ];
-const WING = [
+export const WING = [
   [1.1, -3, -0.25, 7.1, 0.75],
   [2.5, -2.7, -0.2, 6.5, 0.65],
   [5, -1.55, -0.05, 5.1, 0.47],
@@ -121,6 +122,19 @@ function buildEngine(parent, side, materials, fans) {
   ];
   const cowling = mesh(shellGeometry(profile, -1.9, 1.5), materials.white, engine);
   cowling.name = 'engine-cowling';
+  for (const x of [-0.95, 0.85]) {
+    const radius = profileAt(profile, x) + 0.009;
+    cowling.add(
+      line(
+        Array.from({ length: 65 }, (_, i) => {
+          const angle = (i / 64) * Math.PI * 2;
+          return [x, Math.cos(angle) * radius, Math.sin(angle) * radius];
+        }),
+        0x71818b,
+        0.55,
+      ),
+    );
+  }
   const lip = mesh(
     new THREE.TorusGeometry(0.914, 0.087, 16, 64),
     materials.metal,
@@ -178,6 +192,33 @@ function buildEngine(parent, side, materials, fans) {
     [0.4, 0, 0],
   );
   core.rotation.z = Math.PI / 2;
+  const services = new THREE.Group();
+  services.name = 'engine-service-lines';
+  engine.add(services);
+  for (const angle of [0.55, 2.15, 3.7, 5.3]) {
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-0.75, Math.cos(angle) * 0.51, Math.sin(angle) * 0.51),
+      new THREE.Vector3(-0.2, Math.cos(angle) * 0.65, Math.sin(angle) * 0.65),
+      new THREE.Vector3(0.7, Math.cos(angle + 0.3) * 0.64, Math.sin(angle + 0.3) * 0.64),
+      new THREE.Vector3(1.3, Math.cos(angle + 0.3) * 0.41, Math.sin(angle + 0.3) * 0.41),
+    ]);
+    mesh(new THREE.TubeGeometry(curve, 24, 0.024, 6, false), materials.copper, services);
+  }
+  const fasteners = new THREE.InstancedMesh(
+    new THREE.CylinderGeometry(0.045, 0.045, 0.06, 6),
+    materials.metal,
+    48,
+  );
+  fasteners.name = 'engine-flange-fasteners';
+  const bolt = new THREE.Object3D();
+  for (let i = 0; i < 48; i++) {
+    const angle = ((i % 24) / 24) * Math.PI * 2;
+    bolt.position.set(i < 24 ? -0.38 : 1.05, Math.cos(angle) * 0.52, Math.sin(angle) * 0.52);
+    bolt.rotation.z = Math.PI / 2;
+    bolt.updateMatrix();
+    fasteners.setMatrixAt(i, bolt.matrix);
+  }
+  services.add(fasteners);
   for (let i = 0; i < 10; i++) {
     const ring = mesh(
       new THREE.TorusGeometry(0.47 - i * 0.013, 0.035, 8, 32),
@@ -214,7 +255,7 @@ function buildEngine(parent, side, materials, fans) {
       ),
     );
     g.computeVertexNormals();
-    mesh(g, materials.white, engine);
+    mesh(g, materials.white, cowling);
   }
   const pylon = new THREE.Shape();
   pylon.moveTo(-0.7, 0.85);
@@ -222,6 +263,10 @@ function buildEngine(parent, side, materials, fans) {
   pylon.lineTo(2.1, 2);
   pylon.lineTo(1.25, 0.75);
   pylon.closePath();
+  for (const x of [0.2, 0.95]) {
+    engine.add(cylinderBetween([x, 0.43, -0.15], [x, 1.1, 0], 0.065, materials.metal));
+    engine.add(cylinderBetween([x, 0.43, 0.15], [x, 1.1, 0], 0.065, materials.metal));
+  }
   mesh(
     new THREE.ExtrudeGeometry(pylon, { depth: 0.22, bevelEnabled: false }),
     materials.white,
@@ -239,6 +284,17 @@ export function createAircraft() {
     white: paint(0xdce4e8, 0.32, 0.28),
     metal: paint(0x9cafbc, 0.84, 0.22),
     glass: paint(0x122735, 0.64, 0.15),
+    cockpitSeal: paint(0x263438, 0.25, 0.44),
+    cockpitGlass: new THREE.MeshPhysicalMaterial({
+      color: 0x13212a,
+      metalness: 0.35,
+      roughness: 0.16,
+      clearcoat: 1,
+      clearcoatRoughness: 0.12,
+      envMapIntensity: 1.2,
+      side: THREE.DoubleSide,
+      emissiveIntensity: 0,
+    }),
     graphite: paint(0x25343c, 0.67, 0.4),
     dark: paint(0x091319, 0.3, 0.52),
     blade: paint(0x72858e, 0.85, 0.28),
@@ -248,6 +304,7 @@ export function createAircraft() {
     seatHead: paint(0xa8b9b9, 0.1, 0.7),
     tire: paint(0x151c1f, 0.05, 0.86),
     deck: paint(0x596b70, 0.5, 0.55),
+    copper: paint(0xaf8563, 0.77, 0.32),
   };
   const definitions = [
     ['nose', [-13, 0.9, 0], [-4.3, 0.5, 0]],
@@ -260,6 +317,8 @@ export function createAircraft() {
     ['cabin', [-2, 0.5, 0], [0, 0.8, 0]],
     ['landing-gear', [0, -2.3, 0], [0, -2.2, 0]],
   ];
+  materials.cockpitGlass.userData.preserveTint = true;
+  materials.cockpitSeal.userData.preserveTint = true;
   const parts = definitions.map(([id, anchor, offset]) => {
     const group = new THREE.Group();
     group.name = id;
@@ -275,16 +334,7 @@ export function createAircraft() {
 
   mesh(shellGeometry(BODY, -15.7, -10.5), materials.white, groups.nose);
   fuselageWindows(groups.nose, -11.3, -10.5, materials.metal, materials.glass);
-  for (const side of [-1, 1]) {
-    for (let pane = 0; pane < 3; pane++) {
-      const start = side > 0 ? 0.35 + pane * 0.32 : -0.63 - pane * 0.32;
-      mesh(
-        shellGeometry(BODY, -14.15 + pane * 0.13, -12.82, start, start + 0.275, 1.012),
-        materials.glass,
-        groups.nose,
-      );
-    }
-  }
+  addCockpit(groups.nose, BODY, materials);
   const topShell = new THREE.Group();
   topShell.name = 'upper-fuselage-shell';
   groups.fuselage.add(topShell);
@@ -375,6 +425,23 @@ export function createAircraft() {
     heads.setMatrixAt(i, dummy.matrix);
   });
   cabin.add(seatBase, seatBack, heads);
+  const armrests = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.3, 0.035, 0.024),
+    materials.seatHead,
+    seatPositions.length * 2,
+  );
+  armrests.name = 'seat-armrests';
+  seatPositions.forEach(([x, y, z], i) => {
+    for (const [j, side] of [-1, 1].entries()) {
+      dummy.position.set(x, y + 0.15, z + side * 0.108);
+      dummy.updateMatrix();
+      armrests.setMatrixAt(i * 2 + j, dummy.matrix);
+    }
+  });
+  cabin.add(armrests);
+  for (const z of [-0.34, 0.34]) {
+    mesh(new THREE.BoxGeometry(18.7, 0.005, 0.028), materials.seatHead, cabin, [-0.5, -0.161, z]);
+  }
   for (let x = -9.5; x < 9; x += 1.3)
     mesh(new THREE.BoxGeometry(0.08, 0.13, 2.67), materials.metal, cabin, [x, -0.34, 0]);
   for (const z of [-0.8, 0.8])
@@ -482,14 +549,37 @@ export function createAircraft() {
   }
 
   const gear = groups['landing-gear'];
+  const gearPivots = [];
   for (const [x, z, main] of [
     [-11.2, 0, false],
     [1.5, -2, true],
     [1.5, 2, true],
   ]) {
+    const previousChildren = new Set(gear.children);
+    const torqueLinks = new THREE.Group();
+    torqueLinks.name = 'gear-torque-links';
+    gear.add(torqueLinks);
     const bottom = main ? -3 : -2.95;
     gear.add(cylinderBetween([x, -0.8, z], [x + 0.25, bottom, z], 0.065, materials.metal));
     gear.add(cylinderBetween([x - 0.7, -1, z], [x + 0.2, -2.6, z], 0.04, materials.metal));
+    gear.add(cylinderBetween([x + 0.1, -1.5, z], [x + 0.24, -2.65, z], 0.097, materials.graphite));
+    for (const side of [-1, 1]) {
+      const knee = [x + 0.58, -2.15, z + side * 0.09];
+      torqueLinks.add(
+        cylinderBetween([x + 0.14, -1.75, z + side * 0.09], knee, 0.027, materials.metal),
+      );
+      torqueLinks.add(
+        cylinderBetween(knee, [x + 0.22, -2.55, z + side * 0.09], 0.027, materials.metal),
+      );
+    }
+    gear.add(
+      cylinderBetween(
+        [x + 0.25, bottom, z - 0.3],
+        [x + 0.25, bottom, z + 0.3],
+        0.065,
+        materials.metal,
+      ),
+    );
     for (const dx of main ? [-0.38, 0.38] : [0]) {
       for (const dz of [-0.2, 0.2]) {
         const tire = mesh(
@@ -507,6 +597,17 @@ export function createAircraft() {
         hub.rotation.x = Math.PI / 2;
       }
     }
+    const pivot = new THREE.Group();
+    pivot.name = main ? `main-gear-pivot-${z < 0 ? 'left' : 'right'}` : 'nose-gear-pivot';
+    pivot.position.set(x, -0.8, z);
+    const assembly = new THREE.Group();
+    assembly.position.set(-x, 0.8, -z);
+    for (const child of [...gear.children]) {
+      if (!previousChildren.has(child)) assembly.add(child);
+    }
+    pivot.add(assembly);
+    gear.add(pivot);
+    gearPivots.push({ pivot, main, z });
   }
 
   for (const part of parts) {
@@ -523,36 +624,58 @@ export function createAircraft() {
     });
     part.materials = [...materialCopies.values()];
   }
-  let previousSelected;
-  function update({ mode = 'assembled', explosion = 0, selected = null, time = 0 } = {}) {
+  let previousSelected, previousHovered;
+  function update({
+    mode = 'assembled',
+    explosion = 0,
+    selected = null,
+    hovered = null,
+    focused = null,
+    time = 0,
+    gearExtension = 1,
+  } = {}) {
     const amount = THREE.MathUtils.clamp(Number(explosion) || 0, 0, 1);
-    for (const part of parts) part.group.position.copy(part.offset).multiplyScalar(amount);
+    for (const { pivot, main, z } of gearPivots) {
+      const retraction = 1 - THREE.MathUtils.clamp(gearExtension, 0, 1);
+      const fold = THREE.MathUtils.smoothstep(retraction, main ? 0.04 : 0, main ? 1 : 0.92);
+      pivot.rotation.set(main ? Math.sign(z) * fold * 1.48 : 0, 0, main ? 0 : fold * 1.48);
+      // Stow inside the fuselage; the skin occludes the gear instead of a visibility switch.
+      pivot.position.y = -0.8 + 0.65 * THREE.MathUtils.smoothstep(fold, 0.45, 1);
+    }
+    for (const part of parts) {
+      part.group.position.copy(part.offset).multiplyScalar(amount);
+      part.group.visible = !focused || part.id === focused;
+    }
     topShell.position.y = amount * 4.2;
     lowerShell.position.y = -amount * 0.65;
     topShell.visible = mode !== 'cutaway';
     skeleton.visible = mode === 'cutaway' || amount > 0.015;
-    cabin.visible = mode === 'cutaway' || amount > 0.015;
+    cabin.visible = (mode === 'cutaway' || amount > 0.015) && (!focused || focused === 'cabin');
     engines.forEach((e) => {
       e.userData.cowling.visible = mode !== 'cutaway';
     });
     root.children
       .filter((o) => o.name === 'livery-stripe')
       .forEach((o) => {
-        o.visible = mode === 'assembled' && amount < 0.02;
+        o.visible = mode === 'assembled' && amount < 0.02 && !focused;
       });
     fans.forEach((fan) => {
       fan.rotation.x = time * 1.8;
     });
-    if (selected !== previousSelected) {
+    if (selected !== previousSelected || hovered !== previousHovered) {
       for (const part of parts) {
         part.materials.forEach((material) => {
-          if (material.emissive) {
-            material.emissive.set(part.id === selected ? 0x227e6c : 0x000000);
-            material.emissiveIntensity = part.id === selected ? 0.35 : 0;
+          if (material.emissive && !material.userData.preserveTint) {
+            material.emissive.set(
+              part.id === selected ? 0x227e6c : part.id === hovered ? 0x476b80 : 0x000000,
+            );
+            material.emissiveIntensity =
+              part.id === selected ? 0.35 : part.id === hovered ? 0.18 : 0;
           }
         });
       }
       previousSelected = selected;
+      previousHovered = hovered;
     }
   }
   update();

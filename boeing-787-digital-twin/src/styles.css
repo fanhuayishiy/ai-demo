@@ -436,6 +436,13 @@ select {
 .assembly-item:hover {
   background: #1f3030;
 }
+.assembly-item.hovered:not(.selected) {
+  background: #203138;
+  box-shadow: inset 2px 0 #8daec6;
+}
+.assembly-item.hovered .assembly-name {
+  color: #c9e1ef;
+}
 .assembly-item.selected {
   background: #203d37;
 }
@@ -651,6 +658,9 @@ select {
 .annotation-label.selected {
   color: var(--accent);
   border-color: var(--accent);
+}
+.annotation-label:focus-visible {
+  outline-offset: 2px;
 }
 .annotation-label:hover {
   background: #294339;
@@ -1238,6 +1248,30 @@ select {
   font-weight: 500;
   color: #e1eee8;
 }
+.component-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 30px;
+}
+.component-title h3 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.component-title .icon-button {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  color: var(--accent);
+  border: 1px solid #385852;
+  border-radius: 4px;
+}
+.component-title .tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
 .component-inspector > small {
   font: 8px var(--mono);
   color: #699585;
@@ -1336,12 +1370,24 @@ select {
   flex-direction: column;
   gap: 12px;
 }
-.material-legend > div {
+.material-legend > button {
   display: flex;
   align-items: center;
   gap: 9px;
   color: #97b5a0;
   font-size: 10px;
+  padding: 0;
+  text-align: left;
+  min-height: 16px;
+}
+.material-option[aria-pressed='true'] span,
+.material-option:hover span {
+  color: #e0efeb;
+}
+.material-option[aria-pressed='true'] i {
+  box-shadow:
+    0 0 0 2px #101819,
+    0 0 0 3px currentColor;
 }
 .material-legend i {
   width: 5px;
@@ -1766,7 +1812,7 @@ select {
     gap: 15px;
     max-width: 210px;
   }
-  .material-legend > div {
+  .material-legend > button {
     font-size: 11px;
   }
   .material-legend b {
@@ -1983,7 +2029,7 @@ select {
     height: 100px;
     width: 100px;
   }
-  .material-legend > div {
+  .material-legend > button {
     gap: 6px;
     font-size: 9px;
   }
@@ -2269,6 +2315,8 @@ select {
   .view-presets {
     right: 5px;
     bottom: 131px;
+    flex-direction: row;
+    gap: 2px;
   }
   .view-presets button {
     font-size: 8px;
@@ -2479,7 +2527,7 @@ select {
     max-width: 180px;
     gap: 15px;
   }
-  .material-legend > div {
+  .material-legend > button {
     font-size: 11px;
   }
   .donut-center strong {
@@ -2916,5 +2964,258 @@ select {
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
+  }
+}
+
+.flight-controls {
+  position: absolute;
+  z-index: 5;
+  top: 150px;
+  left: 24px;
+}
+.flight-actions,
+.flight-transport,
+.flight-telemetry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.flight-controls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 6px 10px;
+  background: #192628;
+  border: 1px solid #3b5152;
+  color: #d5e1de;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.flight-controls button:hover,
+.flight-controls button.active {
+  color: #8ae7d3;
+  border-color: #73deca;
+  background: #213a37;
+}
+.flight-actions > span {
+  font-size: 9px;
+  color: #78938e;
+  letter-spacing: 0;
+}
+.flight-controls.running {
+  top: auto;
+  bottom: 24px;
+  right: 24px;
+  padding: 8px 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 5px 20px;
+  grid-template-rows: 32px 32px 20px;
+  border-top: 1px solid #405a55;
+  background: #111b1df2;
+  backdrop-filter: blur(12px);
+}
+.flight-telemetry {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  color: #e6eeec;
+  font-variant-numeric: tabular-nums;
+}
+.flight-telemetry > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 5px;
+  border-left: 1px solid #334745;
+  padding-left: 14px;
+  min-width: 0;
+  white-space: nowrap;
+}
+.flight-telemetry > div:first-child {
+  border: 0;
+  padding-left: 0;
+}
+.flight-telemetry small {
+  display: block;
+  margin-bottom: 0;
+}
+.flight-telemetry strong {
+  color: #e4efed;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.1;
+}
+.flight-telemetry em {
+  font-size: 15px;
+  font-style: normal;
+  color: #a5c5cc;
+}
+.flight-telemetry .flight-gear strong {
+  color: #efc17e;
+  font-size: 12px;
+}
+.flight-actions > span {
+  margin-left: auto;
+}
+.flight-controls.running .flight-actions > span {
+  width: 40px;
+  flex: 0 0 40px;
+  white-space: nowrap;
+}
+.flight-controls.running .flight-actions button {
+  flex-shrink: 0;
+}
+.flight-transport time {
+  white-space: nowrap;
+  min-width: 54px;
+}
+.flight-stages {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 0;
+}
+.flight-stages button {
+  display: flex;
+  justify-content: flex-start;
+  border: 0;
+  border-radius: 0;
+  border-top: 2px solid #344545;
+  background: transparent;
+  min-height: 20px;
+  padding: 2px 0;
+  color: #91a5a1;
+  font-size: 11px;
+}
+.flight-stages button i {
+  width: 4px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 50%;
+}
+.flight-stages button.complete {
+  border-top-color: #4a9181;
+  color: #92bfb2;
+}
+.flight-stages button.current {
+  border-top-color: #8ae7d3;
+  color: #8ae7d3;
+  background: transparent;
+}
+.flight-footnote {
+  display: none;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 7px;
+  font-size: 9px;
+  color: #849993;
+}
+.flight-footnote > span:first-child {
+  color: #a7c5be;
+}
+.flight-active .viewer-side-tools {
+  top: 25%;
+}
+.flight-telemetry small,
+.flight-disclaimer {
+  color: #8b9e9b;
+  font-size: 10px;
+}
+.flight-transport input {
+  flex: 1;
+  min-width: 0;
+  accent-color: #73deca;
+  cursor: pointer;
+}
+.flight-transport {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+.flight-transport time {
+  color: #a3b6b1;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.flight-active .viewer-bottom,
+.flight-active .view-presets,
+.flight-active .axis-gizmo {
+  display: none;
+}
+@media (max-width: 900px) {
+  .flight-controls {
+    left: 16px;
+    top: 109px;
+  }
+  .flight-controls.running {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    padding: 6px 8px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 32px 18px 32px 20px;
+    gap: 4px;
+  }
+  .flight-actions,
+  .flight-transport,
+  .flight-telemetry {
+    gap: 8px;
+  }
+  .flight-telemetry {
+    gap: 5px;
+    grid-row: 2;
+  }
+  .flight-transport {
+    grid-row: 3;
+  }
+  .flight-stages {
+    grid-row: 4;
+  }
+  .flight-telemetry > div {
+    padding-left: 4px;
+    gap: 3px;
+  }
+  .flight-telemetry strong {
+    font-size: 12px;
+  }
+  .flight-telemetry .flight-gear strong {
+    font-size: 12px;
+  }
+  .flight-telemetry small {
+    font-size: 8px;
+  }
+  .flight-controls.running .flight-actions {
+    gap: 6px;
+  }
+  .flight-controls.running .flight-actions button {
+    padding: 5px 8px;
+  }
+  .flight-stages {
+    gap: 5px;
+  }
+  .flight-stages button {
+    gap: 5px;
+    font-size: 10px;
+  }
+  .flight-footnote {
+    font-size: 8px;
+  }
+  .flight-disclaimer {
+    display: none;
+  }
+}
+@media (max-width: 380px) {
+  .flight-controls.running {
+    grid-template-rows: 32px 30px 32px 20px;
+  }
+  .flight-telemetry > div {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
   }
 }

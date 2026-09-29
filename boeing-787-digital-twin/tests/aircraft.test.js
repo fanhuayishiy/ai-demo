@@ -2,6 +2,27 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 
+test('gear folds inward continuously and remains present inside the fuselage', async () => {
+  const { createAircraft } = await import('../src/scene/aircraft.js');
+  const model = createAircraft();
+  const left = model.root.getObjectByName('main-gear-pivot-left');
+  const right = model.root.getObjectByName('main-gear-pivot-right');
+  const nose = model.root.getObjectByName('nose-gear-pivot');
+  let last = 0;
+  for (let i = 0; i <= 200; i++) {
+    model.update({ gearExtension: 1 - i / 200 });
+    assert.ok(left.visible && right.visible && nose.visible);
+    assert.ok(left.rotation.x <= 0 && right.rotation.x >= 0);
+    assert.ok(Math.abs(right.rotation.x - last) < 0.025);
+    last = right.rotation.x;
+  }
+  assert.ok(right.position.y > -0.2);
+  model.update({ gearExtension: 1 });
+  assert.equal(right.position.y, -0.8);
+  assert.equal(right.rotation.x, 0);
+  model.dispose();
+});
+
 test('aircraft has nine selectable assemblies with finite, plausible geometry', async () => {
   const api = await import('../src/scene/aircraft.js').catch(() => ({}));
   assert.equal(typeof api.createAircraft, 'function', 'aircraft factory must exist');

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Area,
   AreaChart,
@@ -75,6 +76,9 @@ export function StrainChart({ range = '30' }) {
 }
 
 export function MaterialChart() {
+  const [selected, setSelected] = useState(materials[0].name);
+  const [hovered, setHovered] = useState(null);
+  const active = materials.find((material) => material.name === (hovered || selected));
   return (
     <div className="material-content">
       <div
@@ -94,30 +98,46 @@ export function MaterialChart() {
               paddingAngle={5}
               stroke="none"
               isAnimationActive={false}
+              onMouseEnter={(_, index) => setHovered(materials[index]?.name || null)}
+              onMouseLeave={() => setHovered(null)}
             >
               {materials.map((m) => (
-                <Cell key={m.name} fill={m.color} />
+                <Cell
+                  key={m.name}
+                  fill={m.color}
+                  opacity={m.name === active.name ? 1 : 0.5}
+                  onClick={() => setSelected(m.name)}
+                />
               ))}
             </Pie>
           </PieChart>
         </ResponsiveContainer>
         <div className="donut-center">
           <strong>
-            50<span>%</span>
+            {active.value}
+            <span>%</span>
           </strong>
-          <small>复合材料</small>
+          <small>{active.name}</small>
         </div>
       </div>
       <div className="material-legend">
         {materials.map((m) => (
-          <div key={m.name}>
+          <button
+            key={m.name}
+            className="material-option"
+            aria-label={`查看${m.name}占比`}
+            aria-pressed={selected === m.name}
+            onClick={() => setSelected(m.name)}
+            onMouseEnter={() => setHovered(m.name)}
+            onMouseLeave={() => setHovered(null)}
+          >
             <i style={{ background: m.color }} />
             <span>{m.name}</span>
             <b>
               {m.value}
               <small>%</small>
             </b>
-          </div>
+          </button>
         ))}
       </div>
     </div>
