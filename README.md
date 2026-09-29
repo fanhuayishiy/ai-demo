@@ -17,6 +17,7 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 | --- | --- | --- | --- |
 | habitat-interactive-home | 栖居 HABITAT 可探索家庭 3D 模型，多灯独立控制、家电交互与智能隐墙 | [在线](https://fanhuayishiy.github.io/ai-demo/habitat-interactive-home/dist/) | [README](./habitat-interactive-home/README.md) |
 | orbit-heatpump-washer-dryer | ORBIT 热泵洗烘一体机，3D 爆炸拆解、热循环与进排水结构交互 | [在线](https://fanhuayishiy.github.io/ai-demo/orbit-heatpump-washer-dryer/dist/) | [README](./orbit-heatpump-washer-dryer/README.md) |
+| boeing-787-digital-twin | AEROSTRUCT 波音 787-9 结构数字孪生大屏，3D 爆炸拆解、客舱剖视与模拟监测图表 | [在线](https://fanhuayishiy.github.io/ai-demo/boeing-787-digital-twin/dist/) | [README](./boeing-787-digital-twin/README.md) |
 | hydrogen-energy-system | H₂ NEXUS 含氢综合能源数字孪生，五类能流动态可视化与守恒仿真 | [在线](https://fanhuayishiy.github.io/ai-demo/hydrogen-energy-system/) | [README](./hydrogen-energy-system/README.md) |
 | campus-3d-dashboard | 智慧校园 3D 数据大屏（单 HTML 文件） | [在线](https://fanhuayishiy.github.io/ai-demo/campus-3d-dashboard/) | [README](./campus-3d-dashboard/README.md) |
 | mcb-2p-c16-blender-animation | 双极空气开关 Blender 精细建模与 22 秒 8 章节工程动画 | [在线](https://fanhuayishiy.github.io/ai-demo/mcb-2p-c16-blender-animation/) | [README](./mcb-2p-c16-blender-animation/README.md) |
@@ -39,6 +40,12 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 以原创 108㎡ 示例户型为基础的家庭 3D 交互前端：环绕观察客厅、主卧、书房、餐厨、卫浴与阳台，点选 22 件设备逐一控制；灯光、色温和环境时段实时影响三维空间的光影，遮挡视线的墙体自动淡出。React 19 + Three.js 0.180 + Vite。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/habitat-interactive-home/dist/) · [README（含主生成提示原文）](./habitat-interactive-home/README.md)
+
+## boeing-787-digital-twin — AEROSTRUCT 波音 787-9 结构数字孪生大屏
+
+以波音 787-9 为外形参考的程序化三维飞机，支持整机、连续爆炸和客舱剖视，九大总成点选联动、四种镜头、拆装演示与 PNG / JSON 导出。配套结构健康度、机翼应变、材料构成和动力监测面板；几何与数据均为概念示意，不是官方 CAD、实时遥测或维修指导。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/boeing-787-digital-twin/dist/) · [README（含主生成提示原文）](./boeing-787-digital-twin/README.md)
 
 ## hydrogen-energy-system — H₂ NEXUS 综合能源数字孪生
 
