@@ -465,7 +465,9 @@ export const Scene = forwardRef(function Scene(
       const part = aircraft.parts.find((part) => part.id === id);
       if (!part) return;
       aircraft.root.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(part.group);
+      const bounds = new THREE.Box3().setFromObject(
+        id === 'nose' ? part.group.getObjectByName('cockpit-interior') : part.group,
+      );
       if (bounds.isEmpty()) return;
       bounds.getCenter(targetPose);
       const side = id.endsWith('left') ? -1 : 1;
@@ -477,7 +479,9 @@ export const Scene = forwardRef(function Scene(
             ? [0.9, 0.6, 1]
             : id === 'landing-gear'
               ? [-1, 0.25, 0.45]
-              : [-1, 0.7, 1];
+              : id === 'nose'
+                ? [1, 0.9, 1]
+                : [-1, 0.7, 1];
       const distance = fitDistance(
         bounds,
         new THREE.Vector3(...direction),
@@ -487,7 +491,7 @@ export const Scene = forwardRef(function Scene(
       pose
         .set(...direction)
         .normalize()
-        .multiplyScalar(distance)
+        .multiplyScalar(id === 'nose' ? distance * 1.22 : distance)
         .add(targetPose);
       controls.minDistance = 5;
       controls.maxDistance = Math.max(100, distance * 1.5);

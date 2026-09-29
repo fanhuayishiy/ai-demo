@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { cylinderBetween, line, profileAt, shellGeometry, wingGeometry } from './geometry.js';
 import { addCockpit } from './cockpit.js';
+import { addCabinInterior } from './cabin.js';
+import { addFlightDeck } from './flight-deck.js';
+import { addWingDetails, addSpinnerMark, addFuselageDetails } from './details.js';
 
 const BODY = [
   [-15.7, 0.03],
@@ -185,6 +188,7 @@ function buildEngine(parent, side, materials, fans) {
   }
   const spinner = mesh(new THREE.ConeGeometry(0.23, 0.5, 32), materials.metal, fan, [-0.2, 0, 0]);
   spinner.rotation.z = Math.PI / 2;
+  addSpinnerMark(fan, materials.white);
   const core = mesh(
     new THREE.CylinderGeometry(0.5, 0.35, 2.8, 40),
     materials.graphite,
@@ -332,9 +336,15 @@ export function createAircraft() {
   });
   const groups = Object.fromEntries(parts.map((p) => [p.id, p.group]));
 
-  mesh(shellGeometry(BODY, -15.7, -10.5), materials.white, groups.nose);
-  fuselageWindows(groups.nose, -11.3, -10.5, materials.metal, materials.glass);
-  addCockpit(groups.nose, BODY, materials);
+  mesh(shellGeometry(BODY, -15.7, -14.6), materials.white, groups.nose);
+  const cockpitRoof = new THREE.Group();
+  cockpitRoof.name = 'cockpit-roof';
+  groups.nose.add(cockpitRoof);
+  mesh(shellGeometry(BODY, -14.6, -10.5, -Math.PI / 2, Math.PI / 2), materials.white, cockpitRoof);
+  mesh(shellGeometry(BODY, -14.6, -10.5, Math.PI / 2, Math.PI * 1.5), materials.white, groups.nose);
+  fuselageWindows(cockpitRoof, -11.3, -10.5, materials.metal, materials.glass);
+  addCockpit(cockpitRoof, BODY, materials);
+  const flightDeck = addFlightDeck(groups.nose, materials);
   const topShell = new THREE.Group();
   topShell.name = 'upper-fuselage-shell';
   groups.fuselage.add(topShell);
@@ -343,6 +353,13 @@ export function createAircraft() {
   groups.fuselage.add(lowerShell);
   mesh(shellGeometry(BODY, -10.5, 9, Math.PI / 2, Math.PI * 1.5), materials.white, lowerShell);
   fuselageWindows(topShell, -10.4, 8.8, materials.metal, materials.glass);
+  addFuselageDetails({
+    nose: groups.nose,
+    upper: topShell,
+    lower: lowerShell,
+    profile: BODY,
+    materials,
+  });
   for (let x = -10.4; x <= 9; x += 3.2) {
     const points = Array.from({ length: 65 }, (_, j) => {
       const a = -Math.PI / 2 + (j / 64) * Math.PI;
@@ -444,39 +461,13 @@ export function createAircraft() {
   }
   for (let x = -9.5; x < 9; x += 1.3)
     mesh(new THREE.BoxGeometry(0.08, 0.13, 2.67), materials.metal, cabin, [x, -0.34, 0]);
-  for (const z of [-0.8, 0.8])
-    mesh(new THREE.BoxGeometry(18.8, 0.55, 0.84), materials.graphite, cabin, [-0.6, -0.84, z]);
+  addCabinInterior(cabin, seatPositions, materials);
 
   for (const side of [-1, 1]) {
     const wing = groups[side < 0 ? 'wing-left' : 'wing-right'];
     mesh(wingGeometry(WING, side), materials.white, wing);
     mesh(wingGeometry(WING.slice(-2), side), materials.teal, wing);
-    for (const chord of [0.16, 0.66, 0.86]) {
-      wing.add(
-        line(
-          WING.slice(0, -1).map(([z, x, y, c, thick]) => [
-            x + c * chord,
-            y + thick * 0.5 + 0.025,
-            z * side,
-          ]),
-          0x70888f,
-          0.6,
-        ),
-      );
-    }
-    for (let i = 1; i < WING.length - 1; i++) {
-      const [z, x, y, chord, thickness] = WING[i];
-      wing.add(
-        line(
-          [
-            [x + chord * 0.67, y + thickness * 0.45 + 0.018, z * side],
-            [x + chord * 0.97, y + 0.015, z * side],
-          ],
-          0x6c8088,
-          0.75,
-        ),
-      );
-    }
+    addWingDetails(wing, WING, side, materials.graphite);
     for (const [z, x, y] of [WING[1], WING[2], WING[3]]) {
       const fairing = mesh(new THREE.SphereGeometry(1, 16, 10), materials.white, wing, [
         x + 4,
@@ -649,6 +640,10 @@ export function createAircraft() {
     topShell.position.y = amount * 4.2;
     lowerShell.position.y = -amount * 0.65;
     topShell.visible = mode !== 'cutaway';
+    cockpitRoof.visible = mode !== 'cutaway' && focused !== 'nose';
+    groups.nose.getObjectByName('radome-seam').visible = cockpitRoof.visible;
+    cockpitRoof.position.y = amount * 2.3;
+    flightDeck.visible = mode === 'cutaway' || focused === 'nose' || amount > 0.015;
     skeleton.visible = mode === 'cutaway' || amount > 0.015;
     cabin.visible = (mode === 'cutaway' || amount > 0.015) && (!focused || focused === 'cabin');
     engines.forEach((e) => {
