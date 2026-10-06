@@ -1,0 +1,4 @@
+node_modules/
+# dist/ is intentionally committed for the collection's GitHub Pages hosting.
+artifacts/
+*.log

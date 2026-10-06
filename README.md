@@ -27,6 +27,7 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 | sakura-station-corner | 樱花街角 · 电车与便利店微缩三维沙盘（102 个独立资产模块，五档天气，画面无文字浮层） | [在线](https://fanhuayishiy.github.io/ai-demo/sakura-station-corner/dist/) | [README](./sakura-station-corner/README.md) |
 | sanfang-qixiang-atlas | 三坊七巷 · 坊巷漫游：基于真实地图的 3D 古城导览，支持搜索、缩放与点击飞行 | [在线](https://fanhuayishiy.github.io/ai-demo/sanfang-qixiang-atlas/dist/) | [README](./sanfang-qixiang-atlas/README.md) |
 | terra-728-tractor-blender-animation | 现代四驱拖拉机 Blender 精细建模与 15 秒机械动画 | [在线](https://fanhuayishiy.github.io/ai-demo/terra-728-tractor-blender-animation/) | [README](./terra-728-tractor-blender-animation/README.md) |
+| sunset-flight-study | 夕空飞行 · 奶油白单翼机穿越紫金云海，近距离按键驾驶与官方原曲配乐 | [在线](https://fanhuayishiy.github.io/ai-demo/sunset-flight-study/dist/) | [README](./sunset-flight-study/README.md) |
 
 ---
 
@@ -101,6 +102,14 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 虚构命名的 TERRA 728 大型四驱 CVT 拖拉机概念模型：Blender 5.2.1 程序化建模 1482 个对象，1–360 帧六章节 15 秒机械演示动画（差速行驶、Ackermann 转向、机罩气弹簧开启、车门与副座、后三点抬升、雨刷与警示灯），交付 `.blend`、`.glb`、四张 Cycles 渲染图与本地依赖的交互查看器。轴距、角度与时序均为艺术调整，不得用于选型、制造或安全认证。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/terra-728-tractor-blender-animation/) · [README（含主生成提示原文）](./terra-728-tractor-blender-animation/README.md)
+
+---
+
+## sunset-flight-study — 夕空飞行 · Just breathe
+
+Three.js 程序化奶油白单翼机、紫色立体云海、橙金天空和翼尖气流，24 秒四段连续运镜；WASD/方向键接管近距离稳定尾随，G 回到电影航线。配有播放时间轴、自由视角和 BAANDIT!《rumination》官方流播，并保留日间双机空战版本；提供原始生成请求与根据最终实现整理的完整复现提示词。音乐权利不包含在代码的 MIT 许可中。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/sunset-flight-study/dist/) · [README（含主生成提示原文）](./sunset-flight-study/README.md) · [当前版本完整复现提示词](./sunset-flight-study/docs/RECREATE_PROMPT.zh-CN.md)
 
 ---
 

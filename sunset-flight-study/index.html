@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#327c8b" />
+    <meta
+      name="description"
+      content="一封写给碧海与飞行的情书。以 Web3D 重现《红猪》中红色水上飞机的空战浪漫。"
+    />
+    <title>红猪 · 亚得里亚海上空</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%23c7392c'/%3E%3Cpath d='M19 6h2l2 12 12 5v3l-13-2-1 7 5 2v2l-6-1-6 1v-2l5-2-1-7-13 2v-3l12-5Z' fill='%23fff2d8'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body class="reference-film">
+    <main id="app">
+      <canvas
+        id="scene"
+        aria-label="红色水上飞机与蓝色双翼机飞越亚得里亚海的三维空战场景"
+        >你的浏览器需要支持 WebGL 才能观看这段飞行。</canvas
+      >
+      <div class="vignette" aria-hidden="true"></div>
+      <div class="film-grain" aria-hidden="true"></div>
+
+      <div class="edition-switch">
+        <a id="scene-version" href="?scene=classic">日间空战 ↗</a>
+        <button
+          type="button"
+          id="controls-toggle"
+          aria-expanded="false"
+          aria-controls="film-controls"
+        >
+          显示控制
+        </button>
+      </div>
+      <div class="reference-brand" aria-hidden="true">
+        SWALLOW <span>／</span> A FLIGHT STUDY
+      </div>
+      <div class="reference-title" aria-label="夕空飞行">
+        <p>just breathe.</p>
+      </div>
+
+      <header class="masthead">
+        <a class="wordmark" href="./" aria-label="红猪飞行手记首页">
+          <span class="emblem" aria-hidden="true"
+            ><svg viewBox="0 0 48 48">
+              <path
+                d="M23 7h2l2 13 15 6v3l-16-3-1 9 6 3v2l-7-2-7 2v-2l6-3-1-9-16 3v-3l15-6Z"
+              /></svg
+          ></span>
+          <span
+            ><strong>PORCO ROSSO</strong
+            ><small>红猪 <i>／</i> 飞行手记</small></span
+          >
+        </a>
+        <div
+          class="camera-switch"
+          id="camera-mode"
+          role="group"
+          aria-label="选择观察机位"
+        >
+          <button type="button" data-mode="cinematic" aria-pressed="true">
+            <span class="status-dot"></span>电影运镜
+          </button>
+          <button type="button" data-mode="chase" aria-pressed="false">
+            追随机位
+          </button>
+          <button type="button" data-mode="orbit" aria-pressed="false">
+            自由视角
+          </button>
+        </div>
+        <div class="header-actions">
+          <button type="button" class="notes-button" id="notes-open">
+            飞行笔记 <span>↗</span>
+          </button>
+          <button
+            type="button"
+            class="icon-button"
+            id="sound-toggle"
+            aria-label="开启引擎音效"
+            aria-pressed="false"
+            title="开启引擎音效（M）"
+          >
+            <svg viewBox="0 0 24 24">
+              <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+              <path
+                class="sound-waves"
+                d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"
+              />
+              <path class="sound-muted" d="m16 9 5 6m0-6-5 6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="icon-button"
+            id="fullscreen-toggle"
+            aria-label="进入全屏"
+            title="全屏（F）"
+          >
+            <svg viewBox="0 0 24 24">
+              <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="scene-label">
+        <span class="tiny-cross">+</span> ADRIATIC SEA
+        <span class="label-rule"></span> 1929
+      </div>
+      <div class="shot-indicator">
+        <span id="shot-number">01</span><span class="shot-separator">/</span
+        ><span id="shot-count">06</span
+        ><span class="shot-indicator-title" id="shot-label">掠海</span>
+      </div>
+
+      <section class="scene-caption" aria-label="场景介绍">
+        <p class="eyebrow"><span></span> A LOVE LETTER TO THE SKY</p>
+        <h1>亚得里亚海<span>上空</span><em>。</em></h1>
+        <p class="caption-copy">引擎划破宁静，浪漫永不降落。</p>
+        <div class="aircraft-key">
+          <span class="red-dot"></span> SAVOIA S.21
+          <span class="key-separator">×</span
+          ><span class="blue-dot"></span> CURTISS R3C
+        </div>
+      </section>
+
+      <aside class="flight-data" aria-label="实时飞行数据">
+        <div class="compass" aria-hidden="true">
+          <span class="north">N</span><span class="east">E</span
+          ><span class="south">S</span><span class="west">W</span>
+          <div id="compass-needle">
+            <svg viewBox="0 0 32 56">
+              <path d="m16 2 9 27-9-5-9 5Z" />
+              <path class="needle-tail" d="m16 54 9-25-9 5-9-5Z" />
+            </svg>
+          </div>
+        </div>
+        <div class="telemetry">
+          <span
+            >ALTITUDE <strong><b id="altitude">82</b><i> M</i></strong></span
+          ><span
+            >AIRSPEED
+            <strong><b id="airspeed">190</b><i> KM/H</i></strong></span
+          >
+        </div>
+      </aside>
+
+      <div class="sunset-controls-stack">
+        <p class="reference-maneuver" id="reference-shot">SWALLOW · FOLLOW</p>
+        <div class="pilot-help" id="pilot-help" aria-label="键盘驾驶操作">
+          <div class="pilot-keypad" aria-hidden="true">
+            <kbd id="pilot-up">↑</kbd><kbd id="pilot-left">←</kbd><kbd id="pilot-down">↓</kbd><kbd id="pilot-right">→</kbd>
+          </div>
+          <div class="pilot-instructions">
+            <span><kbd>WASD</kbd> / <kbd>↑↓←→</kbd> 短按 / 长按驾驶</span>
+            <span id="pilot-status">自动巡航 · 按键接管</span>
+          </div>
+          <button type="button" id="pilot-reset" title="回到自动航线（G）">
+            回到航线 <kbd>G</kbd>
+          </button>
+        </div>
+        <section id="music-card" class="soundtrack-card" aria-label="原版音乐">
+          <div class="soundtrack-heading">
+            <a id="music-track-link" href="https://soundcloud.com/user-133547811/rumination" target="_blank" rel="noopener noreferrer">
+              <strong>rumination</strong><span>BAANDIT! · 视频中的原曲</span>
+            </a>
+            <div class="soundtrack-source">
+              <select id="music-source" aria-label="配乐音源">
+                <option value="original">原版整曲 · 在线</option>
+                <option value="clip">视频片段 · 本地</option>
+              </select>
+              <span id="music-track-time"></span>
+            </div>
+          </div>
+          <p id="music-hint">SoundCloud 官方流播 · 开启配乐后加载，需要联网。</p>
+          <details id="music-player-details" open hidden>
+            <summary>官方播放器 <span class="player-expand">展开</span><span class="player-collapse">收起</span></summary>
+            <div id="music-player-mount" hidden></div>
+          </details>
+        </section>
+        <section id="sunset-dock" class="sunset-dock" aria-label="夕空飞行控制">
+          <div class="sunset-flight-actions" role="group" aria-label="飞行操作">
+            <button type="button" id="sunset-prev" title="上一段飞行">
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M5 5v10m10-10-8 5 8 5Z" />
+              </svg>
+              <span>上一段</span>
+            </button>
+            <button
+              type="button"
+              id="sunset-play"
+              class="sunset-play"
+              aria-pressed="false"
+            >
+              <svg
+                class="sunset-pause-icon"
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+              >
+                <path d="M7 5v10m6-10v10" />
+              </svg>
+              <svg
+                class="sunset-resume-icon"
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+              >
+                <path d="m6 4 9 6-9 6Z" />
+              </svg>
+              <span id="sunset-play-label">暂停飞行</span>
+            </button>
+            <button type="button" id="sunset-restart">
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M3 8a7 7 0 1 1 1 7M3 3v5h5" />
+              </svg>
+              <span>重新开始</span>
+            </button>
+            <button type="button" id="sunset-next" title="下一段飞行">
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M15 5v10M5 5l8 5-8 5Z" />
+              </svg>
+              <span>下一段</span>
+            </button>
+            <button
+              type="button"
+              id="sunset-camera"
+              title="切换电影、追随与自由机位"
+            >
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M3 6h9v9H3Zm9 3 5-3v9l-5-3M5 3h5" />
+              </svg>
+              <span id="sunset-camera-label">机位：电影</span>
+            </button>
+          </div>
+          <div class="sunset-music-actions" role="group" aria-label="配乐操作">
+            <button type="button" id="music-toggle" aria-pressed="false">
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M8 14V5l8-2v10M8 8l8-2" />
+                <ellipse cx="5.5" cy="14.5" rx="2.5" ry="1.8" />
+                <ellipse cx="13.5" cy="13.5" rx="2.5" ry="1.8" />
+              </svg>
+              <span id="music-toggle-label">开启配乐</span>
+            </button>
+            <div class="sunset-music-settings">
+              <input
+                id="music-volume"
+                type="range"
+                min="0"
+                max="100"
+                value="35"
+                step="1"
+                aria-label="配乐音量"
+              />
+              <span id="music-status">原曲 · 未开启</span>
+            </div>
+          </div>
+        </section>
+
+        <footer class="film-controls" id="film-controls">
+          <div class="transport-row">
+            <div class="playback-actions">
+              <button
+                type="button"
+                id="play-toggle"
+                class="play-button"
+                aria-label="暂停飞行"
+                aria-pressed="false"
+                title="播放 / 暂停（空格）"
+              >
+                <svg class="pause-icon" viewBox="0 0 20 20">
+                  <path d="M6 4v12M14 4v12" /></svg
+                ><svg class="play-icon" viewBox="0 0 20 20">
+                  <path d="m6 3 11 7-11 7Z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                id="restart"
+                class="icon-button restart-button"
+                aria-label="从头播放"
+                title="从头播放（R）"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path d="M3 10a9 9 0 1 1 1 8M3 4v6h6" />
+                </svg>
+              </button>
+              <span class="timecode"
+                ><span id="current-time">00:00</span
+                ><span class="time-divider">/</span
+                ><span id="total-time">01:12</span></span
+              >
+            </div>
+            <div class="timeline-wrap">
+              <input
+                id="timeline"
+                type="range"
+                min="0"
+                max="72"
+                step="0.05"
+                value="0"
+                aria-label="飞行时间轴"
+              />
+              <div class="timeline-ticks" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+            </div>
+            <div class="film-options">
+              <span class="live-dot"></span
+              ><span class="render-label">实时 3D</span
+              ><button
+                type="button"
+                id="quality-toggle"
+                aria-label="切换为流畅画质"
+                title="切换画质"
+              >
+                高画质 <span>⌄</span>
+              </button>
+            </div>
+          </div>
+          <nav id="chapters" class="chapters" aria-label="空战分镜"></nav>
+          <div class="bottom-line">
+            <span id="interaction-hint"
+              >空格 暂停 <i>·</i> 拖动时间轴，重温每一次交错</span
+            ><span class="dedication"
+              >AN UNOFFICIAL TRIBUTE <i>／</i> MADE FOR THE LOVE OF FLIGHT</span
+            >
+          </div>
+        </footer>
+      </div>
+
+      <div id="loading" class="loading">
+        <span class="loading-plane">✦</span>
+        <p id="loading-copy">海风就绪，准备起飞。</p>
+        <span>PREPARING YOUR FLIGHT</span>
+      </div>
+      <div id="error-message" role="alert" hidden></div>
+      <div id="toast" role="status" aria-live="polite"></div>
+
+      <dialog id="notes-dialog" aria-labelledby="notes-title">
+        <button
+          type="button"
+          class="dialog-close"
+          id="notes-close"
+          aria-label="关闭飞行笔记"
+        >
+          ×
+        </button>
+        <p class="eyebrow">THE FLIGHT NOTES</p>
+        <h2 id="notes-title">关于这片天空</h2>
+        <p id="notes-intro">
+          献给《红猪》里那片自由的海与天空。这是一个以 Three.js
+          实时绘制的非官方致敬场景：从船形机身、高置机翼，到奶油色积云与青蓝海面，让三维画面靠近手绘动画的温度。
+        </p>
+        <dl id="notes-details">
+          <div>
+            <dt>红色飞行艇</dt>
+            <dd>
+              参考 Savoia S.21
+              的标志性轮廓，保留独立发动机、开放座舱、翼端浮筒与三色尾舵。
+            </dd>
+          </div>
+          <div>
+            <dt>蓝色双翼机</dt>
+            <dd>
+              以 Curtiss R3C 的双翼与双浮筒形成对照，沿独立航线完成追逐和交错。
+            </dd>
+          </div>
+          <div>
+            <dt>六段电影运镜</dt>
+            <dd>
+              掠海、追逐、交错、爬升、回旋与远航。可以跳转分镜，或切换自由视角，用鼠标拖动旋转、滚轮缩放。
+            </dd>
+          </div>
+        </dl>
+        <div class="shortcut-grid">
+          <span><kbd>Space</kbd> 播放 / 暂停</span
+          ><span><kbd id="notes-shortcuts">1–6</kbd> 切换分镜</span
+          ><span><kbd>R</kbd> 重新开始</span><span><kbd>M</kbd> 音效开关</span
+          ><span><kbd>F</kbd> 全屏</span><span><kbd>H</kbd> 隐藏界面</span>
+        </div>
+        <p class="notes-disclaimer" id="notes-disclaimer">
+          模型、海面与音效均由程序生成。未使用电影片段、原声或官方模型；本作为观感致敬，并非逐镜头复刻。
+        </p>
+      </dialog>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
