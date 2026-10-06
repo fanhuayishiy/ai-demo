@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="theme-color" content="#e9f2ed" />
+    <meta name="description" content="走进小小晴天幼儿园，探索一个会呼吸的实时 3D 童趣园区。" />
+    <title>小小晴天 · Sunny Side Kindergarten</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="site-header">
+        <a class="brand" href="#" aria-label="小小晴天，返回全景">
+          <span class="brand-sun" aria-hidden="true">✳</span>
+          <span><strong>小小晴天<span class="brand-dot">.</span></strong><small>SUNNY SIDE KINDERGARTEN</small></span>
+        </a>
+        <nav class="top-nav" aria-label="主导航">
+          <button class="nav-link active" data-panel="explore">探索幼儿园<span></span></button>
+          <button class="nav-link" data-panel="activities">今日活动</button>
+          <button class="nav-link" data-panel="about">关于这里 <span class="external-arrow">↗</span></button>
+        </nav>
+        <div class="header-right"><span class="live-dot"></span><span>美好正在发生</span><button class="icon-button" id="sound-btn" aria-label="开启自然环境音" title="开启自然环境音"></button></div>
+      </header>
+
+      <main>
+        <section class="introduction" aria-label="园区介绍">
+          <div class="eyebrow"><span></span> A LITTLE WORLD, A LOT OF WONDER</div>
+          <h1>小小的世界，<br>大大的<span class="wonder">好奇心<svg viewBox="0 0 180 13" aria-hidden="true"><path d="M3 9 Q86 -2 177 7"/></svg></span>。</h1>
+          <p>让童年慢一点，让快乐多一点。<br>欢迎来到我们的阳光小天地。</p>
+          <div class="weather"><span class="weather-icon" aria-hidden="true">☀</span><strong>26°</strong><span class="weather-divider"></span><span>晴朗 · 微风</span><span class="weather-note">适合在草地上撒欢</span></div>
+        </section>
+
+        <section id="world" aria-label="可拖拽旋转、滚轮缩放的实时三维幼儿园" tabindex="0">
+          <canvas id="scene-canvas"></canvas>
+          <div id="world-labels" aria-hidden="true"></div>
+          <div class="hover-tooltip" id="person-tooltip" role="status"></div>
+        </section>
+
+        <aside class="day-card" id="day-card">
+          <div class="card-topline"><span class="live-dot"></span><span>园区进行时</span><span class="small-sun">☀</span></div>
+          <h2>每一刻，都在长大</h2><p class="card-subtitle">阳光正好，一起去玩吧</p>
+          <div class="activity-row"><span class="activity-icon yellow" data-icon="ball"></span><div><strong>小小运动家</strong><small>操场上，快乐不设限</small></div><span class="activity-count">6 <small>位</small></span></div>
+          <div class="activity-row"><span class="activity-icon pink" data-icon="palette"></span><div><strong>想象力工坊</strong><small>把奇思妙想画下来</small></div><span class="activity-count">6 <small>位</small></span></div>
+          <div class="activity-row"><span class="activity-icon green" data-icon="sprout"></span><div><strong>自由探索时间</strong><small>每一次发现都值得欢呼</small></div><span class="activity-count">10 <small>位</small></span></div>
+          <button class="card-action" id="activity-explore">跟着镜头逛一逛 <span>↗</span></button>
+        </aside>
+
+        <div class="scene-top-status"><span class="live-dot"></span> LIVE 3D <span class="tiny-divider"></span><span id="view-status">园区全景</span></div>
+        <div class="scene-tools" aria-label="场景控制">
+          <button class="icon-button" id="zoom-in" aria-label="放大" title="放大"></button>
+          <button class="icon-button" id="zoom-out" aria-label="缩小" title="缩小"></button>
+          <span></span><button class="icon-button" id="reset-view" aria-label="返回全景" title="返回全景"></button>
+          <button class="icon-button" id="fullscreen-btn" aria-label="全屏" title="全屏"></button>
+        </div>
+
+        <section class="person-card" id="person-card" hidden>
+          <button class="icon-button close-person" aria-label="关闭人物信息">×</button>
+          <div class="eyebrow">A LITTLE EXPLORER</div><h2 id="person-title"></h2><p id="person-activity"></p><small>虚拟角色 · 不含任何真实个人信息</small>
+          <button class="text-button" id="back-from-person">返回园区全景 ↗</button>
+        </section>
+
+        <div class="bottom-area">
+          <div class="explore-caption"><span class="caption-line"></span> 每一个角落，都藏着快乐 <span class="caption-line"></span></div>
+          <nav class="location-dock" aria-label="园区位置">
+            <button class="location active" data-view="overview"><span data-icon="grid"></span><span>园区全景</span></button>
+            <button class="location" data-view="sports"><span data-icon="ball"></span><span>活力操场</span></button>
+            <button class="location" data-view="play"><span data-icon="playground"></span><span>童趣乐园</span></button>
+            <button class="location" data-view="classroom"><span data-icon="palette"></span><span>创意教室</span></button>
+            <button class="location" data-view="reading"><span data-icon="book"></span><span>阅读森林</span></button>
+            <button class="location" data-view="rest"><span data-icon="moon"></span><span>午睡时光</span></button>
+            <div class="dock-divider"></div>
+            <button id="tour-btn" class="tour-button"><span data-icon="play"></span><span id="tour-label">自动漫游</span></button>
+          </nav>
+          <div class="interaction-hint"><span data-icon="mouse"></span> 拖拽旋转 <i>·</i> 滚轮缩放 <i>·</i> 点击小朋友，发现小惊喜</div>
+        </div>
+      </main>
+
+      <footer><span>用好奇心，丈量小小世界 <span class="footer-flower">✳</span></span><div><span class="render-dot"></span><span id="fps-label">实时渲染</span><button id="quality-btn" title="切换画质">高清画质 <span>⌄</span></button><button id="pause-btn" title="暂停场景动画" aria-label="暂停场景动画"></button></div></footer>
+      <div class="loading-screen" id="loading-screen"><div class="loading-sun">✳</div><h2>阳光正在洒进来</h2><p>搭建一个充满好奇心的小世界</p><div class="loading-track"><span></span></div><small>纯实时 3D · 每一刻都不一样</small></div>
+      <div class="toast" id="toast" role="status"></div>
+      <dialog id="about-dialog"><button id="close-about" class="icon-button" aria-label="关闭">×</button><span class="brand-sun">✳</span><div class="eyebrow">WELCOME TO SUNNY SIDE</div><h2>给童年一片晴天。</h2><p>这里有奔跑、想象，也有安静翻书的时光。<br>小小晴天是一个可以自由探索的虚拟幼儿园，<br>22 位小朋友与 3 位老师，正在过平凡又闪亮的一天。</p><p class="about-footnote">Three.js + WebGL 实时渲染<br>所有人物均为虚拟角色，不采集个人信息。</p><button class="tour-button" id="about-explore">开始探索 ↗</button></dialog>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

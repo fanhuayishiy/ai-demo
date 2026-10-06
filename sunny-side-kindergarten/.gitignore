@@ -1,0 +1,5 @@
+node_modules/
+# dist/ is committed for GitHub Pages, which publishes from main.
+test-results/
+.publish/
+*.log
