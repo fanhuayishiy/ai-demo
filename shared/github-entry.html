@@ -1,0 +1,109 @@
+<script>
+(() => {
+  const mount = () => {
+    if (document.querySelector('ai-demo-github')) return;
+    const host = document.createElement('ai-demo-github');
+    const shadow = host.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <style>
+        :host {
+          all: initial !important;
+          position: fixed !important;
+          left: max(var(--entry-x, 14px), env(safe-area-inset-left)) !important;
+          top: var(--entry-y, auto) !important;
+          bottom: var(--entry-bottom, max(14px, env(safe-area-inset-bottom))) !important;
+          z-index: 2147483000 !important;
+          display: block !important;
+          color-scheme: dark;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+        }
+        * { box-sizing: border-box; }
+        .safe-area { position: fixed; visibility: hidden; pointer-events: none;
+          padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+        .entry { display: flex; align-items: center; background: #172126; color: #f7fafb;
+          border: 1px solid #ffffff40; border-radius: 12px; box-shadow: 0 3px 14px #0003; }
+        a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+          padding: 0 12px; color: inherit; text-decoration: none; font-size: 12px;
+          font-weight: 600; white-space: nowrap; border-radius: 11px 0 0 11px; }
+        a:hover { background: #2d3a40; }
+        svg { width: 20px; height: 20px; flex: none; fill: currentColor; }
+        .copy { color: #bdcbd0; font-weight: 400; }
+        button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
+          border: 0; border-left: 1px solid #ffffff26; border-radius: 0 11px 11px 0;
+          background: transparent; color: #bdcbd0; cursor: pointer; font: 20px/1 sans-serif; }
+        button:hover { background: #2d3a40; color: #fff; }
+        a:focus-visible, button:focus-visible { outline: 3px solid #f1b85c; outline-offset: 3px; }
+        @media (max-width: 600px) {
+          a { width: 44px; justify-content: center; padding: 0; }
+          .label { display: none; }
+        }
+        @media print { :host { display: none !important; } }
+      </style>
+      <span class="safe-area" aria-hidden="true"></span>
+      <div class="entry">
+        <a href="https://github.com/fanhuayishiy/ai-demo" target="_blank" rel="noopener noreferrer"
+          aria-label="GitHub：查看源码与生成提示词（新标签页）" title="GitHub · 源码 / 提示词">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.01-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.39 1.1.11 1.92.02 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          <span class="label">GitHub <span class="copy">· 源码 / 提示词 ↗</span></span>
+        </a>
+        <button type="button" aria-label="关闭 GitHub 入口" title="本页暂时隐藏">×</button>
+      </div>`;
+    // Only events originating in this entry are stopped; the scene stays interactive.
+    for (const event of ['pointerdown', 'pointerup', 'click', 'dblclick', 'wheel', 'keydown', 'keyup']) {
+      host.addEventListener(event, e => e.stopPropagation());
+    }
+    document.documentElement.append(host);
+    // Choose an empty edge position without a per-project registry. Run only around
+    // initial loading and viewport changes, never in the scene's animation loop.
+    const place = () => {
+      if (!host.isConnected) return;
+      const { width, height } = host.getBoundingClientRect();
+      const w = document.documentElement.clientWidth || window.innerWidth;
+      const h = document.documentElement.clientHeight || window.innerHeight;
+      const safe = getComputedStyle(shadow.querySelector('.safe-area'));
+      const edge = side => Math.max(14, parseFloat(safe[side]) || 0);
+      const left = edge('paddingLeft'), top = edge('paddingTop');
+      const right = Math.max(left, w - width - edge('paddingRight'));
+      const bottom = Math.max(top, h - height - edge('paddingBottom'));
+      const center = Math.max(left, Math.min(right, (w - width) / 2));
+      const boxes = [...document.querySelectorAll('button,a,input,select,textarea,[role="button"],header,footer,nav,aside,section,[role="tablist"],[role="progressbar"],h1,h2,h3,p')]
+        .filter(e => {
+          const s = getComputedStyle(e);
+          return s.display !== 'none' && s.visibility !== 'hidden' && s.opacity !== '0';
+        })
+        .map(e => e.getBoundingClientRect())
+        .filter(r => r.width > 0 && r.height > 0 && r.top < h && r.bottom > 0 && r.left < w && r.right > 0 && r.width * r.height < w * h * .65);
+      const upper = Math.min(bottom, Math.max(top,70));
+      const lower = Math.max(top,bottom-70), middle = Math.max(top,Math.min(bottom,h*.4));
+      const candidates = [[left,bottom],[right,bottom],[right,top],[left,top],[center,bottom],[center,top],
+        [left,upper],[right,upper],[left,lower],[right,lower],
+        [left,middle],[right,middle],[center,upper]];
+      let best = candidates[0], score = Infinity;
+      for (const [x,y] of candidates) {
+        if (x + width > w || y + height > h) continue;
+        const overlap = boxes.reduce((sum,r) => sum + Math.max(0,Math.min(x+width+6,r.right)-Math.max(x-6,r.left)) * Math.max(0,Math.min(y+height+6,r.bottom)-Math.max(y-6,r.top)),0);
+        if (overlap < score) { best = [x,y]; score = overlap; }
+        if (score === 0) break;
+      }
+      host.style.setProperty('--entry-x', best[0] + 'px');
+      host.style.setProperty('--entry-y', best[1] + 'px');
+      host.style.setProperty('--entry-bottom', 'auto');
+    };
+    let resizeTimer;
+    const onResize = () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(place, 120); };
+    const timers = [setTimeout(place, 1200), setTimeout(place, 4500)];
+    window.addEventListener('resize', onResize);
+    window.addEventListener('load', place, { once: true });
+    shadow.querySelector('button').addEventListener('click', () => {
+      timers.forEach(clearTimeout);
+      clearTimeout(resizeTimer);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('load', place);
+      host.remove();
+    });
+    place();
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, { once: true });
+  else mount();
+})();
+</script>
