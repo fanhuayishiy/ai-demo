@@ -1,0 +1,5 @@
+node_modules/
+# GitHub Pages serves the committed client build.
+dist/server/
+dist/.openai/
+*.log

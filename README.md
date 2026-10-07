@@ -11,6 +11,8 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 
 每个项目的 `README.md` 都固定含一节 **`## 主生成提示（原文）`**，逐字收录当初的生成提示，不做改写；本索引不复制提示词。
 
+若早期完整原文无法核验，项目文档会明确注明，仅保留可核验的请求；根据最终成品新整理的「复现提示词」另行标注，不冒充历史原文。
+
 ## 项目列表
 
 | 项目 | 一句话简介 | 预览 | 详细文档 |
@@ -28,6 +30,7 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 | sanfang-qixiang-atlas | 三坊七巷 · 坊巷漫游：基于真实地图的 3D 古城导览，支持搜索、缩放与点击飞行 | [在线](https://fanhuayishiy.github.io/ai-demo/sanfang-qixiang-atlas/dist/) | [README](./sanfang-qixiang-atlas/README.md) |
 | terra-728-tractor-blender-animation | 现代四驱拖拉机 Blender 精细建模与 15 秒机械动画 | [在线](https://fanhuayishiy.github.io/ai-demo/terra-728-tractor-blender-animation/) | [README](./terra-728-tractor-blender-animation/README.md) |
 | sunset-flight-study | 夕空飞行 · 奶油白单翼机穿越紫金云海，近距离按键驾驶与官方原曲配乐 | [在线](https://fanhuayishiy.github.io/ai-demo/sunset-flight-study/dist/) | [README](./sunset-flight-study/README.md) |
+| warehouse-demo | WareTrack 单仓三维运营中心，叉车搬运闭环、库存任务联动、对象聚焦与镜头巡游 | [在线](https://fanhuayishiy.github.io/ai-demo/warehouse-demo/dist/client/) | [README](./warehouse-demo/README.md) |
 
 ---
 
@@ -110,6 +113,14 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 Three.js 程序化奶油白单翼机、紫色立体云海、橙金天空和翼尖气流，24 秒四段连续运镜；WASD/方向键接管近距离稳定尾随，G 回到电影航线。配有播放时间轴、自由视角和 BAANDIT!《rumination》官方流播，并保留日间双机空战版本；提供原始生成请求与根据最终实现整理的完整复现提示词。音乐权利不包含在代码的 MIT 许可中。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/sunset-flight-study/dist/) · [README（含主生成提示原文）](./sunset-flight-study/README.md) · [当前版本完整复现提示词](./sunset-flight-study/docs/RECREATE_PROMPT.zh-CN.md)
+
+---
+
+## warehouse-demo — WareTrack 仓储运营中心
+
+蓝白低多边形单仓园区：四个月台、三辆卡车、一台叉车与三组可选托盘，32 秒搬运闭环和中文库存、任务、月台面板共享状态。支持三维点击、搜索筛选、暂停继续、对象聚焦、主动镜头巡游与窄屏适配；全部业务数据为本地模拟，不连接真实仓储后台。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/warehouse-demo/dist/client/) · [README](./warehouse-demo/README.md) · [当前项目完整复现提示词](./warehouse-demo/docs/RECREATE_PROMPT.zh-CN.md)
 
 ---
 
