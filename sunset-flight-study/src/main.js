@@ -31,7 +31,9 @@ document.body.classList.toggle("reference-film", isReference);
 const reducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)",
 ).matches;
-const player = new Playback(DURATION, { reducedMotion });
+// The sunset experience explicitly starts playing on entry; its pause control
+// remains available. Preserve the classic edition's reduced-motion default.
+const player = new Playback(DURATION, { reducedMotion: !isReference && reducedMotion });
 const audio = new FlightAudio();
 let musicSource = "original";
 let music = isReference ? createMusic() : null;
@@ -55,6 +57,7 @@ let quality = innerWidth < 700 ? "low" : "high";
 let lastShot = -1;
 let soundBusy = false;
 let musicBusy = false;
+let startupMusicPending = isReference;
 let sunsetDock;
 let frameId;
 let toastTimeout;
@@ -200,6 +203,8 @@ function syncMusicPlayback(playing) {
 
 async function toggleMusic() {
   if (!music || musicBusy || !sceneAvailable) return;
+  // A manual choice before the first visible frame must override autostart.
+  startupMusicPending = false;
   musicBusy = true;
   syncDock();
   try {
@@ -551,6 +556,10 @@ function animate() {
     hasRendered = true;
     $("loading").classList.add("ready");
     document.body.dataset.ready = "true";
+    if (startupMusicPending) {
+      startupMusicPending = false;
+      if (music && !music.enabled) void toggleMusic();
+    }
   }
 }
 

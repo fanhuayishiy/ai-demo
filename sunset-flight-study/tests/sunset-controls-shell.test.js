@@ -41,7 +41,7 @@ test("sunset dock exposes labeled native flight and music actions", () => {
   assert.match(element("music-toggle", "button"), /aria-pressed="false"/);
 });
 
-test("music starts opt-in with an accessible bounded volume input", () => {
+test("bootstrap shell shows no playback claim before scene startup and keeps bounded volume", () => {
   const volume = html.match(/<input\b(?=[^>]*\bid="music-volume")[^>]*>/)?.[0];
   assert.ok(volume, "music-volume is a native input");
   for (const attribute of [
