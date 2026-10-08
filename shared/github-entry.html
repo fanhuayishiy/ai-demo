@@ -1,5 +1,6 @@
 <script>
 (() => {
+  /* AI_DEMO_SHARED_RUNTIME */
   const mount = () => {
     if (document.querySelector('ai-demo-github')) return;
     const host = document.createElement('ai-demo-github');
@@ -17,24 +18,53 @@
           color-scheme: dark;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
         }
+        :host([data-sharing-capture]) { visibility: hidden !important; }
         * { box-sizing: border-box; }
+        [hidden] { display: none !important; }
         .safe-area { position: fixed; visibility: hidden; pointer-events: none;
           padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
         .entry { display: flex; align-items: center; background: #172126; color: #f7fafb;
           border: 1px solid #ffffff40; border-radius: 12px; box-shadow: 0 3px 14px #0003; }
-        a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+        .entry a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
           padding: 0 12px; color: inherit; text-decoration: none; font-size: 12px;
           font-weight: 600; white-space: nowrap; border-radius: 11px 0 0 11px; }
-        a:hover { background: #2d3a40; }
+        .entry a:hover { background: #2d3a40; }
         svg { width: 20px; height: 20px; flex: none; fill: currentColor; }
         .copy { color: #bdcbd0; font-weight: 400; }
-        button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
-          border: 0; border-left: 1px solid #ffffff26; border-radius: 0 11px 11px 0;
+        .entry button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
+          border: 0; border-left: 1px solid #ffffff26; border-radius: 0;
           background: transparent; color: #bdcbd0; cursor: pointer; font: 20px/1 sans-serif; }
-        button:hover { background: #2d3a40; color: #fff; }
+        .entry button:last-child { border-radius: 0 11px 11px 0; }
+        .entry button:hover { background: #2d3a40; color: #fff; }
+        button:disabled { opacity: .6; cursor: progress; }
         a:focus-visible, button:focus-visible { outline: 3px solid #f1b85c; outline-offset: 3px; }
+        .pageviews { display: flex; align-items: center; gap: 4px; padding: 0 9px 0 2px;
+          color: #bdcbd0; font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .pageviews svg { width: 14px; height: 14px; }
+        .status { position: fixed; top: max(14px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+          display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 28px); width: max-content;
+          background: #172126; color: #f7fafb; border: 1px solid #ffffff40; border-radius: 10px; padding: 10px 14px;
+          box-shadow: 0 3px 14px #0003; font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif; }
+        .status button { min-height: 32px; padding: 4px 10px; color: inherit; background: #2d3a40;
+          border: 1px solid #ffffff40; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+        dialog { position: fixed; inset: 0; width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px);
+          margin: auto; overflow: auto; padding: 22px; background: #172126; color: #f7fafb;
+          border: 1px solid #ffffff40; border-radius: 16px; box-shadow: 0 18px 70px #0008;
+          font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif; }
+        dialog::backdrop { background: #071016b3; }
+        dialog h2 { margin: 0 44px 12px 0; font-size: 20px; }
+        dialog p { margin: 10px 0; }
+        dialog .close-dialog { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px;
+          border: 0; border-radius: 8px; color: #bdcbd0; background: transparent; cursor: pointer; font-size: 24px; }
+        .share-preview { width: 100%; max-height: 48vh; object-fit: contain; background: #0c151a; border-radius: 6px; }
+        .share-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+        .share-actions button, .share-actions a { display: inline-flex; align-items: center; justify-content: center;
+          min-height: 44px; padding: 8px 14px; border: 1px solid #65757c; border-radius: 8px;
+          background: #2d3a40; color: #f7fafb; text-decoration: none; cursor: pointer; font: inherit; }
+        .share-actions button:hover, .share-actions a:hover { background: #3c4b52; }
+        dialog .privacy { color: #bdcbd0; font-size: 12px; margin-top: 16px; }
         @media (max-width: 600px) {
-          a { width: 44px; justify-content: center; padding: 0; }
+          .entry a { width: 44px; justify-content: center; padding: 0; }
           .label { display: none; }
         }
         @media print { :host { display: none !important; } }
@@ -46,8 +76,28 @@
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.01-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.39 1.1.11 1.92.02 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
           <span class="label">GitHub <span class="copy">· 源码 / 提示词 ↗</span></span>
         </a>
-        <button type="button" aria-label="关闭 GitHub 入口" title="本页暂时隐藏">×</button>
-      </div>`;
+        <span class="pageviews" hidden title="本页访问量由不蒜子提供，不是人数。服务会接收 IP 和无查询参数的页面地址。">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-2a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+          <span class="pageview-count"></span>
+        </span>
+        <button type="button" data-action="share" aria-label="分享当前预览（截图与二维码）" title="分享：截图与当前页面二维码">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16a3 3 0 0 0-2.4 1.2l-7-4.1a3.1 3.1 0 0 0 0-2.2l7-4.1A3 3 0 1 0 15 5c0 .2 0 .4.1.6l-7 4.1a3 3 0 1 0 0 4.6l7 4.1A3 3 0 1 0 18 16z"/></svg>
+        </button>
+        <button type="button" data-action="dismiss" aria-label="关闭 GitHub 入口" title="本页暂时隐藏">×</button>
+      </div>
+      <div class="status" hidden><span class="status-message" role="status" aria-live="polite"></span><button type="button" data-action="cancel-share" hidden>取消</button></div>
+      <dialog aria-labelledby="share-heading" aria-describedby="share-explanation" aria-modal="true">
+        <h2 id="share-heading">分享当前预览</h2>
+        <button class="close-dialog" data-action="close-dialog" type="button" aria-label="关闭分享窗口">×</button>
+        <p class="share-explanation" id="share-explanation" aria-live="polite"></p>
+        <img class="share-preview" alt="当前预览截图及页面地址二维码" hidden>
+        <div class="share-actions">
+          <button type="button" data-action="copy-again" hidden>再次复制图片</button>
+          <a data-action="save" download="ai-demo-share.png" hidden>保存 PNG 图片</a>
+          <button type="button" data-action="capture-tab" hidden>选择当前标签页截图</button>
+        </div>
+        <p class="privacy">截图和二维码仅在本机生成，不会上传。二维码包含当前完整网址，请勿分享敏感链接。<br>本页访问量由不蒜子提供，会接收 IP 和无参数的页面地址；开启隐私偏好或带查询参数时不统计。</p>
+      </dialog>`;
     // Only events originating in this entry are stopped; the scene stays interactive.
     for (const event of ['pointerdown', 'pointerup', 'click', 'dblclick', 'wheel', 'keydown', 'keyup']) {
       host.addEventListener(event, e => e.stopPropagation());
@@ -94,7 +144,28 @@
     const timers = [setTimeout(place, 1200), setTimeout(place, 4500)];
     window.addEventListener('resize', onResize);
     window.addEventListener('load', place, { once: true });
-    shadow.querySelector('button').addEventListener('click', () => {
+    const cleanupShare = ShareUI.connectShareUI({
+      window, document, host, shadow,
+      capture: (mode, signal) => mode === 'tab'
+        ? ShareCapture.captureCurrentTab({window, document, signal})
+        : ShareCapture.captureViewport({window, document, signal, html2canvas:getShareLibraries().html2canvas}),
+      makeBlob: async (image, metadata) => {
+        const canvas = ShareCard.composeShareCard({document, image, ...metadata, qrcode:getShareLibraries().qrcode});
+        try { return await ShareCard.canvasToPng(canvas); }
+        finally { canvas.width = canvas.height = 0; }
+      },
+      copy: blob => ShareClipboard.beginImageCopy({navigator:window.navigator, ClipboardItem:window.ClipboardItem}, blob),
+    });
+    const cleanupPageviews = Pageviews.startPageviews({window, document, onCount: count => {
+      const views = shadow.querySelector('.pageviews');
+      shadow.querySelector('.pageview-count').textContent = count.toLocaleString('zh-CN');
+      views.setAttribute('aria-label', '本页访问 ' + count + ' 次；不蒜子会接收 IP 和页面地址');
+      views.hidden = false;
+      place();
+    }});
+    shadow.querySelector('[data-action="dismiss"]').addEventListener('click', () => {
+      cleanupShare();
+      cleanupPageviews();
       timers.forEach(clearTimeout);
       clearTimeout(resizeTimer);
       window.removeEventListener('resize', onResize);

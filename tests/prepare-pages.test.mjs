@@ -250,3 +250,43 @@ test('refuses a symlinked output directory', async (t) => {
   if (!await createLinkOrSkip(t, path.join(root, 'outside'), outputDir, 'junction')) return;
   await assert.rejects(() => api('prepareSite')({ sourceDir, outputDir }), /symbolic|symlink|link/i);
 });
+
+test('staged strict CSP permits only the exact provider and local capture resources without changing source', async t => {
+  const {sourceDir,outputDir,put} = await fixture(t);
+  const policy = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'";
+  const html = preview.replace('</head>', `<meta http-equiv="Content-Security-Policy" content="${policy}"></head>`);
+  await put('one/dist/index.html', html);
+  await api('prepareSite')({sourceDir,outputDir});
+  const staged = await readFile(path.join(outputDir,'one/dist/index.html'), 'utf8');
+  assert.match(staged, /script-src 'unsafe-inline' https:\/\/busuanzi\.ibruce\.info/);
+  assert.match(staged, /frame-src 'self'/);
+  assert.match(staged, /media-src blob:/);
+  assert.match(staged, /connect-src 'none'/);
+  assert.equal(await readFile(path.join(sourceDir,'one/dist/index.html'), 'utf8'), html);
+});
+
+test('missing inline sharing dependencies fail before any staging files are copied', async t => {
+  const {sourceDir,outputDir,put} = await fixture(t);
+  await put('shared/github-entry.html', '<script>/* AI_DEMO_SHARED_RUNTIME */</script>');
+  await assert.rejects(() => api('prepareSite')({sourceDir,outputDir}), /ENOENT|dependency|helper/);
+  await assert.rejects(() => lstat(outputDir), {code:'ENOENT'});
+});
+
+test('the real shared template and pinned libraries are inlined into a newly discovered project', async t => {
+  const {sourceDir,outputDir,put} = await fixture(t, ['./future-sixteenth/dist/index.html']);
+  await put('future-sixteenth/dist/index.html', preview);
+  const files = ['shared/github-entry.html', 'shared/THIRD_PARTY.md', ...['share-card','share-capture','share-clipboard','share-ui','pageviews'].map(name => `shared/${name}.mjs`),
+    'node_modules/html2canvas/package.json', 'node_modules/html2canvas/dist/html2canvas.min.js',
+    'node_modules/qrcode-generator/package.json', 'node_modules/qrcode-generator/qrcode.js'];
+  for (const file of files) await put(file, await readFile(new URL('../' + file, import.meta.url)));
+  const before = await snapshot(sourceDir);
+  await api('prepareSite')({sourceDir,outputDir});
+  const html = await readFile(path.join(outputDir,'future-sixteenth/dist/index.html'), 'utf8');
+  assert.doesNotMatch(html, /AI_DEMO_SHARED_RUNTIME/);
+  assert.match(html, /data-action="share"/);
+  assert.match(html, /html2canvas 1\.4\.1/);
+  assert.match(html, /QR Code Generator/);
+  assert.equal(html.split(start).length - 1, 1);
+  assert.deepEqual(await snapshot(sourceDir), before);
+  await assert.rejects(() => lstat(path.join(outputDir,'node_modules')), {code:'ENOENT'});
+});

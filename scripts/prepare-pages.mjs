@@ -3,6 +3,8 @@ import { copyFile, lstat, mkdir, readFile, readdir, realpath, writeFile } from '
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'parse5';
+import { buildEntry } from './build-entry.mjs';
+import { patchPreviewCsp } from './preview-csp.mjs';
 
 const START = '<!-- ai-demo-github:start -->';
 const END = '<!-- ai-demo-github:end -->';
@@ -150,11 +152,11 @@ export async function prepareSite({ sourceDir, outputDir }) {
   }
 
   const previews = discoverPreviews(await readSafeFile(source, 'index.html'));
-  const fragment = await readSafeFile(source, 'shared/github-entry.html');
+  const fragment = await buildEntry({sourceDir:source, template:await readSafeFile(source, 'shared/github-entry.html')});
   const prepared = new Map();
   for (const relative of previews) {
     if (within(output, path.join(source, relative))) throw new Error(`Preview target is inside the output directory: ${relative}`);
-    try { prepared.set(relative, injectEntry(await readSafeFile(source, relative), fragment)); }
+    try { prepared.set(relative, injectEntry(patchPreviewCsp(await readSafeFile(source, relative)), fragment)); }
     catch (error) { throw new Error(`Cannot prepare preview ${relative}: ${error.message}`, { cause: error }); }
   }
 
