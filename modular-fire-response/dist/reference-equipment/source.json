@@ -1,0 +1,105 @@
+{
+  "source": "User-supplied visual reference dated 2026-10-08; the original image is not distributed in this repository.",
+  "origin": "User-supplied visual reference, 2026-10-08; individual equipment illustrations only.",
+  "usage": "Equipment-class selection thumbnails, not the live Three.js scene or engineering specifications.",
+  "assets": [
+    {
+      "name": "water",
+      "source_crop": [
+        49,
+        810,
+        201,
+        880
+      ],
+      "output": "./water.webp",
+      "size": [
+        224,
+        110
+      ]
+    },
+    {
+      "name": "booster",
+      "source_crop": [
+        230,
+        810,
+        382,
+        880
+      ],
+      "output": "./booster.webp",
+      "size": [
+        224,
+        110
+      ]
+    },
+    {
+      "name": "boom",
+      "source_crop": [
+        408,
+        810,
+        560,
+        880
+      ],
+      "output": "./boom.webp",
+      "size": [
+        224,
+        110
+      ]
+    },
+    {
+      "name": "ladder",
+      "source_crop": [
+        587,
+        810,
+        739,
+        880
+      ],
+      "output": "./ladder.webp",
+      "size": [
+        224,
+        110
+      ]
+    },
+    {
+      "name": "fire-drone",
+      "source_crop": [
+        764,
+        810,
+        918,
+        880
+      ],
+      "output": "./fire-drone.webp",
+      "size": [
+        224,
+        110
+      ]
+    },
+    {
+      "name": "cargo-drone",
+      "source_crop": [
+        941,
+        810,
+        1095,
+        880
+      ],
+      "output": "./cargo-drone.webp",
+      "size": [
+        224,
+        110
+      ]
+    },
+    {
+      "name": "robot",
+      "source_crop": [
+        1113,
+        810,
+        1237,
+        880
+      ],
+      "output": "./robot.webp",
+      "size": [
+        224,
+        110
+      ]
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+:root {
+  color-scheme: dark;
+  --night-canvas: #111619;
+  --night-panel: #162128;
+  --night-surface: #202d33;
+  --night-border: #33464e;
+  --night-ink: #e8f0f2;
+  --night-muted: #a6b6bd;
+  --night-red: #ed796b;
+  --night-water: #6ed7e5;
+  --night-green: #83c5aa;
+  --night-amber: #dfbd7b;
+  color: var(--night-ink);
+  background: var(--night-canvas);
+}
+
+button { background: var(--night-surface); border-color: var(--night-border); }
+button:hover { background: #354044; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline-color: var(--night-water); }
+.topbar, .bottom-panel { background: #131c22f5; border-color: #32525f; }
+.inspector { background: #142029ed; border-color: #2f5f70; backdrop-filter: blur(8px); }
+.search-results { background: var(--night-panel); border-color: var(--night-border); }
+.search-results { box-shadow: 0 6px 24px #00000030; }
+.brand, .brand:hover, .view-tabs button { background: transparent; }
+.brand b { color: #f0f6f7; font-style: italic; }
+.brand-mark { color: #b6e6f1; background: transparent; border: 1px solid #3c7384; }
+.timeline-row > .icon-button:first-child { background: #c84438; color: #fff; }
+.mode-select, .timeline-row select, .scene-controls { background: var(--night-panel); border-color: var(--night-border); }
+.search-wrap input { background: var(--night-surface); }
+.search-wrap input::placeholder { color: var(--night-muted); }
+.search-wrap, .search-results small, .brand small, .view-tabs button,
+.eyebrow, .mission-heading p, .metrics > div, .metrics strong small,
+.inspector-sub, .inspector-tabs button, .inspector-tabs small,
+.life-state small, .section-label > span, .meter > div, .meter small,
+.water-grid small, .water-grid b span, .supply-status, .checklist li,
+.checklist li span, .inspector-footer, .event-list time, .fact-list dt,
+.station-units small, .scene-legend, .timeline-row time span, .phase-labels,
+.demo-clock, .fleet-heading b span, .fleet-unit small, .fleet-unit-status,
+.unit-icon, .completion p, .loading { color: var(--night-muted); }
+.metrics strong, .meter strong { color: var(--night-ink); }
+.mission-heading, .scene-legend { text-shadow: 0 2px 8px var(--night-canvas); }
+.metrics { background-color: #11191ff2; background-image: none; border-radius: 0; box-shadow: none; text-shadow: none; }
+.view-tabs button[aria-selected="true"], .inspector-tabs button.active { color: var(--night-water); }
+.view-tabs button[aria-selected="true"]:after { background: var(--night-water); height: 2px; }
+.phase-labels .current { color: var(--night-red); }
+.timeline-track > div, .scene-legend i { background: var(--night-red); }
+.inspector-tabs button.active { border-bottom-color: var(--night-water); }
+.inspector-tabs, .inspector-footer, .timeline-row, .event-list > div,
+.station-units > button, .unit-task { border-color: var(--night-border); }
+.signal.confirmed { background: #233830; color: var(--night-green); }
+.signal { background: #3d3425; color: var(--night-amber); }
+.live-dot, .checklist li.done:before { background: var(--night-green); }
+.checklist li.done:before { border-color: var(--night-green); }
+.checklist li.done span, .event-list .success p { color: var(--night-green); }
+.live-dot.warning, .scene-legend .amber { background: var(--night-amber); }
+.event-list .warning p, .warning-action { color: var(--night-amber); }
+.concept-note, .graphic-alert { background: #362e22; border-color: #766544; color: #f0d2a2; }
+.warning-action { border-color: #766544; }
+.icon-button.active, .approval-actions button { background: #233a43; color: var(--night-water); border-color: #476e7c; }
+.scene-legend .cyan { background: var(--night-water); }
+.meter progress, .timeline-track { background: #384245; }
+.meter progress::-webkit-progress-bar { background: #384245; }
+.meter progress::-webkit-progress-value { background: var(--night-green); }
+.meter progress.water::-webkit-progress-value { background: var(--night-water); }
+.meter progress::-moz-progress-bar { background: var(--night-green); }
+.meter progress.water::-moz-progress-bar { background: var(--night-water); }
+.fleet-unit { background: #121f27; border-color: #2b4654; }
+.fleet-unit:hover { background: #1d3440; border-color: #4d879a; }
+.fleet-unit.selected { background: #17323c; border-color: var(--night-water); box-shadow: inset 0 -2px var(--night-water); }
+.equipment-illustration img { mix-blend-mode: lighten; }
+.equipment-illustration-icon .unit-icon { stroke-width: 1.5; }
+.fleet-unit strong { color: var(--night-ink); }
+.unit-icon[data-unit-kind="water"], .unit-icon[data-unit-kind="booster"] { color: var(--night-water); }
+.unit-icon[data-unit-kind="boom"], .unit-icon[data-unit-kind="fire-drone"] { color: var(--night-red); }
+.unit-icon[data-unit-kind="power"], .unit-icon[data-unit-kind="cargo"], .unit-icon[data-unit-kind="ladder"] { color: var(--night-amber); }
+.unit-icon[data-unit-kind="recon"], .unit-icon[data-unit-kind="dog"] { color: #b8c7cb; }
+.status-pill { background: var(--night-surface); color: var(--night-muted); }
+.status-pill[data-status="working"], .status-pill[data-status="complete"] { background: #233830; color: var(--night-green); }
+.status-pill[data-status="responding"], .status-pill[data-status="deploying"] { background: #3b3428; color: var(--night-amber); }
+.status-pill[data-status="enroute"], .status-pill[data-status="refilling"] { background: #263941; color: var(--night-water); }
+.status-pill[data-status="fault"] { background: #3e2b2a; color: var(--night-red); }
+.fleet-unit-status[data-status="working"] { color: var(--night-green); }
+.fleet-unit-status[data-status="enroute"], .fleet-unit-status[data-status="refilling"] { color: var(--night-water); }
+.fleet-unit-status[data-status="deploying"] { color: var(--night-amber); }
+.fleet-unit-status[data-status="fault"] { color: var(--night-red); }
+.fleet-filters select { color: var(--night-muted); }
+.fleet-filters option { background: var(--night-panel); }
+.completion { background: #1c2925; border-color: #3f6c5c; color: var(--night-green); box-shadow: 0 8px 30px #00000030; }
+.water-grid b.network-state { font-size: 15px; color: var(--night-water); }
+.cargo-delivery { display: flex; align-items: center; gap: 7px; padding: 10px 0; color: var(--night-amber); font-size: 12px; }
+.cargo-delivery strong { margin-left: auto; font: 500 20px ui-monospace, monospace; }
+.cargo-delivery small { color: var(--night-muted); font-size: 11px; }
+.inspector h2 { overflow-wrap: anywhere; }
+.command-rail-title { border-color: #35535f; }
+.command-rail-title::before { background: var(--night-water); }
+.command-rail-title time, .force-count-label, .force-row dd span { color: var(--night-muted); }
+.command-section { border-color: #304852; }
+.command-section-title, .section-label { color: #b1e1ec; }
+.force-row { border-color: #243a45; }
+.force-row dt { color: #9fc0ce; }
+.force-row dd strong { color: var(--night-ink); }
+.reserve-gauge { background: conic-gradient(var(--night-water) var(--reserve-progress), #314650 0); }
+.reserve-gauge::before { background: var(--night-panel); }
+.reserve-gauge small { color: var(--night-muted); }
+.task-map-surface { background: #0e191f; border-color: #31515e; }
+.task-map-road { background: #1a2d35; border-color: #31424b; }
+.task-map-road.vertical, .task-map-road.horizontal { border-color: #31424b; }
+.task-map-building { background: #263944; border-color: #39505b; }
+.task-map-unit { background: #788c92; }
+.task-map-unit[data-status="working"] { background: var(--night-green); }
+.task-map-unit[data-status="enroute"], .task-map-unit[data-status="refilling"] { background: var(--night-water); }
+.task-map-unit[data-status="deploying"] { background: var(--night-amber); }
+.task-map-unit[data-status="fault"] { background: var(--night-red); }
+.task-map-marker.station { background: #173443; border-color: #3c7181; color: #84d7e5; }
+.task-map-marker.station:hover { background: #244a59; }
+.task-map-marker.incident { background: #452928; border-color: #93534b; color: var(--night-red); }
+.task-map-marker.incident.complete { background: #233830; border-color: #527d6e; color: var(--night-green); }
+.task-map-marker[aria-pressed="true"] { box-shadow: 0 0 0 1px currentColor; }
+.task-map-north { color: #9cb3be; }

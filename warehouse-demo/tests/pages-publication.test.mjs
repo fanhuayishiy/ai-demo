@@ -22,13 +22,16 @@ test('built entry references existing local assets below its own directory', () 
   }
 });
 
-test('collection appends warehouse after existing demos without changing the first entry', () => {
+test('collection keeps warehouse immediately after sunset without changing the first entry', () => {
   const html = readFileSync(path.join(root, '../index.html'), 'utf8');
   const cards = [...html.matchAll(/class="badge cover" href="([^"]+)"/g)].map(match => match[1]);
   assert.equal(cards[0], './habitat-interactive-home/dist/index.html');
-  assert.equal(cards.at(-2), './sunset-flight-study/dist/index.html');
-  assert.equal(cards.at(-1), './warehouse-demo/dist/client/index.html');
+  const sunsetIndex = cards.indexOf('./sunset-flight-study/dist/index.html');
+  assert.ok(sunsetIndex > 0);
+  assert.equal(cards[sunsetIndex + 1], './warehouse-demo/dist/client/index.html');
   const readme = readFileSync(path.join(root, '../README.md'), 'utf8');
   const rows = readme.split('\n').filter(line => /^\| [a-z][\w-]+ \|/.test(line));
-  assert.match(rows.at(-1), /^\| warehouse-demo \|/);
+  const sunsetRowIndex = rows.findIndex(row => row.startsWith('| sunset-flight-study |'));
+  assert.ok(sunsetRowIndex > 0);
+  assert.match(rows[sunsetRowIndex + 1], /^\| warehouse-demo \|/);
 });
