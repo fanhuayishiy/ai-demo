@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { Children, isValidElement, useLayoutEffect, type ComponentProps, type ReactElement, type ReactNode, type RefObject } from "react";
-import { act, cleanup, render } from "@testing-library/react";
+import { act, cleanup, render, renderHook } from "@testing-library/react";
 import { Group } from "three";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -14,6 +14,8 @@ import {
 import { Tag } from "./City";
 import { createUnits } from "../simulation/data";
 import type { UnitState, Vec3 } from "../types";
+import { ApparatusCab } from "./ApparatusDetails";
+import { crewForCarrier, onboardCrew } from "../spatial/crew";
 
 const frameHarness = vi.hoisted(() => ({
   callback: undefined as undefined | (() => void),
@@ -117,5 +119,40 @@ describe("vehicle frame ordering", () => {
     expect(observed.heading).toBe(next.heading);
     expect(frameHarness.priority).toBeGreaterThan(-.5);
     expect(frameHarness.priority).toBeLessThan(-.25);
+  });
+});
+
+describe("visible firefighter transport", () => {
+  const nodes = (node: ReactNode): ReactElement<Record<string, unknown>>[] => {
+    if (!isValidElement<Record<string, unknown>>(node)) return [];
+    return [node, ...Children.toArray(node.props.children as ReactNode).flatMap(nodes)];
+  };
+  const vehicle = (unit: UnitState) => {
+    const { result } = renderHook(() => renderVehicle({ unit, time: 10, selected: false, rescue: false, onSelect: () => {} }));
+    return nodes(result.current);
+  };
+
+  it("renders crew-cab interiors and seated personnel inside their four carrier groups", () => {
+    for (const unit of createUnits()) {
+      const tree = vehicle(unit);
+      const assigned = crewForCarrier(unit.id);
+      const cab = tree.find(node => node.type === ApparatusCab)!;
+      expect(cab.props.crewCab, unit.id).toBe(assigned.length > 0);
+      const crew = tree.find(node => typeof node.type === "function" && node.type.name === "CabCrew");
+      if (assigned.length) {
+        expect(crew, unit.id).toBeDefined();
+        expect(crew!.props.members).toEqual(onboardCrew(unit));
+      } else expect(crew).toBeUndefined();
+    }
+  });
+
+  it("removes each seated passenger only for their own ground journey and restores them on reboarding", () => {
+    const unit = createUnits().find(item => item.id === "C01")!;
+    for (const progress of [0, .1, .3, .55, .8, 1, .8, .3, 0]) {
+      unit.crewProgress = progress;
+      const crew = vehicle(unit).find(node => typeof node.type === "function" && node.type.name === "CabCrew")!;
+      expect(crew, `crew clock ${progress}`).toBeDefined();
+      expect(crew.props.members).toEqual(onboardCrew(unit));
+    }
   });
 });

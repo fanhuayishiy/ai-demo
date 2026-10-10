@@ -89,6 +89,42 @@ describe('reference-inspired city detailing', () => {
     }
   });
 
+  it('keeps station roof detail top faces disjoint', () => {
+    const roof = cityDetails().details.filter(detail =>
+      detail.id.startsWith('station-') && /\/roof-(center|channel)/.test(detail.id));
+    const conflicts: string[][] = [];
+    for (let first = 0; first < roof.length; first++) for (let second = first + 1; second < roof.length; second++) {
+      const a = roof[first], b = roof[second];
+      const topA = a.p[1] + a.s[1] / 2, topB = b.p[1] + b.s[1] / 2;
+      const overlap = [0, 2].map(axis => Math.max(0,
+        Math.min(a.p[axis] + a.s[axis] / 2, b.p[axis] + b.s[axis] / 2) -
+        Math.max(a.p[axis] - a.s[axis] / 2, b.p[axis] - b.s[axis] / 2)));
+      if (Math.abs(topA - topB) < .000001 && overlap[0] * overlap[1] > .00000001) {
+        conflicts.push([a.id, b.id]);
+      }
+    }
+    expect(conflicts).toEqual([]);
+  });
+
+  it.each(STATION_LAYOUT)('retains $id station roof coverage and flush elevation', station => {
+    const prefix = `station-${station.id}/roof-`;
+    const roof = cityDetails().details.filter(detail =>
+      detail.id.startsWith(`${prefix}center`) || detail.id.startsWith(`${prefix}channel`));
+    expect(roof.filter(detail => detail.id.startsWith(`${prefix}channel`))).toHaveLength(2);
+    expect(roof.some(detail => detail.id === `${prefix}center`)).toBe(true);
+    const sine = Math.sin(station.rotation), cosine = Math.cos(station.rotation);
+    for (const detail of roof) {
+      const dx = detail.p[0] - station.position[0], dz = detail.p[2] - station.position[2];
+      const local = { ...detail,
+        p: [cosine * dx - sine * dz, detail.p[1], sine * dx + cosine * dz] as Vec3,
+        s: [Math.abs(cosine) * detail.s[0] + Math.abs(sine) * detail.s[2], detail.s[1], Math.abs(sine) * detail.s[0] + Math.abs(cosine) * detail.s[2]] as Vec3,
+      };
+      within(local, [-9.85, 6.388, -7.3], [9.85, 6.4, -.7]);
+      expect(local.p[1] + local.s[1] / 2, detail.id).toBeCloseTo(6.4, 8);
+    }
+    expect(roof.reduce((area, detail) => area + detail.s[0] * detail.s[2], 0)).toBeCloseTo(19.7 * 6.6, 8);
+  });
+
   it('uses clustered foliage only at existing tree locations and inside their collision envelopes', () => {
     const canopies = cityDetails().canopies;
     expect(canopies.length).toBeGreaterThanOrEqual(TREE_POSITIONS.length * 7);

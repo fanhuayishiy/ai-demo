@@ -114,7 +114,8 @@ describe('industrial city surface finishes', () => {
       expect(rendered.some(node => node.props.castShadow)).toBe(false);
       const material = rendered.find(node => node.type === 'meshStandardMaterial')!;
       expect(material.props.polygonOffset).toBe(true);
-      expect(material.props.polygonOffsetFactor).toBeLessThan(0);
+      expect(material.props.polygonOffsetFactor).toBe(0);
+      expect(material.props.polygonOffsetUnits).toBeLessThan(-16);
     }
   });
 });

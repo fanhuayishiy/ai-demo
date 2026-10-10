@@ -1,0 +1,232 @@
+
+.topbar .system-introduction-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 96px;
+  height: 34px;
+  min-height: 34px;
+  flex-shrink: 0;
+  padding: 0 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--night-ink);
+  background: transparent;
+  border-color: var(--night-border);
+}
+
+.topbar .system-introduction-trigger svg {
+  color: var(--night-water);
+}
+
+.topbar .system-introduction-trigger:hover {
+  background: var(--night-surface);
+}
+
+.system-introduction {
+  width: min(820px, calc(100% - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 0;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  letter-spacing: 0;
+  color: var(--night-ink);
+  background: var(--night-panel);
+  border: 1px solid var(--night-border);
+  border-radius: 8px;
+  box-shadow: 0 18px 60px #00000066;
+  pointer-events: auto;
+}
+
+.system-introduction[open] {
+  display: grid;
+}
+
+.system-introduction::backdrop {
+  background: #050a10bf;
+}
+
+.system-introduction-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 18px;
+  border-bottom: 1px solid var(--night-border);
+}
+
+.system-introduction-heading > div {
+  min-width: 0;
+}
+
+.system-introduction-heading p {
+  margin: 0;
+  font: 11px/1.6 ui-monospace, "Microsoft YaHei", monospace;
+  color: var(--night-water);
+}
+
+.system-introduction-heading h2 {
+  margin: 6px 0 0;
+  font-size: 22px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.system-introduction-close {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  flex-shrink: 0;
+  padding: 0;
+  color: var(--night-muted);
+  background: transparent;
+  border: 0;
+}
+
+.system-introduction-close:hover {
+  color: var(--night-ink);
+  background: var(--night-surface);
+}
+
+.system-introduction-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 20px 24px 24px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--night-border) transparent;
+}
+
+.system-introduction-heading h2:focus-visible,
+.system-introduction-body:focus-visible {
+  outline: 2px solid var(--night-water);
+  outline-offset: -3px;
+}
+
+.system-introduction-summary {
+  margin: 0 0 22px;
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.system-introduction-summary strong {
+  font-weight: 600;
+}
+
+.system-introduction-advantages {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 28px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.system-introduction-advantage {
+  min-width: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--night-border);
+}
+
+.system-introduction-advantage h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.system-introduction-advantage p {
+  margin: 7px 0 0;
+  color: var(--night-muted);
+  font-size: 13px;
+  line-height: 1.85;
+}
+
+.system-introduction-boundary {
+  padding: 14px 24px 18px;
+  border-top: 1px solid var(--night-border);
+}
+
+.system-introduction-boundary h3 {
+  margin: 0;
+  color: var(--night-amber);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.system-introduction-boundary p {
+  margin: 6px 0 0;
+  color: var(--night-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+@media (min-width: 801px) and (max-width: 1050px) {
+  .dashboard .topbar {
+    gap: 8px;
+  }
+
+  .dashboard .topbar .search-wrap input {
+    width: 80px;
+  }
+}
+
+@media (max-width: 800px) {
+  .topbar .system-introduction-trigger {
+    position: absolute;
+    right: 12px;
+    bottom: 0;
+    width: 96px;
+    height: 40px;
+    min-height: 40px;
+    font-size: 11px;
+    border: 0;
+    border-left: 1px solid var(--night-border);
+    border-radius: 0;
+  }
+
+  .dashboard .topbar .view-tabs {
+    right: 116px;
+  }
+
+  .dashboard .topbar .view-tabs button {
+    padding: 0 6px;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .system-introduction {
+    width: calc(100% - 20px);
+    max-height: calc(100dvh - 20px);
+    border-radius: 6px;
+  }
+
+  .system-introduction-heading {
+    padding: 16px;
+  }
+
+  .system-introduction-heading h2 {
+    font-size: 20px;
+  }
+
+  .system-introduction-body {
+    padding: 16px;
+  }
+
+  .system-introduction-advantages {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .system-introduction-boundary {
+    padding: 12px 16px 16px;
+  }
+}

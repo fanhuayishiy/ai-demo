@@ -3,7 +3,28 @@ import { describe, it, expect } from "vitest";
 import type { ReactElement } from "react";
 import { Beam, Box, C, Cylinder } from "./Primitives";
 import { UrbanSurfaceMaterial } from "./UrbanSurfaceMaterial";
+import { MeshStandardMaterial, type MeshStandardMaterialParameters } from "three";
 describe("night equipment materials", () => {
+  it("separates flush finishes with unit-only depth bias while retaining physical occlusion", () => {
+    const mesh = Box({ depthLayer: 3 }) as ReactElement<{ children: ReactElement<MeshStandardMaterialParameters>[] }>;
+    const material = new MeshStandardMaterial(mesh.props.children[1].props);
+    expect(material.polygonOffset).toBe(true);
+    expect(material.polygonOffsetFactor).toBe(0);
+    expect(material.polygonOffsetUnits).toBe(-12);
+    expect(material.transparent).toBe(false);
+    expect(material.depthTest).toBe(true);
+    expect(material.depthWrite).toBe(true);
+    material.dispose();
+  });
+  it("forwards depth priority to textured city surfaces but leaves equipment unbiased", () => {
+    const city = Box({ surface: "concrete", depthLayer: 2 }) as ReactElement<{ children: ReactElement[] }>;
+    expect(city.props.children[1].props).toMatchObject({ surface: "concrete", depthLayer: 2 });
+    const equipment = Box({ color: C.red }) as ReactElement<{ children: ReactElement<MeshStandardMaterialParameters>[] }>;
+    const material = new MeshStandardMaterial(equipment.props.children[1].props);
+    expect(material.polygonOffset).toBe(false);
+    expect(material.polygonOffsetUnits).toBe(0);
+    material.dispose();
+  });
   it("opts city surfaces into shared texture finishes without changing equipment materials", () => {
     const city = Box({ surface: "asphalt", color: "#20272b", roughness: .96, metalness: 0 }) as ReactElement<{ children: ReactElement[] }>;
     expect(city.props.children[1].type).toBe(UrbanSurfaceMaterial);

@@ -33,6 +33,7 @@ export type UrbanSurfaceMaterialProps = {
   metalness?: number;
   emissive?: string;
   emissiveIntensity?: number;
+  depthLayer?: number;
 };
 
 export function UrbanSurfaceProvider({ children }: { children: ReactNode }) {
@@ -59,10 +60,14 @@ export function UrbanSurfaceMaterial({
   metalness = color === "#bbc7cd" ? .45 : color === "#d63d42" ? .18 : color === "#304a58" ? .24 : .04,
   emissive = "#000000",
   emissiveIntensity = 0,
+  depthLayer = 0,
 }: UrbanSurfaceMaterialProps) {
   const textures = useContext(SurfaceContext)?.[surface];
   const props = {
     color, roughness, metalness, emissive, emissiveIntensity,
+    polygonOffset: depthLayer > 0,
+    polygonOffsetFactor: 0,
+    polygonOffsetUnits: depthLayer > 0 ? -4 * depthLayer : 0,
     map: textures?.map,
     roughnessMap: textures?.roughnessMap,
     onBeforeCompile: projectSurfaceUvs,

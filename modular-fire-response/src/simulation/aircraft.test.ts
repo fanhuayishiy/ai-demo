@@ -86,7 +86,7 @@ describe('simulation-owned aircraft missions', () => {
     expect(unit(s, 'F01').airTime).toBe(30);
   });
 
-  it.each(['F01', 'C01'])('holds %s until its airborne payload has returned before driving home', id => {
+  it.each(['F01', 'C01'])('holds %s until its airborne payload and any ground crew have returned before driving home', id => {
     let s = advance(createInitialState(), 60);
     const before = unit(s, id);
     expect(before.airTime).toBeGreaterThan(0);
@@ -102,6 +102,14 @@ describe('simulation-owned aircraft missions', () => {
     expect(unit(s, id).airReturning).toBe(true);
     s = advance(s, 1.1);
     expect(unit(s, id).airReturning).toBe(false);
+    if (id === 'C01') {
+      expect(unit(s, id).position).toEqual(before.position);
+      expect(unit(s, id).crewReturning).toBe(true);
+      expect(unit(s, id).crewProgress).toBeGreaterThan(0);
+      s = until(s, state => unit(state, id).crewProgress === 0);
+      expect(unit(s, id).position).toEqual(before.position);
+      s = advance(s, 1.1);
+    }
     expect(unit(s, id).position).not.toEqual(before.position);
     if (id === 'C01') expect(s.metrics.delivered).toBe(0);
   });
@@ -160,12 +168,13 @@ describe('simulation-owned aircraft missions', () => {
     for (const id of ['F01', 'C01']) expect(unit(fast, id).airTime).toBe(unit(s, id).airTime);
   });
 
-  it('only authorizes a lift while hovering after the cargo release', () => {
+  it('only authorizes a lift with enough roof hover time after the cargo release', () => {
     let s = advance(createInitialState(), 60);
     s = applyCommand(s, { type: 'flag', key: 'liftConcept', value: true });
     s = applyCommand(s, { type: 'approve', key: 'lift' });
     expect(s.approvals.lift).toBe(false);
-    s = advance(s, 15);
+    // Lowering and boarding need five seconds before the roof departure at 44.
+    s = advance(s, 10);
     s = applyCommand(s, { type: 'approve', key: 'lift' });
     expect(s.approvals.lift).toBe(true);
     s = advance(s, 10);

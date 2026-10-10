@@ -1,0 +1,143 @@
+.cargo-rescue-intervention {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 12px 0;
+  padding: 14px 0;
+  border-top: 1px solid var(--night-border);
+  border-bottom: 1px solid var(--night-border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.conditions > .cargo-rescue-intervention {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.cargo-rescue-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.cargo-rescue-heading h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--night-amber);
+}
+
+.cargo-rescue-view-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.cargo-rescue-intervention .cargo-rescue-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  color: var(--night-water);
+}
+
+.cargo-rescue-intervention .cargo-rescue-opt-in {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.cargo-rescue-intervention .cargo-rescue-checkbox {
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
+  margin: 0;
+  accent-color: var(--night-amber);
+}
+
+.cargo-rescue-stage {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 36px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--night-ink);
+}
+
+.cargo-rescue-stage svg { margin-top: 2px; }
+.cargo-rescue-stage strong { font-weight: 500; }
+.cargo-rescue-progress[data-state="active"] .cargo-rescue-stage { color: var(--night-water); }
+.cargo-rescue-progress[data-state="recovery"] .cargo-rescue-stage { color: var(--night-amber); }
+.cargo-rescue-progress[data-state="complete"] .cargo-rescue-stage { color: var(--night-green); }
+
+.cargo-rescue-reason {
+  min-height: 34px;
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--night-muted);
+}
+
+.cargo-rescue-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+}
+
+.cargo-rescue-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 7px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.cargo-rescue-actions .cargo-rescue-authorize {
+  border-color: #766544;
+  background: #3b3428;
+  color: var(--night-amber);
+}
+
+.cargo-rescue-intervention button:disabled {
+  opacity: 1;
+  border-color: var(--night-border);
+  background: transparent;
+  color: var(--night-muted);
+}
+
+.cargo-rescue-intervention button:focus-visible,
+.cargo-rescue-intervention input:focus-visible {
+  outline: 2px solid var(--night-water);
+  outline-offset: 3px;
+}
+
+.cargo-rescue-risk {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--night-amber);
+}

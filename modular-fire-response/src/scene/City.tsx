@@ -8,6 +8,9 @@ import { CityDetails, StationSign } from './CityDetails';
 import { CITY_DETAIL_BOXES, CITY_TREE_CANOPIES } from './cityDetailLayout';
 import { UrbanSurfaceProvider } from './UrbanSurfaceMaterial';
 import { CityContext } from './CityContext';
+// Flush ground finishes need distinct depth priorities, without raising vehicle or hose contact surfaces.
+// Unit-only offsets stay small at oblique camera angles; a slope factor can cover nearby feet and wheels.
+const GROUND_LAYERS = { road: 0, crossing: 1, courtyard: 1, driveway: 2, bay: 2, apron: 3, lobby: 3, entrance: 4, paint: 5 } as const;
 function StreetLamp({p,rotation}:{p:Vec3;rotation:number}) {
   return <group position={p} rotation={[0,rotation,0]}>
     <Cylinder p={[0,4,0]} r={.12} h={8} color="#7e898e" roughness={.36} metalness={.62}/>
@@ -54,7 +57,7 @@ function LowBuilding({ p, s, color }: { p: Vec3; s: Vec3; color: string }) {
   );
 }
 function Driveway({from,to,width=5}:{from:Vec3;to:Vec3;width?:number}) {
-  return <Box p={[(from[0]+to[0])/2,SURFACE_Y-.025,(from[2]+to[2])/2]} s={[Math.max(width,Math.abs(from[0]-to[0])+width),.05,Math.max(width,Math.abs(from[2]-to[2])+width)]} color="#424c52" roughness={.94} metalness={0} surface="asphalt"/>;
+  return <Box p={[(from[0]+to[0])/2,SURFACE_Y-.025,(from[2]+to[2])/2]} s={[Math.max(width,Math.abs(from[0]-to[0])+width),.05,Math.max(width,Math.abs(from[2]-to[2])+width)]} color="#424c52" roughness={.94} metalness={0} surface="asphalt" depthLayer={GROUND_LAYERS.driveway}/>;
 }
 function RoadArrow({p,angle=0}:{p:Vec3;angle?:number}) {
   return <group position={p} rotation={[0,angle,0]}><Box p={[-.5,.01,0]} s={[2.4,.015,.15]} color="#c9d2d1" roughness={.92} metalness={0}/>{[-1,1].map(s=><Box key={s} p={[.4,.01,s*.42]} s={[1.2,.015,.15]} rotation={[0,s*Math.PI/4,0]} color="#c9d2d1" roughness={.92} metalness={0}/>)}</group>;
@@ -68,8 +71,8 @@ function RoadEdge({ p, s }: { p: Vec3; s: [number, number] }) {
         roughness={.9}
         metalness={0}
         polygonOffset
-        polygonOffsetFactor={-1}
-        polygonOffsetUnits={-1}
+        polygonOffsetFactor={0}
+        polygonOffsetUnits={-4 * GROUND_LAYERS.paint}
       />
     </mesh>
   );
@@ -89,7 +92,7 @@ export const City = memo(function City({
       <Box p={[-4, -1.7, -1]} s={[154, 0.8, 118]} color="#242b30" roughness={.9} metalness={0} />
       {ROAD_XS.map((x) => (
         <group key={x}>
-          <Box p={[x, SURFACE_Y-.03, 5]} s={[8, 0.06, 78]} color="#20272b" roughness={.96} metalness={0} surface="asphalt" />
+          <Box p={[x, SURFACE_Y-.03, 5]} s={[8, 0.06, 78]} color="#20272b" roughness={.96} metalness={0} surface="asphalt" depthLayer={GROUND_LAYERS.road} />
           {[-1, 1].flatMap(sign => [[-26, 16], [24, 36]].map(([from, to]) => (
             <RoadEdge key={`${sign}-${from}`} p={[x + sign * 3.8, SURFACE_Y, (from + to) / 2]} s={[.16, to - from]} />
           )))}
@@ -98,7 +101,7 @@ export const City = memo(function City({
       ))}
       {ROAD_ZS.map((z) => (
         <group key={z}>
-          <Box p={[2.5, SURFACE_Y-.03, z]} s={[103, 0.06, 8]} color="#20272b" roughness={.96} metalness={0} surface="asphalt" />
+          <Box p={[2.5, SURFACE_Y-.03, z]} s={[103, 0.06, 8]} color="#20272b" roughness={.96} metalness={0} surface="asphalt" depthLayer={GROUND_LAYERS.crossing} />
           {[-1, 1].flatMap(sign => [[-41, -26], [-18, 24], [32, 46]].map(([from, to]) => (
             <RoadEdge key={`${sign}-${from}`} p={[(from + to) / 2, SURFACE_Y, z + sign * 3.8]} s={[to - from, .16]} />
           )))}
@@ -121,8 +124,8 @@ export const City = memo(function City({
           </group>
         )),
       )}
-      <Box p={[7, SURFACE_Y-.02, -2]} s={[32, 0.04, 29]} color="#4a5357" roughness={.94} metalness={0} surface="concrete" />
-      {Object.entries(STAGING).map(([id,bay])=><group key={id} position={bay.position}><Box p={[0,-.02,0]} s={[8,.04,5]} color="#424b50" roughness={.94} metalness={0}/>{[-1,1].map(sign=><Box key={sign} p={[0,.005,sign*2.3]} s={[7.6,.015,.08]} color="#98a7ab" roughness={.94} metalness={0}/>)}</group>)}
+      <Box p={[7, SURFACE_Y-.02, -2]} s={[32, 0.04, 29]} color="#4a5357" roughness={.94} metalness={0} surface="concrete" depthLayer={GROUND_LAYERS.courtyard} />
+      {Object.entries(STAGING).map(([id,bay])=><group key={id} position={bay.position}><Box p={[0,-.02,0]} s={[8,.04,5]} color="#424b50" roughness={.94} metalness={0} depthLayer={GROUND_LAYERS.bay}/>{[-1,1].map(sign=><Box key={sign} p={[0,.005,sign*2.3]} s={[7.6,.015,.08]} color="#98a7ab" roughness={.94} metalness={0}/>)}</group>)}
       <group
         position={[7, 0, 0]}
         onClick={(e) => {
@@ -133,7 +136,7 @@ export const City = memo(function City({
         <Box p={[0, 15.6, 0]} s={[15, 24.8, 13]} color="#b5bec2" roughness={.89} metalness={0} surface="concrete" />
         {[-4.6,4.6].map(x=><Box key={x} p={[x,1.69,0]} s={[5.8,3.02,13]} color="#b5bec2" roughness={.89} metalness={0} surface="concrete"/>)}
         <Box p={[0,1.69,-6.2]} s={[3.4,3.02,.6]} color="#909fa5" roughness={.88} metalness={0}/>
-        <Box p={[0,SURFACE_Y-.025,0]} s={[15,.05,13]} color="#89979b" roughness={.93} metalness={0}/>
+        <Box p={[0,SURFACE_Y-.025,0]} s={[15,.05,13]} color="#89979b" roughness={.93} metalness={0} depthLayer={GROUND_LAYERS.lobby}/>
         <Box p={[-7.7, 14, 0]} s={[0.8, 28, 13.5]} color="#aab7bc" roughness={.87} metalness={0} surface="concrete" />
         <Box p={[7.7, 14, 0]} s={[0.8, 28, 13.5]} color="#aab7bc" roughness={.87} metalness={0} surface="concrete" />
         {Array.from({ length: 7 }, (_, floor) => (
@@ -198,7 +201,7 @@ export const City = memo(function City({
         />
         {[-1.6,1.6].map(x=><Box key={x} p={[x,1.6,6.7]} s={[.15,2.84,.15]} color="#6e838e" roughness={.4} metalness={.5}/>)}
         <Box p={[0, 3, 7.3]} s={[4, 0.3, 2]} color="#955149" roughness={.8} metalness={0} />
-        <Box p={[0,SURFACE_Y-.015,8]} s={[3.2,.03,3.2]} color="#99aaae" roughness={.94} metalness={0}/>
+        <Box p={[0,SURFACE_Y-.015,8]} s={[3.2,.03,3.2]} color="#99aaae" roughness={.94} metalness={0} depthLayer={GROUND_LAYERS.entrance}/>
         <Box p={[0,2.8,8.12]} s={[3.5,.12,.1]} color={C.white} emissive="#d4e3e9" emissiveIntensity={1.2}/>
         <Tag p={[0, 33, 0]} tone="incident">
           滨河 01 号楼 · 8F
@@ -214,7 +217,7 @@ export const City = memo(function City({
             onSelect(id);
           }}
         >
-          <Box p={[0, SURFACE_Y-.04, 5]} s={[23, .08, 26]} color="#495459" roughness={.94} metalness={0} surface="asphalt" />
+          <Box p={[0, SURFACE_Y-.04, 5]} s={[23, .08, 26]} color="#495459" roughness={.94} metalness={0} surface="asphalt" depthLayer={GROUND_LAYERS.apron} />
           <Box p={[0, 3, -4]} s={[20, 6, 6]} color="#cbd4d7" roughness={.86} metalness={0} surface="concrete" />
           <Box p={[0, 6.2, -4]} s={[21, 0.4, 7]} color={C.red} roughness={.7} metalness={.06} />
           <Box p={[0,5.6,-.88]} s={[19,.14,.16]} color="#edf3f5" emissive="#d7e6ed" emissiveIntensity={1.8}/>

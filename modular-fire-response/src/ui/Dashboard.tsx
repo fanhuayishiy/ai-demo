@@ -24,9 +24,10 @@ import {
 import type { DashboardProps } from "./types";
 import type { SimulationState, UnitKind } from "../types";
 import { KIND_LABELS, STATUS_LABELS, PHASES, STATIONS } from "../simulation";
-import { cargoLiftReady } from "../simulation/aircraft";
 import { EquipmentIllustration, orderEquipmentUnits, UnitIcon } from "./UnitVisual";
 import { ForceSummary, SupplyGauge, TaskMap } from "./CommandOverview";
+import { SystemIntroduction } from "./SystemIntroduction";
+import { CargoRescueIntervention } from "./CargoRescueIntervention";
 import "./Dashboard.css";
 import "./NightTheme.css";
 const clock = (n: number) =>
@@ -83,13 +84,12 @@ function IconButton({
     </button>
   );
 }
-const flagLabels: Record<keyof SimulationState["flags"], string> = {
+const flagLabels: Record<Exclude<keyof SimulationState["flags"], "liftConcept">, string> = {
   blockedRoad: "道路阻断",
   lowWater: "水源不足",
   droneFault: "无人机故障",
   powerFault: "能源故障",
   airConcept: "系留空中灭火 · 研究概念",
-  liftConcept: "载人吊运 · 高风险概念",
 };
 export function Dashboard(p: DashboardProps) {
   const { state: s, command: c } = p;
@@ -194,6 +194,7 @@ export function Dashboard(p: DashboardProps) {
             </div>
           )}
         </div>
+        <SystemIntroduction state={s} command={c} />
         <select
           className="mode-select"
           aria-label="演示模式"
@@ -343,7 +344,10 @@ export function Dashboard(p: DashboardProps) {
               </>
             )}
             {selected.kind === "cargo" && (
-              <div className="cargo-delivery"><Package size={15} />物资交付<strong>{s.metrics.delivered}<small> / 4 组</small></strong></div>
+              <>
+                <div className="cargo-delivery"><Package size={15} />物资交付<strong>{s.metrics.delivered}<small> / 4 组</small></strong></div>
+                <CargoRescueIntervention {...p} select={select} />
+              </>
             )}
             <dl className="fact-list">
               <div>
@@ -546,6 +550,7 @@ export function Dashboard(p: DashboardProps) {
             )}
             {tab === "conditions" && (
               <div className="conditions">
+                <CargoRescueIntervention {...p} select={select} />
                 {Object.entries(flagLabels).map(([key, label]) => (
                   <label key={key}>
                     <span>{label}</span>
@@ -563,24 +568,8 @@ export function Dashboard(p: DashboardProps) {
                   </label>
                 ))}
                 <p className="concept-note">
-                  系留水带协同与载人吊运为研究概念，未作工程验证。载人吊运不计入安全转移人数。
+                  系留水带协同为研究概念，未作工程验证。
                 </p>
-                {s.flags.liftConcept && (
-                  <button
-                    className="warning-action"
-                    disabled={
-                      s.approvals.lift ||
-                      !s.life.confirmed ||
-                      s.flags.droneFault ||
-                      s.life.rescued > 0 ||
-                      s.complete ||
-                      !s.units.some(cargoLiftReady)
-                    }
-                    onClick={() => c({ type: "approve", key: "lift" })}
-                  >
-                    {s.approvals.lift ? "概念吊运已授权" : "明确授权概念吊运"}
-                  </button>
-                )}
               </div>
             )}
           </>

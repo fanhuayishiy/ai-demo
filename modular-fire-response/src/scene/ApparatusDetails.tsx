@@ -6,6 +6,7 @@ import {
   ExtrudeGeometry,
   Matrix4,
   MeshStandardMaterial,
+  Path,
   Shape,
   TorusGeometry,
 } from "three";
@@ -141,8 +142,79 @@ const CAB = [
     box([-4.08, 1.065, side * 1.02], [.025, .16, .25])), tailLamp),
 ];
 
-export function ApparatusCab() {
-  return <group name="apparatus-cab" dispose={null}>{meshes(CAB)}</group>;
+export const CAB_SEAT_ANCHORS: readonly Vec3[] = [-1, 0, 1].map(side => [2.1, 1.62, side * .78]);
+
+const crewGlass = new MeshStandardMaterial({
+  name: "apparatus-crew-cab-glass", color: "#afc9d2", roughness: .14, metalness: .24,
+  transparent: true, opacity: .2, depthWrite: false,
+});
+const crewSideProfile = cabProfile.clone();
+const sideWindow = new Path();
+sideWindow.moveTo(1.3, 2.16);
+sideWindow.lineTo(1.3, 2.87);
+sideWindow.lineTo(3.16, 2.87);
+sideWindow.lineTo(3.16, 2.16);
+sideWindow.closePath();
+crewSideProfile.holes.push(sideWindow);
+
+// Only the crew variant replaces the solid shell and filled window surrounds.
+const CREW_CAB = [
+  ...CAB.filter(part => !["cab-paint", "cab-window-frames", "cab-glazing", "cab-glass-dividers"].includes(part.name)),
+  batch("cab-paint", [
+    box([2.3, .92, 0], [2.3, .14, 2.59]),
+    box([1.195, 1.95, 0], [.09, 1.92, 2.59]),
+    box([2.22, 2.915, 0], [2.14, .09, 2.59]),
+    box([3.395, 1.56, 0], [.11, 1.18, 2.59]),
+    ...sides.map(side => new ExtrudeGeometry(crewSideProfile, {
+      depth: .06, steps: 1, bevelEnabled: false, curveSegments: 1,
+    }).translate(0, 0, side < 0 ? -1.295 : 1.235)),
+    ...sides.map(side => box([3.325, 2.54, side * 1.245], [.07, .82, .1], windscreenTilt)),
+  ], paint, true),
+  batch("cab-window-frames", [
+    box([3.225, 2.895, 0], [.045, .055, 2.44], windscreenTilt),
+    box([3.424, 2.185, 0], [.045, .055, 2.44], windscreenTilt),
+    ...sides.flatMap(side => [
+      box([1.3, 2.515, side * 1.312], [.055, .76, .045]),
+      box([3.16, 2.515, side * 1.312], [.055, .76, .045]),
+      box([2.23, 2.87, side * 1.312], [1.91, .055, .045]),
+      box([2.23, 2.16, side * 1.312], [1.91, .055, .045]),
+      box([1.33, 1.6, side * 1.334], [.025, .95, .018]),
+      box([3.14, 1.62, side * 1.334], [.022, .94, .018]),
+      box([2.17, 1.98, side * 1.365], [.29, .07, .055]),
+    ]),
+  ], dark),
+  batch("cab-glazing", [
+    box([3.343, 2.54, 0], [.018, .7, 2.38], windscreenTilt),
+    ...sides.map(side => box([2.23, 2.515, side * 1.308], [1.86, .71, .018])),
+  ], crewGlass),
+  batch("cab-glass-dividers", sides.flatMap(side => [
+    box([1.7, 2.515, side * 1.325], [.035, .71, .02]),
+    box([3.424, 2.24, side * .59], [.025, .035, .62], [side * .17, 0, windscreenTilt[2]]),
+  ]), dark),
+  batch("cab-dashboard", [
+    box([3.12, 2.025, 0], [.43, .16, 2.36]),
+    box([2.93, 1.895, -.78], [.085, .31, .085], [0, 0, -.45]),
+    ring([2.8, 2.05, -.78], .19, .025, [0, Math.PI / 2, 0]),
+  ], dark),
+];
+const CREW_SEAT = [batch("cab-seat-upholstery", [
+  box([.035, -.21, 0], [.55, .17, .65]),
+  box([-.255, .275, 0], [.105, .82, .65]),
+  box([-.265, .69, 0], [.105, .18, .37]),
+  box([.035, -.42, 0], [.42, .43, .55]),
+], dark)];
+
+export function ApparatusCab({ crewCab = false }: { crewCab?: boolean } = {}) {
+  return (
+    <group name="apparatus-cab" dispose={null}>
+      {meshes(crewCab ? CREW_CAB : CAB)}
+      {crewCab && CAB_SEAT_ANCHORS.map((position, seat) => (
+        <group key={seat} name={`cab-seat-${seat}`} position={position} userData={{ seat }}>
+          {meshes(CREW_SEAT)}
+        </group>
+      ))}
+    </group>
+  );
 }
 
 const lugAngles = Array.from({ length: 6 }, (_, index) => index * Math.PI / 3);

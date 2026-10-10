@@ -132,7 +132,7 @@ describe('response simulation', () => {
     expect(run(s, 50).metrics.energySwaps).toBe(s.metrics.energySwaps);
   });
   it('requires explicit lift permission and removes it when the aircraft faults', () => {
-    let s = run(createInitialState(), 75);
+    let s = run(createInitialState(), 70);
     s = applyCommand(s, { type: 'flag', key: 'liftConcept', value: true });
     s = applyCommand(s, { type: 'approve', key: 'lift' });
     expect(s.approvals.lift).toBe(true);
@@ -197,14 +197,14 @@ describe('response simulation', () => {
     expect(s.water.outflow).toBe(27);
   });
   it('allows independent authorized lift trials without enabling the hose concept', () => {
-    let s = run(createInitialState(), 75);
+    let s = run(createInitialState(), 70);
     s = applyCommand(s, { type: 'flag', key: 'airConcept', value: false });
     s = applyCommand(s, { type: 'flag', key: 'liftConcept', value: true });
     s = applyCommand(s, { type: 'approve', key: 'lift' });
     expect(s.approvals.lift).toBe(true);
   });
   it('revokes lift authorization on cargo recall and requires fresh approval', () => {
-    let s = run(createInitialState(), 75);
+    let s = run(createInitialState(), 70);
     s = applyCommand(s, { type: 'flag', key: 'liftConcept', value: true });
     s = applyCommand(s, { type: 'approve', key: 'lift' });
     s = applyCommand(s, { type: 'recall', id: 'C01' });

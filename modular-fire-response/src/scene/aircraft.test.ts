@@ -152,7 +152,22 @@ describe("carrier-relative aircraft", () => {
     }
   });
 
-  it("carries four physical supply groups over the balcony rail before releasing them", () => {
+  it("keeps basket orientation continuous when takeoff from a rotated carrier is interrupted", () => {
+    const unit = carrier("cargo", 1);
+    unit.heading = 1.1;
+    const source = rescueBasketPose(unit);
+    unit.airReturning = true;
+    unit.airReturnFrom = 1;
+    unit.airReturnTime = 0.000001;
+    const returning = rescueBasketPose(unit);
+    expect(Math.abs(returning.heading - source.heading)).toBeLessThan(0.0001);
+    expect(distance(returning.position, source.position)).toBeLessThan(0.0001);
+    expect(distance(returning.hook, source.hook)).toBeLessThan(0.0001);
+    unit.airReturnTime = 24;
+    expect(rescueBasketPose(unit).heading).toBe(unit.heading);
+  });
+
+  it("lowers four physical supply groups vertically onto the actual rooftop", () => {
     const unit = carrier("cargo");
     const dockLoad = cargoLoadPose(unit);
     expect(dockLoad.count).toBe(4);
@@ -166,22 +181,18 @@ describe("carrier-relative aircraft", () => {
       const load = cargoLoadPose(unit);
       expect(load.attached).toBe(true);
       expect(distance(previous, load.position)).toBeLessThan(1.25);
-      if (
-        load.position[0] > 10 &&
-        load.position[0] < 13.3 &&
-        load.position[2] < 8.4 &&
-        load.position[2] > 7.6
-      ) {
-        expect(load.position[1]).toBeGreaterThan(20.425 + 0.1);
-        expect(load.position[1] + 0.75).toBeLessThan(22.775);
+      if (time >= 22) {
+        expect(load.position[0]).toBe(6.8);
+        expect(load.position[2]).toBe(4.8);
+        expect(load.position[1]).toBeGreaterThan(29.025);
       }
       previous = load.position;
     }
     unit.airTime = 34;
-    expect(cargoLoadPose(unit).position).toEqual([11.7, 19.625, 7]);
+    expect(cargoLoadPose(unit).position).toEqual([6.8, 29.045, 4.8]);
     expect(cargoLoadPose(unit).attached).toBe(false);
     unit.airTime = 64;
-    expect(cargoLoadPose(unit, 4).position).toEqual([11.7, 19.625, 7]);
+    expect(cargoLoadPose(unit, 4).position).toEqual([6.8, 29.045, 4.8]);
   });
 
   it("binds water ports to the mobile booster and carrier geometry", () => {
@@ -209,7 +220,7 @@ describe("carrier-relative aircraft", () => {
     expect(rescueBasketPose(unit).extension).toBe(0);
     expect(rescueBasketPose(unit).position[1]).toBeGreaterThan(3);
     unit.airTime = 38;
-    expect(rescueBasketPose(unit).position).toEqual([3.85, 22, 14]);
+    expect(rescueBasketPose(unit).position).toEqual([5.65, 29.045, 4.8]);
     const source = rescueBasketPose(unit).position;
     unit.airReturning = true;
     unit.airReturnFrom = 38;

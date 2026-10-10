@@ -18,6 +18,12 @@ type MaterialProps = {
   clearcoatRoughness?: number;
   map?: DataTexture;
   roughnessMap?: DataTexture;
+  polygonOffset?: boolean;
+  polygonOffsetFactor?: number;
+  polygonOffsetUnits?: number;
+  transparent?: boolean;
+  depthTest?: boolean;
+  depthWrite?: boolean;
   onBeforeCompile: (shader: { vertexShader: string; fragmentShader: string }) => void;
   customProgramCacheKey: () => string;
 };
@@ -39,6 +45,28 @@ afterEach(() => {
 });
 
 describe("urban surface material selection", () => {
+  it.each(["asphalt", "concrete"] as const)("keeps %s depth priority through texture initialization", surface => {
+    render(<UrbanSurfaceProvider><Probe surface={surface} depthLayer={2} /></UrbanSurfaceProvider>);
+    expect(frames.some(frame => !frame.props.map)).toBe(true);
+    expect(frames.some(frame => frame.props.map)).toBe(true);
+    for (const frame of frames) {
+      expect(frame.props).toMatchObject({ polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: -8 });
+      expect(frame.props.transparent).not.toBe(true);
+      expect(frame.props.depthTest).not.toBe(false);
+      expect(frame.props.depthWrite).not.toBe(false);
+    }
+  });
+
+  it.each(["asphalt", "concrete"] as const)("leaves ordinary %s surfaces opaque and depth-writing", surface => {
+    render(<Probe surface={surface} />);
+    const props = rendered.get("material")!.props;
+    expect(props.polygonOffset).toBe(false);
+    expect(props.polygonOffsetUnits).toBe(0);
+    expect(props.transparent).not.toBe(true);
+    expect(props.depthTest).not.toBe(false);
+    expect(props.depthWrite).not.toBe(false);
+  });
+
   it("preserves the supplied Box material parameters", () => {
     const props = { color: "#30383d", roughness: .93, metalness: 0, emissive: "#20303c", emissiveIntensity: .06 };
     render(<UrbanSurfaceProvider><Probe surface="asphalt" {...props} /></UrbanSurfaceProvider>);

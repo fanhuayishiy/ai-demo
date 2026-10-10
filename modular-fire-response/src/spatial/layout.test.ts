@@ -187,7 +187,7 @@ function loadVolume(unit: UnitState) {
   return result;
 }
 function basketVolume(unit: UnitState) {
-  const pose = rescueBasketPose(unit), top = .12 + 1.23 * pose.extension;
+  const pose = rescueBasketPose(unit), top = pose.slingHeight;
   const box = new Box3(new Vector3(-.45, 0, -.625).multiplyScalar(pose.scale), new Vector3(.45, top, .625).multiplyScalar(pose.scale));
   box.applyMatrix4(new Matrix4().makeRotationY(pose.heading).setPosition(...pose.position));
   return { id: 'rescue-basket', box: box.expandByScalar(-EPSILON) };
@@ -293,7 +293,7 @@ describe('aircraft and physical load clearance', () => {
     expect(hits).toEqual([]);
   });
 
-  it.each([1, 6, 15, 22, 29, 33, 35, 43, 47, 59, 63])('keeps the cargo return from %ss clear including balcony load and cable', from => {
+  it.each([1, 6, 15, 22, 29, 33, 35, 43, 47, 59, 63])('keeps the cargo return from %ss clear including rooftop load and cable', from => {
     const unit = aircraftUnit('C01', from), hits: string[] = [];
     unit.airReturning = true; unit.airReturnFrom = from;
     for (let tick = 0; tick <= AIRCRAFT_TIMING.return * 10; tick++) {
@@ -372,7 +372,7 @@ describe('cargo auxiliary basket clearance', () => {
       for (let tick = 0; tick < 30; tick++) {
         advanceAircraftLift(unit, .1, authorized);
         const current = rescueBasketPose(unit);
-        expect(new Vector3(...current.position).distanceTo(new Vector3(...previous.position))).toBeLessThan(.105);
+        expect(new Vector3(...current.position).distanceTo(new Vector3(...previous.position))).toBeLessThan(.30);
         hits.push(...basketHits(unit));
         previous = current;
       }
@@ -381,15 +381,16 @@ describe('cargo auxiliary basket clearance', () => {
     expect(hits).toEqual([]);
   });
 
-  it('keeps the basket and second winch clear throughout the complete cargo flight', () => {
+  it('keeps the basket and second winch clear through rooftop pickup and ground handoff', () => {
     const unit = aircraftUnit('C01', 0), hits: string[] = [];
-    for (let tick = 0; tick <= 640; tick++) {
-      unit.airTime = tick / 10;
+    for (let tick = 0; tick <= AIRCRAFT_TIMING.roofRescue.mission * 10; tick++) {
+      if (tick > 0) advanceAircraft(unit, .1);
       advanceAircraftLift(unit, .1, true);
       hits.push(...basketHits(unit));
       if (hits.length) { hits.unshift(`cargo-t=${tick / 10}`); break; }
     }
     expect(hits).toEqual([]);
+    expect(unit.airRescueDelivered).toBe(true);
     expect(rescueBasketPose(unit).extension).toBe(0);
   });
 

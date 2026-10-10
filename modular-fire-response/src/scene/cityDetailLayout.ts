@@ -145,7 +145,9 @@ function stationDetails(id: string): CityDetailBox[] {
     }
     details.push(box(`${prefix}/rear-course-${side}`, [0, side === -1 ? .5 : 5.35, -7.025], [19.8, .18, .05], '#aab7ba'));
   }
-  details.push(box(`${prefix}/roof-center`, [0, 6.396, -4], [19.7, .008, 6.6], '#6f797d'));
+  // Leave channel footprints open because both finishes share the same depth bias.
+  details.push(box(`${prefix}/roof-center`, [0, 6.396, -4], [8.1, .008, 6.6], '#6f797d'));
+  for (const side of [-1, 1]) details.push(box(`${prefix}/roof-center-${side}`, [side * 7, 6.396, -4], [5.7, .008, 6.6], '#6f797d'));
   for (let i = 0; i < 6; i++) details.push(box(`${prefix}/apron/joint-x-${i}`, [-10 + i * 4, SURFACE_Y + .004, 5], [.025, .008, 25.7], '#657174', 'paint'));
   for (let i = 0; i < 6; i++) details.push(box(`${prefix}/apron/joint-z-${i}`, [0, SURFACE_Y + .004, -6 + i * 4.7], [22.8, .008, .025], '#657174', 'paint'));
   for (const x of [-8.6, -3, 3, 8.6]) details.push(box(`${prefix}/apron/bay-line-${x}`, [x, SURFACE_Y + .007, 3.6], [.08, .01, 6.9], '#b0b8b4', 'paint'));

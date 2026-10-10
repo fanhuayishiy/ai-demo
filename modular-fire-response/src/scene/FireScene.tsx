@@ -95,7 +95,7 @@ export default function FireScene(props: SceneProps) {
               }
             />
           ))}
-          <Effects state={props.state} selectedId={props.selectedId} />
+          <Effects state={props.state} selectedId={props.selectedId} onSelect={props.onSelect} />
           {props.state.units.filter(u=>u.id===props.selectedId&&u.route.length>0).map(u=><Line key={u.id} points={[u.position,...u.route].map(p=>[p[0],.35,p[2]] as Vec3)} color="#dc5046" lineWidth={2} dashed dashSize={1.2} gapSize={.65}/>)}
           <CameraRig {...props} />
           <SceneLabels />

@@ -3,6 +3,8 @@ import { useFrame } from "@react-three/fiber";
 import { Group, Vector3 } from "three";
 import { Box, Beam, C, Cylinder, Tube } from "./Primitives";
 import { ApparatusCab, ApparatusModuleDetails, ApparatusWheel, RotorcraftSkin } from "./ApparatusDetails";
+import { CabCrew } from "./CabCrew";
+import { crewForCarrier, onboardCrew } from "../spatial/crew";
 import { Tag } from "./City";
 import {
   deploymentProgress,
@@ -716,10 +718,12 @@ export const Vehicle = memo(function Vehicle({
   const ref = useRef<Group>(null),
     wheels = useRef<Group>(null),
     initialPosition = useRef(unit.position);
+  const assignedCrew = crewForCarrier(unit.id), seatedCrew = onboardCrew(unit);
   useFrame(() => {
     if (!ref.current) return;
     ref.current.position.set(...unit.position);
-    const moving = unit.status === "enroute" || unit.status === "returning";
+    const moving = (unit.status === "enroute" || unit.status === "returning")
+      && !unit.airReturning && !(unit.crewProgress ?? 0) && unit.route.length > 0;
     if (unit.heading !== undefined) ref.current.rotation.y = unit.heading;
     else if (moving && unit.route.length > 0) {
       const next = unit.route.find(
@@ -744,7 +748,8 @@ export const Vehicle = memo(function Vehicle({
       }}
     >
       <Box p={[-0.3, 0.95, 0]} s={[7.6, 0.6, 2.7]} color={C.dark} />
-      <ApparatusCab />
+      <ApparatusCab crewCab={assignedCrew.length > 0} />
+      {assignedCrew.length > 0 && <CabCrew members={seatedCrew} />}
       <Box p={[2.3, 3.2, 0]} s={[0.7, 0.25, 2]} color={C.dark} />
       {[-0.75, 0.75].map((z) => (
         <Box
@@ -802,7 +807,7 @@ export const Vehicle = memo(function Vehicle({
             <meshBasicMaterial color="#db463f" transparent opacity={0.8} />
           </mesh>
           <Tag p={[0, 6, 0]} tone="selected">
-            {unit.name}
+            {unit.name}{assignedCrew.length > 0 ? ` · 随车 ${seatedCrew.length}/${assignedCrew.length} 人` : ""}
           </Tag>
         </>
       )}

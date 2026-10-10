@@ -5,7 +5,7 @@ import { Dog, FireAircraft, HeavyCargoAircraft, Rotorcraft } from "./Vehicles";
 import { Tag } from "./City";
 import { actionAllowed, dogRoutePosition } from "./helpers";
 import { BOOM_TARGET, RECON_HEIGHT, TOWER_POSITION } from "../spatial/layout";
-import { fireHoseChainReady } from "../simulation/aircraft";
+import { AIRCRAFT_TIMING, cargoFlightTime, fireHoseChainReady } from "../simulation/aircraft";
 import {
   cargoAircraftPose,
   cargoLoadPose,
@@ -21,6 +21,9 @@ import {
   waterToBoosterRoute,
 } from "./waterPaths";
 import { IncidentParticles, WaterJet } from "./IncidentParticles";
+import { RooftopResponse } from "./RooftopResponse";
+import { Firefighters } from "./Firefighters";
+import { crewReady } from "../spatial/crew";
 
 const fireTarget: Vec3 = [TOWER_POSITION[0], 18, 7.9];
 const stages: Record<FlightStage, string> = {
@@ -144,8 +147,27 @@ export function CargoFlight({
   const pose = cargoAircraftPose(unit),
     load = cargoLoadPose(unit, delivered),
     basket = rescueBasketPose(unit);
-  const railHeight = 0.1 + 0.6 * basket.extension,
-    slingHeight = 0.12 + 1.23 * basket.extension;
+  const { railHeight, slingHeight } = basket;
+  const groundAccess = (unit.airRescuePassenger || unit.airRescueDelivered)
+    && cargoFlightTime(unit) >= AIRCRAFT_TIMING.roofRescue.groundApproach;
+  const gateOpen = Math.max(0, Math.min(1, (basket.extension - 0.7) / 0.3));
+  const flightTime = cargoFlightTime(unit), rescueTiming = AIRCRAFT_TIMING.roofRescue;
+  let cargoStage = stages[pose.stage];
+  if (unit.airRescuePassenger && !unit.airRescueDelivered) {
+    cargoStage = flightTime < AIRCRAFT_TIMING.cargo.retract ? "楼顶人员起吊"
+      : flightTime < rescueTiming.groundApproach ? "人员转运"
+        : flightTime < rescueTiming.groundLower ? "下放吊篮" : "地面交接";
+  } else if (unit.airRescueDelivered && flightTime < rescueTiming.groundRetract) {
+    cargoStage = "回收空篮";
+  } else if (unit.airReturning && (unit.airRescueBoarding ?? 0) > 0) {
+    cargoStage = "接应撤销";
+  } else if (!unit.airReturning && (unit.airRescueBoarding ?? 0) > 0) {
+    cargoStage = "楼顶人员登篮";
+  } else if (basket.extension > 0) {
+    cargoStage = unit.airReturning ? "回收吊篮" : "屋顶接应";
+  } else if (pose.stage === "delivering") {
+    cargoStage = flightTime < AIRCRAFT_TIMING.cargo.delivery ? "楼顶物资投送" : "楼顶物资接应";
+  }
   return (
     <group>
       <group
@@ -158,7 +180,7 @@ export function CargoFlight({
         </group>
         {pose.airborne && (
           <Tag p={[0, 3.6, 0]} tone="warning">
-            载重无人机 · {stages[pose.stage]}
+            载重无人机 · {cargoStage}
           </Tag>
         )}
       </group>
@@ -212,36 +234,35 @@ export function CargoFlight({
         scale={basket.scale}
       >
         <Box p={[0, 0.04, 0]} s={[0.9, 0.08, 1.25]} color={C.red} />
-        {[-1, 1].map((x) => (
-          <Box
+        {[-1, 1].map(x => (
+          <group
             key={x}
-            p={[x * 0.43, railHeight / 2, 0]}
-            s={[0.04, railHeight, 1.2]}
-            color="#d5dfda"
-          />
+            name={`rescue-basket-gate-${x}`}
+            position={[x * 0.43, 0, -0.58]}
+            rotation={[0, x === (groundAccess ? 1 : -1) && gateOpen > 0 ? x * gateOpen * Math.PI / 2 : 0, 0]}
+          >
+            <Box p={[0, railHeight / 2, 0.58]} s={[0.04, railHeight, 1.16]} color="#d5dfda" />
+          </group>
         ))}
         {[-1, 1].flatMap((x) =>
           [-1, 1].map((z) => (
             <Beam
               key={`${x}-${z}`}
-              from={[0, slingHeight, 0]}
-              to={[x * 0.43, railHeight, z * 0.58]}
-              width={0.025}
+              from={[x * 0.43, 0, z * 0.58]}
+              to={[x * 0.43, slingHeight, z * 0.58]}
+              width={0.035}
               color="#d9e3dc"
             />
           )),
         )}
-        <group scale={[1, basket.extension, 1]}>
-          <Box p={[0, 0.4, 0]} s={[0.3, 0.55, 0.34]} color="#f3ce70" />
-          <Box p={[0, 0.17, 0.29]} s={[0.32, 0.2, 0.52]} color="#a6b0a9" />
-          <mesh position={[0, 0.91, 0]}>
-            <sphereGeometry args={[0.16, 8, 8]} />
-            <meshStandardMaterial color="#becac1" />
-          </mesh>
+        <group name="rescue-basket-top-frame">
+          {[-1, 1].flatMap(x => [-1, 1].map(z => (
+            <Beam key={`${x}-${z}`} from={[x * 0.43, slingHeight, z * 0.58]} to={[0, slingHeight, 0]} width={0.035} color="#d9e3dc" />
+          )))}
         </group>
-        {basket.extension > 0.05 && (
+        {(basket.extension > 0.05 || (unit.airRescuePassenger && !unit.airRescueDelivered)) && (
           <Tag p={[0, 2, 0]} tone="warning">
-            吊运前瞻 · 模拟载荷
+            {unit.airRescuePassenger ? "人员转运 · 概念演示" : "屋顶接人 · 概念演示"}
           </Tag>
         )}
       </group>
@@ -252,9 +273,11 @@ export function CargoFlight({
 export function Effects({
   state,
   selectedId,
+  onSelect,
 }: {
   state: SimulationState;
   selectedId?: string;
+  onSelect?: (id: string) => void;
 }) {
   const { time } = state;
   const active = (kind: string) =>
@@ -270,7 +293,7 @@ export function Effects({
   const connected = !!booster && state.water.connected;
   const spray = connected && state.water.outflow > 0.001;
   const dogClock = useRef({ start: time, last: time, active: false }),
-    dogActive = !!dogs && state.phase >= 3;
+    dogActive = !!dogs && crewReady(dogs) && state.phase >= 3;
   if (time < dogClock.current.last || !dogActive) {
     dogClock.current.start = time;
     dogClock.current.active = false;
@@ -295,6 +318,8 @@ export function Effects({
   return (
     <group>
       {!state.complete && <Flame time={time} intensity={intensity} />}
+      <RooftopResponse unit={cargo} time={time} delivered={state.metrics.delivered} detailedLabels={selectedId === "C01"} />
+      <Firefighters state={state} dogPositions={dogActive ? dogPositions : []} selectedId={selectedId} onSelect={onSelect} />
       {state.life.detected && !state.life.confirmed && (
         <Tag p={[7, 21, 8]} tone="warning">
           疑似热目标 · 待复核

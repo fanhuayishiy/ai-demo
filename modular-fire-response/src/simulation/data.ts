@@ -1,5 +1,6 @@
 import type { UnitKind, UnitState, UnitStatus, Vec3 } from '../types';
 import { STAGING, STATION_LAYOUT, WATER_SOURCES } from '../spatial/layout';
+import { crewForCarrier } from '../spatial/crew';
 
 export const PHASES = ['警情触发', '并行出动', '现场展开', '协同处置', '循环保障', '救援收束'];
 export const KIND_LABELS: Record<UnitKind, string> = {
@@ -27,6 +28,7 @@ export function createUnits(): UnitState[] {
     return { id, name: `${KIND_LABELS[kind]} ${id}`, kind, station, position: [...home], home, heading: layout.homeHeading,
       destination: stagingFor(id), battery: 100, water: kind === 'water' ? 900 : 0,
       capacity: kind === 'water' ? 900 : 0, status: 'standby', task: '等待调度', route: [], travel: 0, deployment: 0,
+      ...(crewForCarrier(id).length ? { crewProgress: 0, crewReturning: false } : {}),
       ...(kind === 'fire-drone' || kind === 'cargo' ? { airTime: 0, airReturning: false, airReturnFrom: 0, airReturnTime: 0 } : {}),
       ...(kind === 'cargo' ? { airLiftDeployment: 0 } : {}) };
   });

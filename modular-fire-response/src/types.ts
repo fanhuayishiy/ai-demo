@@ -5,7 +5,12 @@ export interface UnitState {
   id: string; name: string; kind: UnitKind; station: string; position: Vec3; home: Vec3; destination: Vec3;
   battery: number; water: number; capacity: number; status: UnitStatus; task: string;
   route: Vec3[]; travel: number; deployment: number; heading?: number;
+  // One reversible journey clock keeps seated and ground crew mutually exclusive.
+  crewProgress?: number; crewReturning?: boolean;
   airTime?: number; airReturning?: boolean; airReturnFrom?: number; airReturnTime?: number; airLiftDeployment?: number;
+  // Pickup stays latched after the ground handoff so the return route keeps its identity.
+  airRescueBoarding?: number; airRescuePassenger?: boolean; airRescueDelivered?: boolean; airRescueRecovery?: boolean;
+  airRescueRequested?: boolean;
 }
 export interface SimEvent { id: string; time: number; text: string; level: 'info' | 'success' | 'warning'; }
 export interface WaterState { buffer: number; capacity: number; inflow: number; outflow: number; totalUsed: number; interruptedFor: number; connected: boolean; sourceAvailable: boolean; refillCycles: number; }
@@ -19,7 +24,7 @@ export interface SimulationState {
 }
 export type Command = {type:'toggle-play'} | {type:'speed';value:number} | {type:'mode';value:'guided'|'command'}
   | {type:'approve';key:keyof Approvals} | {type:'flag';key:keyof Flags;value:boolean}
-  | {type:'recall';id:string} | {type:'dispatch';id:string} | {type:'confirm-life'} | {type:'reset'};
+  | {type:'recall';id:string} | {type:'dispatch';id:string} | {type:'confirm-life'} | {type:'request-cargo-rescue'} | {type:'reset'};
 export type ViewMode = 'overview' | 'follow' | 'command';
 export interface CameraCommand {type:'reset'|'focus'|'zoomIn'|'zoomOut';sequence:number;}
 export interface SceneProps {

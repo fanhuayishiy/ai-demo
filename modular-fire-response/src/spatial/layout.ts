@@ -10,7 +10,16 @@ export const PUMP_POSITION: Vec3 = [-6, SURFACE_Y, -2];
 export const LADDER_TARGET: Vec3 = [11.7, 20.9, 9.2];
 export const BOOM_TARGET: Vec3 = [2, 20, 10];
 export const AIR_FIRE_POSITION: Vec3 = [17, 23, 15];
-export const CARGO_POSITION: Vec3 = [5, 26, 14];
+export const ROOFTOP_SURFACE_Y = 29.025;
+export const ROOFTOP_CARGO_LANDING: Vec3 = [6.8, 29.045, 4.8];
+export const ROOFTOP_BASKET_POSITION: Vec3 = [5.65, 29.045, 4.8];
+export const ROOFTOP_PEOPLE: Vec3[] = [
+  [3.4, 29.045, 4.8], [1.6, 29.045, 3.8],
+  [2.5, 29.045, 5.5], [4.6, 29.045, 2.2],
+];
+export const CARGO_POSITION: Vec3 = [6.8, 38, 4.8];
+export const GROUND_BASKET_POSITION: Vec3 = [43.5, SURFACE_Y, -24.5];
+export const GROUND_PERSON_POSITION: Vec3 = [44.7, SURFACE_Y, -23.5];
 export const RECON_HEIGHT = 35;
 
 export const STATION_LAYOUT: {

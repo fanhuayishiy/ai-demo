@@ -1,8 +1,11 @@
 import type { UnitState, Vec3 } from "../types";
-import { AIRCRAFT_TIMING } from "../simulation/aircraft";
+import { AIRCRAFT_TIMING, cargoFlightTime, cargoMissionDuration } from "../simulation/aircraft";
 import {
   AIR_FIRE_POSITION,
   CARGO_POSITION,
+  GROUND_BASKET_POSITION,
+  ROOFTOP_BASKET_POSITION,
+  ROOFTOP_CARGO_LANDING,
   STAGING,
   SURFACE_Y,
   VEHICLE_SCALE,
@@ -63,7 +66,7 @@ export const FIRE_TARGETS: Vec3[] = [
   [13.5, 16, 15],
   AIR_FIRE_POSITION,
 ];
-export const CARGO_LANDING: Vec3 = [11.7, 19.625, 7];
+export const CARGO_LANDING = ROOFTOP_CARGO_LANDING;
 export const CARGO_LOAD_SIZE: Vec3 = [1.3, 0.7, 0.72];
 export const CARGO_ROTOR_HALF: Vec3 = [3.7, 0.85, 3];
 export const CARGO_GEAR_BOTTOM = 1.6;
@@ -177,36 +180,52 @@ export function fireAircraftPose(unit: UnitState, index: number): FlightPose {
 const cargoScale = (position: Vec3, dock: Vec3) =>
   0.34 + 0.66 * clamp((position[1] - dock[1] - 0.6) / 3);
 function cargoPose(unit: UnitState, time: number): FlightPose {
-  const dock = carrierDock(unit, "cargo");
+  const dock = carrierDock(unit, "cargo"),
+    mission = cargoMissionDuration(unit),
+    rescueMission = !!(unit.airRescuePassenger || unit.airRescueDelivered);
+  const aboveRoof: Vec3 = [CARGO_POSITION[0], 42, CARGO_POSITION[2]];
+  const groundHover: Vec3 = [GROUND_BASKET_POSITION[0] + 1.15, 9, GROUND_BASKET_POSITION[2]];
+  const returnFrames: Frame[] = rescueMission
+    ? [
+        [48, aboveRoof],
+        [54, [groundHover[0], 42, groundHover[2]]],
+        [AIRCRAFT_TIMING.roofRescue.groundApproach, groundHover],
+        [AIRCRAFT_TIMING.roofRescue.groundRetract, groundHover],
+        [mission - 4, [dock[0], 9, dock[2]]],
+        [mission, dock],
+      ]
+    : [
+        [48, aboveRoof],
+        [53, [25, 42, CARGO_POSITION[2]]],
+        [58, [dock[0], 42, dock[2]]],
+        [60, [dock[0], 22, dock[2]]],
+        [mission, dock],
+      ];
   const position = atFrames(
     [
       [0, dock],
       [4, [dock[0], 12, dock[2]]],
       [8, [dock[0], 42, dock[2]]],
       [11, [25, 42, dock[2]]],
-      [14, [25, 42, 14]],
-      [16, [5, 42, 14]],
+      [14, [25, 42, CARGO_POSITION[2]]],
+      [16, aboveRoof],
       [22, CARGO_POSITION],
       [44, CARGO_POSITION],
-      [48, [5, 42, 14]],
-      [53, [25, 42, 14]],
-      [58, [dock[0], 42, dock[2]]],
-      [60, [dock[0], 22, dock[2]]],
-      [64, dock],
+      ...returnFrames,
     ],
     time,
   );
   const scale = cargoScale(position, dock),
     h =
-      heading(unit) * (time < 4 ? 1 - clamp(time / 4) : clamp((time - 60) / 4));
+      heading(unit) * (time < 4 ? 1 - clamp(time / 4) : clamp((time - mission + 4) / 4));
   return {
     position,
     scale,
     heading: h,
-    airborne: time > 0 && time < 64,
+    airborne: time > 0 && time < mission,
     workReady: time >= 22 && time < 44 && unit.status === "working",
     stage:
-      time <= 0 || time >= 64
+      time <= 0 || time >= mission
         ? "docked"
         : time < 4
           ? "takeoff"
@@ -221,7 +240,12 @@ function cargoPose(unit: UnitState, time: number): FlightPose {
 }
 
 export function cargoAircraftPose(unit: UnitState): FlightPose {
-  if (!unit.airReturning) return cargoPose(unit, unit.airTime ?? 0);
+  if (!unit.airReturning || unit.airRescueRecovery) {
+    const pose = cargoPose(unit, cargoFlightTime(unit));
+    return unit.airRescueRecovery
+      ? { ...pose, workReady: false, stage: pose.airborne ? "returning" : "docked" }
+      : pose;
+  }
   const from = unit.airReturnFrom ?? unit.airTime ?? 0,
     elapsed = unit.airReturnTime ?? 0;
   const source = cargoPose(unit, from),
@@ -245,9 +269,8 @@ export function cargoAircraftPose(unit: UnitState): FlightPose {
       );
   const scale = cargoScale(position, dock),
     h =
-      elapsed === 0
-        ? source.heading
-        : heading(unit) * clamp((elapsed - 20) / 4);
+      source.heading * (1 - clamp(elapsed / 4)) +
+      heading(unit) * clamp((elapsed - 20) / 4);
   return {
     position,
     scale,
@@ -272,8 +295,6 @@ function normalLoad(unit: UnitState, time: number): Vec3 {
   return atFrames(
     [
       [22, carriedLoad(unit, CARGO_POSITION)],
-      [28, [11.7, 21.05, 9.2]],
-      [30, [11.7, 21.05, 7]],
       [34, CARGO_LANDING],
     ],
     time,
@@ -292,22 +313,23 @@ export function cargoLoadPose(
   unit: UnitState,
   deliveredCount = 0,
 ): CargoLoadPose {
-  const from = unit.airReturning
+  const returning = unit.airReturning && !unit.airRescueRecovery;
+  const from = returning
     ? (unit.airReturnFrom ?? unit.airTime ?? 0)
-    : (unit.airTime ?? 0);
+    : cargoFlightTime(unit);
   const released = deliveredCount > 0 || from >= AIRCRAFT_TIMING.cargo.delivery;
   const elapsed = unit.airReturnTime ?? 0,
     pose = cargoAircraftPose(unit);
   const position = released
     ? ([...CARGO_LANDING] as Vec3)
-    : !unit.airReturning
+    : !returning
       ? normalLoad(unit, from)
       : from >= 22 && elapsed <= 8
         ? normalLoad(unit, from - (from - 22) * clamp(elapsed / 8))
         : carriedLoad(unit, pose.position);
   const cableEnd = !released
     ? add(position, [0, 0.86, 0])
-    : !unit.airReturning
+    : !returning
       ? normalCable(unit, from)
       : mix(normalCable(unit, from), add(pose.hook, [0, -1.4, 0]), elapsed / 8);
   return { position, cableEnd, attached: !released, count: 4 };
@@ -315,20 +337,33 @@ export function cargoLoadPose(
 
 export function rescueBasketPose(unit: UnitState) {
   const aircraft = cargoAircraftPose(unit);
-  const extension =
-    clamp(unit.airLiftDeployment ?? 0) *
-    clamp((aircraft.position[1] - SURFACE_Y - 7) / 4);
-  const position = vehicleToWorld(
-    [-1.15, -0.9 - 3.1 * extension, 0],
+  const extension = aircraft.airborne ? clamp(unit.airLiftDeployment ?? 0) : 0;
+  const occupied = !!unit.airRescuePassenger && !unit.airRescueDelivered;
+  const boarding = !unit.airRescueDelivered ? clamp(unit.airRescueBoarding ?? 0) : 0;
+  // Keep person-sized headroom in transit and fold it continuously after handoff.
+  const occupancy = occupied ? 1 : unit.airRescueDelivered ? extension : boarding;
+  const unfolded = Math.max(extension, occupancy),
+    railHeight = 0.1 + 0.6 * unfolded,
+    slingHeight = 0.12 + 1.23 * unfolded + 0.75 * occupancy;
+  const scale = occupied || boarding > 0 ? 1 : aircraft.scale;
+  const stowedGap = unit.airRescueDelivered ? 0.9 : 0.9 + 3.3 * occupancy;
+  const stowed = vehicleToWorld(
+    [-1.15, -stowedGap, 0],
     aircraft.position,
     aircraft.heading,
     aircraft.scale,
   );
+  const receivingPosition = (unit.airRescuePassenger || unit.airRescueDelivered)
+    && cargoFlightTime(unit) >= AIRCRAFT_TIMING.roofRescue.groundApproach
+    ? GROUND_BASKET_POSITION : ROOFTOP_BASKET_POSITION;
+  const position = mix(stowed, receivingPosition, extension);
   return {
     position,
     extension,
-    scale: aircraft.scale,
+    scale,
     heading: aircraft.heading,
+    railHeight,
+    slingHeight,
     hook: vehicleToWorld(
       [-1.15, -0.75, 0],
       aircraft.position,
@@ -336,10 +371,10 @@ export function rescueBasketPose(unit: UnitState) {
       aircraft.scale,
     ),
     cableEnd: vehicleToWorld(
-      [0, 0.12 + 1.23 * extension, 0],
+      [0, slingHeight, 0],
       position,
       aircraft.heading,
-      aircraft.scale,
+      scale,
     ),
   };
 }

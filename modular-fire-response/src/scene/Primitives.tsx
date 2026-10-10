@@ -24,6 +24,7 @@ export function Box({
   roughness = color === C.metal ? .4 : color === C.red ? .36 : color === C.glass ? .2 : .65,
   metalness = color === C.metal ? .45 : color === C.red ? .18 : color === C.glass ? .24 : .04,
   surface,
+  depthLayer = 0,
 }: {
   p?: Vec3;
   s?: Vec3;
@@ -34,6 +35,7 @@ export function Box({
   roughness?: number;
   metalness?: number;
   surface?: UrbanSurface;
+  depthLayer?: number;
 }) {
   return (
     <mesh position={p} rotation={rotation} castShadow receiveShadow>
@@ -45,12 +47,16 @@ export function Box({
         metalness={metalness}
         emissive={emissive}
         emissiveIntensity={emissiveIntensity}
+        depthLayer={depthLayer}
       /> : <meshStandardMaterial
         color={color}
         roughness={roughness}
         metalness={metalness}
         emissive={emissive}
         emissiveIntensity={emissiveIntensity}
+        polygonOffset={depthLayer > 0}
+        polygonOffsetFactor={0}
+        polygonOffsetUnits={depthLayer > 0 ? -4 * depthLayer : 0}
       />}
     </mesh>
   );

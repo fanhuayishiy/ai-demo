@@ -190,4 +190,14 @@ describe("visible flight effects", () => {
       ).toHaveLength(4);
     }
   });
+  it.each([
+    [30, false, "楼顶物资投送"],
+    [50, true, "人员转运"],
+    [63, true, "地面交接"],
+  ] as const)("identifies the actual rooftop mission at aircraft time %s", (airTime, passenger, stage) => {
+    const unit = { ...staged("C01"), airTime, airRescuePassenger: passenger, airRescueBoarding: passenger ? 1 : 0 };
+    const aircraftLabel = labels(CargoFlight({ unit, time: 80, delivered: airTime >= 34 ? 4 : 0 }))
+      .find(label => label.parent === "cargo-aircraft");
+    expect(aircraftLabel?.text).toBe(`载重无人机 · ${stage}`);
+  });
 });
