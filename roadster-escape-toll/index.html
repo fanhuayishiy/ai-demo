@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Roadster 逃离收费站</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230d1c30'/%3E%3Cpath d='M4 19h24l-2.5-6H6.5z' fill='%23e0202f'/%3E%3Ccircle cx='10' cy='21' r='3.2' fill='%23191c22'/%3E%3Ccircle cx='22' cy='21' r='3.2' fill='%23191c22'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<!-- ================= HUD ================= -->
+<div id="hud" class="hidden">
+  <div class="hud-top">
+    <div class="panel score-panel">
+      <div class="score-main"><span id="score">0</span></div>
+      <div class="score-sub">飞越收费站 <b id="cleared">0</b> 座 &nbsp;·&nbsp; 最高 <b id="best">0</b></div>
+    </div>
+    <div class="panel speed-panel">
+      <div class="speed-num" id="speed">0</div>
+      <div class="speed-unit">km/h</div>
+    </div>
+  </div>
+
+  <div class="gauges" id="gauges">
+    <div class="gauge">
+      <div class="gauge-track gas-track" id="gasTrack">
+        <div class="gas-fill" id="gasFill"></div>
+      </div>
+      <div class="gauge-caption" id="gasCaption">冷气 100%</div>
+    </div>
+    <div class="gauge">
+      <div class="gauge-track">
+        <div class="gauge-danger" id="gaugeDanger"></div>
+        <div class="gauge-safe" id="gaugeSafe"></div>
+        <div class="gauge-marker" id="gaugeMarker"></div>
+      </div>
+      <div class="gauge-caption">高度</div>
+    </div>
+  </div>
+
+  <div class="hud-bottom">
+    <div class="dist-row">
+      <span class="dist-label">下一个收费站</span>
+      <span class="dist-val"><b id="dist">---</b> m</span>
+    </div>
+    <div class="prompt" id="prompt">长按 <kbd>空格</kbd> / 点击屏幕 点火起飞</div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<!-- ================= START ================= -->
+<div id="start" class="overlay">
+  <div class="card">
+    <div class="tag">TESLA ROADSTER · SPACEX 冷气推进器 A71</div>
+    <h1>Roadster<br /><span>逃离收费站</span></h1>
+    <p class="lead">开特斯拉的人，谁还过收费站？直接飞过去。</p>
+    <ul class="rules">
+      <li><b>长按</b> 空格键 / 鼠标左键 / 手指按住屏幕 &nbsp;—&nbsp; 车底 4 个冷气推进器向下喷，把车顶起来</li>
+      <li>不燃烧、无尾焰：高压气体喷出后骤冷，水汽凝结成白雾</li>
+      <li><b class="warn">冷气是定量的</b>：一趟只装一罐，<b>烧完不补充</b>；满罐只有 5 秒总点火时间，约够点 7 次火 —— 按住不放最费气</li>
+      <li>在收费站<b>前方</b>点火，飞越整座收费站即得 100 分</li>
+      <li>点火太晚 &rarr; <span class="bad">撞上收费站</span>；推力过猛 &rarr; <span class="bad">飞过头冲出马路</span></li>
+    </ul>
+    <button id="btnStart" class="btn">开始起飞</button>
+    <div class="hint">提示：路面上的 <b class="cyan">蓝色光带</b> 就是最佳点火位置</div>
+  </div>
+</div>
+
+<!-- ================= GAME OVER ================= -->
+<div id="over" class="overlay hidden">
+  <div class="card over-card">
+    <div class="over-reason" id="overReason">撞上收费站</div>
+    <div class="over-desc" id="overDesc"></div>
+    <div class="over-score">
+      <div class="big" id="finalScore">0</div>
+      <div class="small">最终得分</div>
+    </div>
+    <div class="over-stats">
+      <div><b id="finalCleared">0</b><span>飞越收费站</span></div>
+      <div><b id="finalSpeed">0</b><span>最高时速 km/h</span></div>
+      <div><b id="finalBest">0</b><span>历史最高</span></div>
+    </div>
+
+    <!-- ================= 本地排行榜 ================= -->
+    <div class="board" id="board">
+      <div class="board-head">
+        <span class="board-title">本地排行榜</span>
+        <span class="board-note">保存在本机浏览器 · 最多 10 条</span>
+      </div>
+      <ol class="board-list" id="boardList"></ol>
+      <div class="board-empty" id="boardEmpty">还没有记录 —— 飞一次就上榜</div>
+    </div>
+
+    <button id="btnRetry" class="btn">再来一次</button>
+    <div class="hint">按 <kbd>空格</kbd> 或 <kbd>R</kbd> 快速重开</div>
+  </div>
+</div>
+
+<div id="flash"></div>
+<div id="loading" class="overlay"><div class="load-txt">正在加载 Roadster…</div></div>
+
+<script src="./libs/three.min.js"></script>
+<script src="./game.js"></script>
+</body>
+</html>

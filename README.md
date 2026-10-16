@@ -32,6 +32,7 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 | sunset-flight-study | 夕空飞行 · 奶油白单翼机穿越紫金云海，近距离按键驾驶与官方原曲配乐 | [在线](https://fanhuayishiy.github.io/ai-demo/sunset-flight-study/dist/) | [README](./sunset-flight-study/README.md) |
 | warehouse-demo | WareTrack 单仓三维运营中心，叉车搬运闭环、库存任务联动、对象聚焦与镜头巡游 | [在线](https://fanhuayishiy.github.io/ai-demo/warehouse-demo/dist/client/) | [README](./warehouse-demo/README.md) |
 | modular-fire-response | FIRELINK 分布式消防概念演示，三机共用一根水带、移动增压、循环补水与无人机物资投送 | [在线](https://fanhuayishiy.github.io/ai-demo/modular-fire-response/dist/) | [README](./modular-fire-response/README.md) |
+| roadster-escape-toll | Roadster 逃离收费站：SpaceX 冷气推进器小游戏，冷气限量烧完不补，车模按官方渲染图 1:1 对齐 | [在线](https://fanhuayishiy.github.io/ai-demo/roadster-escape-toll/) | [README](./roadster-escape-toll/README.md) |
 
 ---
 
@@ -130,6 +131,14 @@ Three.js 程序化奶油白单翼机、紫色立体云海、橙金天空和翼�
 分布式调度下的模块化 3D 消防概念演示：两架承托无人机与一架末端喷射机共用一根水带，配合移动增压、循环补水与重载无人机物资投送。调度、供水和运动均为前端概念示意，不代表经真实物理验证的消防系统，也不用于实际救援决策。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/modular-fire-response/dist/) · [README](./modular-fire-response/README.md) · [当前项目完整复现提示词](./modular-fire-response/docs/RECREATE_PROMPT.zh-CN.md)
+
+---
+
+## roadster-escape-toll — Roadster 逃离收费站
+
+特斯拉第二代 Roadster 搭载 SpaceX 冷气推进器可空中悬浮，网友玩梗「开特斯拉的人谁还过收费站，直接飞过去」。本 Demo 据此做成 Three.js 网页小游戏：长按点火在收费站前起飞，点火太晚撞站、推力过猛飞过头冲出马路。一罐氮气只有 5 秒总点火时间、烧完不补，罐空后推进器点不着；10 个喷嘴按真实冷气推进器布局（车底 4 向下喷、车尾 4 向后推、两侧成对做姿态控制），羽流是水汽凝结的白雾而非火焰。车模按 tesla.cn 官方渲染图逐列实测反推型面（长 4.721 / 宽 2.051 / 高 1.130 m），折面几何还原「隐形战机」式大平面折板，另有本地排行榜。three.js r149 UMD 完全离线，双击即玩。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/roadster-escape-toll/) · [README（含主生成提示原文）](./roadster-escape-toll/README.md) · [官方渲染侧视叠加对比](./roadster-escape-toll/docs/official-render-compare.png)
 
 ---
 
