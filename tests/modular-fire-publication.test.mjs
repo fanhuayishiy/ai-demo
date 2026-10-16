@@ -24,6 +24,8 @@ const existingPreviews = [
 ];
 const firePreview = 'modular-fire-response/dist/index.html';
 const fireTitle = 'FIRELINK · 分布式智能消防';
+const roadsterPreview = 'roadster-escape-toll/index.html';
+const roadsterTitle = 'Roadster 逃离收费站';
 
 function* walk(node) {
   yield node;
@@ -35,18 +37,35 @@ const hasClass = (node, name) => (attribute(node, 'class') ?? '').split(/\s+/u).
 const text = node => [...walk(node)].filter(child => child.nodeName === '#text').map(child => child.value).join('').trim();
 const nodes = [...walk(parse(html))];
 
-test('collection appends FIRELINK after all fourteen existing previews in their original order', () => {
-  assert.deepEqual(discoverPreviews(html), [...existingPreviews, firePreview]);
+test('collection appends FIRELINK then Roadster after all fourteen existing previews in their original order', () => {
+  assert.deepEqual(discoverPreviews(html), [...existingPreviews, firePreview, roadsterPreview]);
 });
 
-test('homepage metadata advertises fifteen runnable projects', () => {
+test('homepage metadata advertises sixteen runnable projects', () => {
   const description = nodes.find(node => node.tagName === 'meta' && attribute(node, 'name') === 'description');
-  assert.match(attribute(description, 'content'), /15 个可运行项目/u);
+  assert.match(attribute(description, 'content'), /16 个可运行项目/u);
 });
 
-test('last card presents FIRELINK as a concept demo with preview and reproduction links', () => {
+test('last card presents Roadster as an offline mini-game with preview and prompt links', () => {
   const cards = nodes.filter(node => hasClass(node, 'card'));
   const cardNodes = [...walk(cards.at(-1))];
+  const heading = cardNodes.find(node => node.tagName === 'h2');
+  assert.equal(text(heading), roadsterTitle);
+  const preview = cardNodes.find(node => node.tagName === 'a' && hasClass(node, 'badge') && hasClass(node, 'cover'));
+  assert.equal(attribute(preview, 'href'), `./${roadsterPreview}`);
+  const prompt = cardNodes.find(node => node.tagName === 'a' && hasClass(node, 'prompt-link'));
+  assert.equal(attribute(prompt, 'href'), 'https://github.com/fanhuayishiy/ai-demo/blob/main/roadster-escape-toll/README.md');
+  assert.equal(attribute(prompt, 'target'), '_blank');
+  for (const rel of ['noopener', 'noreferrer']) assert.ok(attribute(prompt, 'rel').split(/\s+/u).includes(rel));
+  const description = text(cardNodes.find(node => node.tagName === 'p'));
+  for (const concept of ['冷气推进器', '1:1', '本地排行榜', '离线']) {
+    assert.ok(description.includes(concept), `Roadster description must mention ${concept}`);
+  }
+});
+
+test('second-to-last card still presents FIRELINK with preview and reproduction links', () => {
+  const cards = nodes.filter(node => hasClass(node, 'card'));
+  const cardNodes = [...walk(cards.at(-2))];
   const heading = cardNodes.find(node => node.tagName === 'h2');
   assert.equal(text(heading), fireTitle);
   const preview = cardNodes.find(node => node.tagName === 'a' && hasClass(node, 'badge') && hasClass(node, 'cover'));
@@ -61,18 +80,31 @@ test('last card presents FIRELINK as a concept demo with preview and reproductio
   }
 });
 
-test('README lists FIRELINK last and gives its final project overview before contribution instructions', () => {
+test('README lists Roadster last and gives its final project overview before contribution instructions', () => {
   const rows = readme.split('\n').filter(line => /^\| [a-z][\w-]+ \|/u.test(line));
-  const expectedProjects = [...existingPreviews, firePreview].map(preview => preview.split('/')[0]);
+  const expectedProjects = [...existingPreviews, firePreview, roadsterPreview].map(preview => preview.split('/')[0]);
   assert.deepEqual(rows.map(row => row.split('|')[1].trim()), expectedProjects);
-  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/modular-fire-response/dist/)'));
-  assert.ok(rows.at(-1).includes('[README](./modular-fire-response/README.md)'));
+  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/roadster-escape-toll/)'));
+  assert.ok(rows.at(-1).includes('[README](./roadster-escape-toll/README.md)'));
   const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
   const contributionIndex = headings.indexOf('## 新增项目');
   assert.ok(contributionIndex > 0);
-  assert.ok(headings[contributionIndex - 1].startsWith('## modular-fire-response '));
-  const overviewStart = readme.indexOf('## modular-fire-response ');
+  assert.ok(headings[contributionIndex - 1].startsWith('## roadster-escape-toll '));
+  const overviewStart = readme.indexOf('## roadster-escape-toll ');
   const overview = readme.slice(overviewStart, readme.indexOf('## 新增项目', overviewStart));
+  assert.match(overview, /冷气推进器/u);
+  assert.match(overview, /烧完不补/u);
+  assert.match(overview, /1:1/u);
+  assert.ok(overview.includes('(./roadster-escape-toll/docs/official-render-compare.png)'));
+});
+
+test('README keeps the FIRELINK overview directly before the Roadster overview', () => {
+  const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
+  const fireIndex = headings.indexOf('## modular-fire-response — FIRELINK 分布式智能消防');
+  assert.ok(fireIndex > 0);
+  assert.ok(headings[fireIndex + 1].startsWith('## roadster-escape-toll '));
+  const overviewStart = readme.indexOf('## modular-fire-response ');
+  const overview = readme.slice(overviewStart, readme.indexOf('## roadster-escape-toll ', overviewStart));
   assert.match(overview, /概念/u);
   assert.match(overview, /重载无人机物资投送/u);
   assert.match(overview, /不用于实际救援决策/u);
