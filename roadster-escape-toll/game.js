@@ -524,8 +524,22 @@
   /* 由参数表生成放样体。opt.arches 用来在车侧挖出轮拱 */
   function buildShell(table, opt) {
     var step = opt.step || 0.045;
+    /* extraSecs：在等距截面网格之外，按指定 z 补插截面。
+       用途：参数表里有尖折角（如车尾行李厢面在 z=1.03 的陡坎）而
+       等距网格恰好跨过折角时，线性放样会把折角抹平 —— 补一个
+       落在折角上的截面，陡坎才立得起来。 */
+    var zs = [];
+    for (var z = opt.z0; z <= opt.z1 + 1e-6; z += step) zs.push(z);
+    if (opt.extraSecs) {
+      for (var ei = 0; ei < opt.extraSecs.length; ei++) {
+        var ze = opt.extraSecs[ei];
+        if (ze > opt.z0 + 1e-9 && ze <= opt.z1 + 1e-6 && zs.indexOf(ze) < 0) zs.push(ze);
+      }
+      zs.sort(function (a, b) { return a - b; });
+    }
     var secs = [];
-    for (var z = opt.z0; z <= opt.z1 + 1e-6; z += step) {
+    for (var zi = 0; zi < zs.length; zi++) {
+      var z = zs[zi];
       var p = sampleProfile(table, z);
       var hw = p[0], hwt = p[1], hwb = p[2], ys = p[3], yt = p[4], yb = p[5];
       /* 第 8 列 dip：顶面中央相对两侧翼子板的下凹量（真车机盖是中间低的槽，
@@ -547,7 +561,10 @@
       }
       if (opt.ybFn) yb = opt.ybFn(z, yb, yt);
       if (opt.ytFn) yt = opt.ytFn(z, yb, yt);
-      if (yb > yt - 0.03) yb = yt - 0.03;
+      /* 高度守卫：侧墙至少 minH 高。贴面壳（如车顶亮棱贴玻璃面）
+         需要 0.004 级别的极薄壳，默认 0.03 会多露出一圈侧面。 */
+      var minH = opt.minH === undefined ? 0.03 : opt.minH;
+      if (yb > yt - minH) yb = yt - minH;
 
       var sc = opt.scale || 1;
       secs.push({
@@ -666,21 +683,27 @@
     var paint = new T.MeshStandardMaterial({
       color: 0x7b828a, metalness: 0.70, roughness: 0.30, envMapIntensity: 0.85
     });
-    var carbon = new T.MeshStandardMaterial({ color: 0x15181d, metalness: 0.46, roughness: 0.48 });
+    /* 碳件/车顶暗玻璃：官方侧视实测是暖暗棕灰（rgb≈39,34,31 / 58,46,43，
+       即 r−b≈+8~+15），冷蓝黑在银漆车身上会显出一片蓝 */
+    var carbon = new T.MeshStandardMaterial({ color: 0x1a1510, metalness: 0.46, roughness: 0.48 });
+    /* 车顶亮棱：官方侧视顶缘那条 2.3~3.6cm 宽的亮银棱（峰值 rgb≈227,227,229），
+       比车身漆更亮更挺 —— 漆面顶棱正面捕光 */
+    var roofEdge = new T.MeshStandardMaterial({ color: 0xaab2bc, metalness: 0.82, roughness: 0.24, envMapIntensity: 1.0 });
     var matte = new T.MeshStandardMaterial({ color: 0x0b0d11, metalness: 0.18, roughness: 0.88 });
     var glass = new T.MeshStandardMaterial({
-      color: 0x0a1018, metalness: 0.9, roughness: 0.06,
+      color: 0x0f0c08, metalness: 0.9, roughness: 0.06,
       transparent: true, opacity: 0.70
     });
     var cabinInner = new T.MeshStandardMaterial({ color: 0x0a0c10, metalness: 0.12, roughness: 0.92 });
     var chrome = new T.MeshStandardMaterial({ color: 0xc6ccd4, metalness: 1.0, roughness: 0.16 });
     var alloy = new T.MeshStandardMaterial({ color: 0x9aa2ac, metalness: 0.94, roughness: 0.26 });
     var rimDark = new T.MeshStandardMaterial({ color: 0x1d2026, metalness: 0.86, roughness: 0.36 });
+    var rimFace = new T.MeshStandardMaterial({ color: 0x464c55, metalness: 0.82, roughness: 0.38 });
     var tireMat = new T.MeshStandardMaterial({ color: 0x0d0f12, metalness: 0.05, roughness: 0.96, side: T.DoubleSide });
     var discMat = new T.MeshStandardMaterial({ color: 0x6e757d, metalness: 0.85, roughness: 0.42 });
     var caliperMat = new T.MeshStandardMaterial({ color: 0xd0261f, metalness: 0.4, roughness: 0.45 });
     /* 大灯：熄火时是一片深色刀锋镜片，只有一条极细的 DRL 灯丝发亮 */
-    var lensMat = new T.MeshStandardMaterial({ color: 0x07090c, metalness: 0.5, roughness: 0.17, side: T.DoubleSide });
+    var lensMat = new T.MeshStandardMaterial({ color: 0x0a0d12, metalness: 0.25, roughness: 0.32, side: T.DoubleSide });
     var drlMat = new T.MeshStandardMaterial({
       color: 0xcfe6f6, emissive: 0x8fc8ee, emissiveIntensity: 1.25,
       roughness: 0.30, side: T.DoubleSide
@@ -702,7 +725,7 @@
        轮胎按渲染图实测 Ø 0.52 m（渲染图轮径比量产规格小） */
     var WHEEL_Z_F = -0.95, WHEEL_Z_R = 1.22, WHEEL_X = 0.858;
     var WHEEL_R_F = 0.26, WHEEL_R_R = 0.26;
-    var ARCH_R_F = 0.28, ARCH_R_R = 0.28;
+    var ARCH_R_F = 0.31, ARCH_R_R = 0.31;
     var CROWN = 0.014;
 
     /* ---------- 车身参数表 ----------
@@ -712,36 +735,51 @@
        （z=-1.5 处 0.66 / -1.1 处 0.81 / -0.95 处 0.84 —— 中间没有凹陷），
        风挡从 z=-0.95 爬到车顶 1.13 m，顶点在 z=+0.25。
        尾部是 fastback：行李厢面从顶点一路滑到 z=+2.0 的 0.91 m，
-       然后是一道垂直尾板切面（0.91 → 0.15，尾灯条嵌在切面中部）。 */
+       然后是一道垂直尾板切面（0.91 → 0.15，尾灯条嵌在切面中部）。
+       宽度列按官方 3/4 渲染实测收窄：后翼子板峰 z=+1.22 满宽 1.04，
+       之后一路收到尾刃 z=+2.35 的 0.64（官方尾部是薄刃不是方墙），
+       尾灯板/灯带/扩散器/尾翼随型面同步收窄。
+       z=1.00~1.02 是玻璃带尾端的腰带线：车身顶面在这里压到官方实测的
+       玻璃带下缘（0.978@1.00 / 0.980@1.02），暗玻璃带从腰带线升到
+       玻璃顶线（1.038@1.00），上面再压一条 3.6cm 宽的银色亮棱到
+       roofline 1.074@1.00；银棱在 z=1.028 收口后，身体行李厢面接棒
+       升到官方 roofline 1.067@1.03（注意顶高列已扣掉 crown 0.014 - dip
+       0.006，表中 yt=1.059 才是渲染顶 1.067），
+       玻璃带与行李厢面在官方侧视里是一条连续斜坡，不在中间留台阶。 */
     var bodyTable = [
-      [-2.35, 0.380, 0.300, 0.240, 0.200, 0.260, 0.130, 0.008],
-      [-2.20, 0.500, 0.420, 0.340, 0.250, 0.320, 0.150, 0.010],
-      [-2.00, 0.660, 0.570, 0.470, 0.300, 0.400, 0.140, 0.014],
-      [-1.80, 0.820, 0.730, 0.620, 0.360, 0.520, 0.120, 0.020],
-      [-1.55, 0.930, 0.840, 0.730, 0.420, 0.660, 0.110, 0.028],
-      [-1.22, 0.990, 0.900, 0.800, 0.490, 0.790, 0.110, 0.034],
-      [-0.95, 1.010, 0.920, 0.820, 0.530, 0.820, 0.120, 0.034],
-      [-0.60, 0.990, 0.900, 0.810, 0.560, 0.860, 0.130, 0.030],
-      [-0.45, 0.970, 0.880, 0.800, 0.560, 0.900, 0.140, 0.024],
-      [-0.20, 0.950, 0.860, 0.790, 0.560, 0.940, 0.150, 0.018],
-      [0.13, 0.950, 0.860, 0.790, 0.550, 1.000, 0.160, 0.014],
-      [0.44, 0.960, 0.870, 0.800, 0.540, 1.060, 0.170, 0.012],
-      [0.91, 0.970, 0.880, 0.810, 0.530, 1.090, 0.190, 0.010],
-      [1.10, 0.980, 0.890, 0.820, 0.520, 1.050, 0.200, 0.008],
-      [1.22, 0.990, 0.900, 0.830, 0.520, 1.048, 0.210, 0.006],
-      [1.50, 1.000, 0.910, 0.840, 0.510, 0.995, 0.230, 0.005],
-      [1.80, 0.990, 0.900, 0.840, 0.500, 0.935, 0.240, 0.004],
-      [2.00, 0.985, 0.895, 0.835, 0.495, 0.913, 0.200, 0.004],
-      [2.15, 0.980, 0.890, 0.832, 0.490, 0.910, 0.180, 0.004],
-      [2.35, 0.960, 0.870, 0.820, 0.480, 0.910, 0.150, 0.004]
+      [-2.35, 0.315, 0.270, 0.210, 0.175, 0.246, 0.125, 0.014],
+      [-2.20, 0.410, 0.355, 0.292, 0.225, 0.305, 0.145, 0.016],
+      [-2.00, 0.590, 0.510, 0.430, 0.285, 0.392, 0.140, 0.018],
+      [-1.80, 0.760, 0.690, 0.600, 0.345, 0.528, 0.120, 0.020],
+      [-1.55, 0.900, 0.840, 0.760, 0.405, 0.636, 0.110, 0.024],
+      [-1.22, 1.000, 0.960, 0.900, 0.520, 0.787, 0.110, 0.026],
+      [-0.95, 1.061, 1.020, 0.980, 0.560, 0.825, 0.120, 0.022],
+      [-0.60, 1.040, 1.000, 0.965, 0.490, 0.840, 0.130, 0.024],
+      [-0.45, 1.019, 0.980, 0.950, 0.480, 0.848, 0.140, 0.018],
+      [-0.20, 0.997, 0.960, 0.930, 0.475, 0.856, 0.150, 0.014],
+      [0.13, 0.997, 0.960, 0.930, 0.470, 0.866, 0.160, 0.012],
+      [0.44, 1.008, 0.970, 0.940, 0.470, 0.900, 0.170, 0.010],
+      [0.91, 1.019, 0.965, 0.950, 0.480, 0.960, 0.190, 0.008],
+      [1.00, 1.024, 0.972, 0.955, 0.490, 0.978, 0.195, 0.007],
+      [1.02, 1.026, 0.975, 0.957, 0.492, 0.980, 0.198, 0.007],
+      [1.03, 1.027, 0.977, 0.958, 0.494, 1.059, 0.200, 0.006],
+      [1.10, 1.029, 0.990, 0.960, 0.500, 1.050, 0.200, 0.006],
+      [1.22, 1.040, 1.000, 0.970, 0.560, 1.035, 0.210, 0.005],
+      [1.50, 0.975, 0.940, 0.918, 0.500, 0.995, 0.230, 0.004],
+      [1.80, 0.900, 0.868, 0.847, 0.490, 0.935, 0.240, 0.004],
+      [2.00, 0.810, 0.781, 0.764, 0.485, 0.913, 0.200, 0.004],
+      [2.15, 0.730, 0.704, 0.690, 0.480, 0.910, 0.180, 0.004],
+      [2.35, 0.640, 0.617, 0.604, 0.470, 0.905, 0.150, 0.004]
     ];
 
     var bodyMesh = new T.Mesh(buildShell(bodyTable, {
       z0: -2.35, z1: 2.35, step: 0.042, crown: CROWN, samples: 4,
       facet: true,
+      extraSecs: [1.03],   /* 行李厢面陡坎：等距截面落在 1.01/1.052，
+                             会把 0.980@1.02→1.067@1.03 抹平 —— 补截面立起来 */
       arches: [
-        { zc: WHEEL_Z_F, R: ARCH_R_F, yc: WHEEL_R_F, flat: 0.40 },
-        { zc: WHEEL_Z_R, R: ARCH_R_R, yc: WHEEL_R_R, flat: 0.40 }
+        { zc: WHEEL_Z_F, R: ARCH_R_F, yc: WHEEL_R_F, flat: 0.30 },
+        { zc: WHEEL_Z_R, R: ARCH_R_R, yc: WHEEL_R_R, flat: 0.30 }
       ]
     }), paint);
     car.add(bodyMesh);
@@ -752,21 +790,28 @@
        然后后风挡缓降到 z=+1.0 的 1.08 —— 玻璃后缘正好落在行李厢面上。
        facet 模式下没有过冲，顶高控制点即实际高度，顶点取 1.118 + crown 0.012 = 1.130。 */
     var cabinTable = [
-      [-0.95, 0.620, 0.546, 0.640, 0.740, 0.830, 0.740],
-      [-0.72, 0.700, 0.630, 0.710, 0.770, 0.925, 0.770],
-      [-0.50, 0.740, 0.672, 0.745, 0.795, 0.988, 0.795],
-      [-0.25, 0.760, 0.696, 0.762, 0.810, 1.070, 0.810],
-      [0.00, 0.762, 0.700, 0.765, 0.820, 1.118, 0.820],
-      [0.25, 0.750, 0.688, 0.752, 0.825, 1.118, 0.825],
-      [0.50, 0.730, 0.668, 0.735, 0.820, 1.110, 0.820],
-      [0.75, 0.690, 0.628, 0.695, 0.810, 1.092, 0.810],
-      [1.00, 0.630, 0.570, 0.635, 0.800, 1.070, 0.800]
+      [-0.95, 0.980, 0.940, 0.970, 0.740, 0.830, 0.740],
+      [-0.72, 0.970, 0.930, 0.965, 0.770, 0.925, 0.770],
+      [-0.50, 0.940, 0.900, 0.935, 0.795, 0.988, 0.795],
+      [-0.25, 0.940, 0.900, 0.935, 0.810, 1.070, 0.810],
+      [0.00, 0.940, 0.900, 0.935, 0.820, 1.118, 0.820],
+      [0.25, 0.935, 0.895, 0.930, 0.825, 1.118, 0.825],
+      [0.50, 0.930, 0.890, 0.925, 0.830, 1.110, 0.830],
+      [0.75, 0.940, 0.900, 0.932, 0.880, 1.092, 0.880],
+      [1.00, 0.918, 0.878, 0.912, 0.950, 1.072, 0.950],
+      [1.02, 0.916, 0.876, 0.906, 0.960, 1.069, 0.950]
     ];
 
     /* 玻璃顶篷（外层）—— 前缘埋进机器盖里，不留切口。折面后是一整块楔形玻璃，
-       侧面近乎垂直、顶部是浅梯形，正是真车那种「座舱楔形」 */
+       侧面近乎垂直、顶部是浅梯形，正是真车那种「座舱楔形」。
+       后缘延到 z=+1.03：官方侧视玻璃带在 z≈1.01-1.02 随斜坡自然闭合，之后顶面
+       就是行李厢面（1.073@1.02 → 1.067@1.03 连续顺接），不留台阶。
+       z1=1.03 但 step 0.038 只到 1.026 —— 恰好覆盖闭合点，甲板内侧不留缝。
+       z>0.86 顶面拉平 1.2cm：官方行李厢面是平的（1.085~1.089），
+       拉平后玻璃顶弧永远压在银壳亮棱顶弧下方 2mm，不共面不穿模。 */
     car.add(new T.Mesh(buildShell(cabinTable, {
-      z0: -0.95, z1: 1.00, step: 0.038, crown: 0.012, facet: true
+      z0: -0.95, z1: 1.03, step: 0.038, crown: 0.012, facet: true,
+      ytFn: function (z, yb, yt) { return z > 0.86 ? yt - 0.012 : yt; }
     }), glass));
 
     /* 座舱内衬：挡住天空，顺便把座椅兜在里面 */
@@ -776,11 +821,42 @@
       ytFn: function (z, yb, yt) { return yt - 0.018; }
     }), cabinInner));
 
-    /* 车顶面板：黑色，只盖住车顶那一段（真车顶篷就是黑的） */
+    /* 官方车顶的分层线（glass-top.mjs 实测拟合，误差 ≤3mm）：
+       亮银棱 → 暗玻璃的分界线。中段（z≤0.25）是一条抛物线顶点在 1.102@0.25；
+       后段（z>0.25）二次曲线降到 1.038@1.00；前段（z<-0.25）从风挡根部
+       1.038@-0.25 线性降到 0.915@-0.75（max 兜底防穿进机盖）。 */
+    function glassTopFn(z) {
+      if (z < -0.25) return Math.max(0.915, 1.038 + 0.32 * (z + 0.25));
+      if (z <= 0.25) return 1.095 + 0.128 * z - 0.4 * z * z;
+      var d = z - 0.25;
+      return 1.102 - 0.0173 * d - 0.0907 * d * d;
+    }
+
+    /* 车顶面板：黑色，只盖住车顶中段。下缘（ybFn）压在官方玻璃顶线上，
+       肩线从 cabinTable 的 ys 升到 yt —— 侧面看去就是腰带线上方那条
+       暖暗玻璃带（碳色 0x1a1510 与官方暖暗玻璃同色系）。
+       注：ys 不可覆盖（只能改表），碳壳肩线天然覆盖玻璃壳肩线，
+       玻璃壳在 z∈[-0.16,0.86] 段被压在下面，从外侧不可见。 */
     car.add(new T.Mesh(buildShell(cabinTable, {
       z0: -0.16, z1: 0.86, step: 0.038, scale: 1.006, facet: true,
-      ybFn: function (z, yb, yt) { return yt - 0.050; }
+      ybFn: function (z) { return glassTopFn(z); }
     }), carbon));
+
+    /* 银色亮棱 + 行李厢面：官方车顶不是整片黑 —— 玻璃带上方压着一条
+       2.3~3.6cm 宽的亮银棱（峰值 rgb 227,227,229），棱的顶线就是 roofline
+       （1.128@0.25 平坦 → 1.074@1.00）。银壳 ys 与 yb 同时 := glassTopFn，
+       侧墙退化为零、只露肩线 [glassTop, yt] 这条亮棱；scale 1.010 比碳壳
+       1.006 更宽，顶弧永远压住下层不共面。
+       z>0.86 顶面拉平 1.2cm 对齐官方平坦行李厢面（1.085~1.089），
+       z1=1.03 延过玻璃壳末端接过车身行李厢面 1.067，消除 roofline 跌落台阶。 */
+    car.add(new T.Mesh(buildShell(cabinTable.map(function (r) {
+      return [r[0], r[1], r[2], r[3], glassTopFn(r[0]), r[5], r[6]];
+    }), {
+      z0: -0.72, z1: 1.03, step: 0.038, scale: 1.010, crown: 0.014, facet: true,
+      minH: 0.004,
+      ybFn: function (z) { return glassTopFn(z); },
+      ytFn: function (z, yb, yt) { return z > 0.86 ? yt - 0.012 : yt; }
+    }), roofEdge));
 
     /* 内饰：两张座椅 + 中控屏 + 方向盘（都不能戳出顶篷和内衬） */
     (function interior() {
@@ -807,7 +883,23 @@
       car.add(sw);
     })();
 
-    /* ---------- 轮子：5 组双辐 Y 型深色轮辋 ---------- */
+    /* ---------- 轮子：六角星形深色轮毂 ----------
+       真车轮毂是 6 根锥形辐条从中心盖向外辐射（轮毂处窄、轮缘处宽），
+       辐条之间露出深灰轮辋面 —— 正侧看就是一颗六角星 */
+    /* 锥形辐条：形状面是 (切向, 径向) 的梯形，沿轮轴(x)挤出。
+       Extrude 形状在 xy 面、沿 z 挤出；rotateY(π/2) 把 z→x(轴向)、x→-z(切向)。 */
+    function starSpoke(r0, r1, w0, w1, depth) {
+      var sh = new T.Shape();
+      sh.moveTo(-w0, r0);
+      sh.lineTo(-w1, r1);
+      sh.lineTo(w1, r1);
+      sh.lineTo(w0, r0);
+      sh.closePath();
+      var geo = new T.ExtrudeGeometry(sh, { depth: depth, bevelEnabled: false });
+      geo.rotateY(Math.PI / 2);
+      return geo;
+    }
+
     function buildWheel(radius, halfWidth) {
       var w = new T.Group();
       var r = radius, hw = halfWidth;
@@ -829,7 +921,7 @@
 
       /* 轮辋桶 + 亮色轮辋外圈 */
       var lipR = r * 0.665;
-      var barrel = new T.Mesh(new T.CylinderGeometry(lipR, lipR, hw * 1.88, 32, 1, true), rimDark);
+      var barrel = new T.Mesh(new T.CylinderGeometry(lipR, lipR, hw * 1.88, 32, 1, true), rimFace);
       barrel.rotation.z = Math.PI / 2;
       w.add(barrel);
       var lip = new T.Mesh(new T.TorusGeometry(lipR, 0.015, 8, 40), alloy);
@@ -845,24 +937,19 @@
       cal.position.set(0, r * 0.40, -r * 0.28);
       w.add(cal);
 
-      /* 5 组双辐 —— 每根在轮平面内偏一点，从中心向外张开成 Y 字 */
+      /* 6 根锥形辐条：从中心盖向外辐射，中间窄、轮缘宽，拼成六角星 */
       var spokeGeos = [];
-      for (var i = 0; i < 5; i++) {
-        var base = (i / 5) * Math.PI * 2;
-        for (var k = 0; k < 2; k++) {
-          var sgn = k ? 1 : -1;
-          var sg = new T.BoxGeometry(0.026, r * 0.60, hw * 0.42);
-          sg.translate(0, r * 0.30, 0);
-          sg.rotateY(0.30);                       /* 辐条自身扭转，做出涡轮感 */
-          sg.rotateX(base + sgn * 0.215);         /* 双辐夹角 */
-          sg.translate(hw * 0.70, 0, 0);
-          spokeGeos.push(sg);
-        }
+      for (var i = 0; i < 6; i++) {
+        var base = (i / 6) * Math.PI * 2;
+        var sg = starSpoke(r * 0.05, r * 0.94, 0.034, 0.088, hw * 0.82);
+        sg.rotateX(base);                      /* 绕轮轴均布 6 根 */
+        sg.translate(hw * 0.17, 0, 0);         /* 贴到轮辋外侧面 */
+        spokeGeos.push(sg);
       }
       w.add(new T.Mesh(mergeGeometries(spokeGeos), rimDark));
 
-      /* 中心盖 */
-      var hub = new T.Mesh(new T.CylinderGeometry(r * 0.165, r * 0.165, 0.042, 18), chrome);
+      /* 中心盖：深色，与真车轮毂中心一致 */
+      var hub = new T.Mesh(new T.CylinderGeometry(r * 0.165, r * 0.165, 0.042, 18), rimDark);
       hub.rotation.z = Math.PI / 2;
       hub.position.x = hw * 0.90;
       w.add(hub);
@@ -888,9 +975,9 @@
        真车是隐形战机式的尖三角（外窄内宽、向后扫），不是一条横条灯带。
        灭车时是深色刀锋镜片，沿前缘埋一条极细的 DRL 灯丝。 */
     var LIGHT_VERTS = [
-      { z: -2.12, x: 0.46 },   /* 鼻尖：靠车头中线 */
-      { z: -1.32, x: 0.93 },   /* 后外端：落在翼子板棱上 */
-      { z: -1.88, x: 0.87 }    /* 下缘顶点，撑出楔形的厚度 */
+      { z: -2.04, x: 0.42 },   /* 前端：鼻翼外角 */
+      { z: -1.54, x: 0.80 },   /* 后端：落在翼子板棱上 */
+      { z: -1.88, x: 0.58 }    /* 下缘顶点：收成薄刃 */
     ];
     [-1, 1].forEach(function (s) {
       var verts = LIGHT_VERTS.map(function (p) { return { z: p.z, x: s * p.x }; });
@@ -900,9 +987,9 @@
       for (var i = 0; i <= 8; i++) {
         var t = i / 8;
         drl.push({
-          x: s * (0.46 + (0.93 - 0.46) * t),
-          z: -2.12 + (-1.32 + 2.12) * t,
-          w: 0.017
+          x: s * (0.42 + (0.80 - 0.42) * t),
+          z: -2.04 + (-1.54 + 2.04) * t,
+          w: 0.015
         });
       }
       car.add(new T.Mesh(topRibbon(drl, bodyTable, 0.014, CROWN), drlMat));
@@ -918,7 +1005,7 @@
     }
     car.add(new T.Mesh(buildShell(chinRows, {
       z0: -2.35, z1: -1.90, step: 0.030, crown: CROWN, facet: true,
-      ytFn: function (z, yb, yt) { return Math.min(yt, 0.168 + (z + 2.35) * 0.170); }
+      ytFn: function (z, yb, yt) { return Math.min(yt, 0.190 + (z + 2.35) * 0.150); }
     }), matte));
 
     [-1, 1].forEach(function (s) {
@@ -945,41 +1032,46 @@
     /* ---------- 车尾 ----------
        官方侧视图尾部：行李厢面滑到 z=+2.0 的 0.91 m 后是一道垂直尾板切面
        （0.91 → 0.15）。切面上部银白车身面，中部嵌一条横贯式尾灯，
-       下部是一整块深色件（尾板 + 扩散器）。 */
-    var tailPanel = new T.Mesh(new T.BoxGeometry(1.92, 0.340, 0.085), matte);
-    tailPanel.position.set(0, 0.320, 2.322);
+       下部是一整块深色件（尾板 + 扩散器）。
+       宽度全部随 bodyTable 尾部收窄同步：尾刃 z=+2.35 满宽 1.28（hw 0.640），
+       尾板/灯带/扩散器/尾翼按同一比例收，不再像方墙一样探出车身。 */
+    var tailPanel = new T.Mesh(new T.BoxGeometry(1.26, 0.425, 0.085), matte);
+    tailPanel.position.set(0, 0.3625, 2.322);
     car.add(tailPanel);
-    /* 贯穿式尾灯：一条横贯整个车尾宽度的细灯带，嵌在切面中部偏上 */
-    var tailBar = new T.Mesh(new T.BoxGeometry(1.80, 0.040, 0.055), tailMat);
-    tailBar.position.set(0, 0.570, 2.342);
+    /* 贯穿式尾灯：一条横贯整个车尾宽度的细灯带，嵌在切面中部偏上。
+       官方渲染里灯带在尾板约 1/3 高度（贴银白面板下沿），不在正中 */
+    var tailBar = new T.Mesh(new T.BoxGeometry(1.18, 0.040, 0.055), tailMat);
+    tailBar.position.set(0, 0.620, 2.342);
     car.add(tailBar);
     /* 灯带两端沿尾板转角包过去一点，做出「绕着走」的感觉 */
     [-1, 1].forEach(function (s) {
       var cap = new T.Mesh(new T.BoxGeometry(0.070, 0.040, 0.085), tailMat);
-      cap.position.set(s * 0.872, 0.570, 2.318);
+      cap.position.set(s * 0.600, 0.620, 2.318);
       cap.rotation.y = s * -0.42;
       car.add(cap);
     });
 
     /* 尾部扩散器（带竖鳍）—— 贴住尾板下沿 */
-    var diff = new T.Mesh(new T.BoxGeometry(1.30, 0.140, 0.26), carbon);
+    var diff = new T.Mesh(new T.BoxGeometry(1.04, 0.140, 0.26), carbon);
     diff.position.set(0, 0.270, 2.220);
     car.add(diff);
     for (var fi = -2; fi <= 2; fi++) {
       var fin = new T.Mesh(new T.BoxGeometry(0.020, 0.130, 0.24), matte);
-      fin.position.set(fi * 0.250, 0.270, 2.238);
+      fin.position.set(fi * 0.200, 0.270, 2.238);
       car.add(fin);
     }
 
     /* 主动尾翼（收起位）—— 真车照片里尾翼就是收在尾箱上的一条薄翼片，
-       不是立杆撑起来的赛道尾翼。压到贴着行李厢面的高度，去掉支杆。 */
-    var wingBlade = new T.Mesh(new T.BoxGeometry(1.46, 0.024, 0.20), carbon);
-    wingBlade.position.set(0, 0.898, 2.020);
+       不是立杆撑起来的赛道尾翼。抬到行李厢面上方露出薄唇（旧位置 0.898
+       整个埋在 0.92 的行李厢面里，侧面完全看不见），前缘随板面坡度
+       扎进deck、后缘抬起约 3 cm，做出收起位鸭尾的样子。 */
+    var wingBlade = new T.Mesh(new T.BoxGeometry(1.20, 0.024, 0.20), carbon);
+    wingBlade.position.set(0, 0.934, 2.020);
     wingBlade.rotation.x = -0.09;
     car.add(wingBlade);
     [-1, 1].forEach(function (s) {
       var end = new T.Mesh(new T.BoxGeometry(0.012, 0.036, 0.20), carbon);
-      end.position.set(s * 0.724, 0.892, 2.020);
+      end.position.set(s * 0.595, 0.928, 2.020);
       end.rotation.x = -0.09;
       car.add(end);
     });
@@ -987,7 +1079,7 @@
     /* 侧裙 + 车门分缝（都贴着车壳表面走） */
     [-1, 1].forEach(function (s) {
       var skirt = new T.Mesh(new T.BoxGeometry(0.048, 0.095, 2.34), carbon);
-      skirt.position.set(s * 0.852, 0.185, 0.370);
+      skirt.position.set(s * 0.955, 0.185, 0.370);
       car.add(skirt);
       [-0.15, 0.95].forEach(function (dz) {
         var lx = surfaceSideX(bodyTable, dz, 0.640);
