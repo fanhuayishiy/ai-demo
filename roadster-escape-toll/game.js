@@ -651,6 +651,17 @@
           yb = Math.max(yb, h);
         }
       }
+      /* hwFn：按外部参考（如车身型面）改写横向尺寸。用于"贴在车身外侧"
+         的薄壳 —— 它必须贴着车身宽度走，不能只靠固定 scale。
+         第二个参数 p 是该 z 处的原始参数行 [hw,hwt,hwb,ys,yt,yb,dip]，
+         便于只改其中一列（例如只加宽 hw 而保留窄 hwt）。 */
+      if (opt.hwFn) {
+        var hwp = opt.hwFn(z, p);
+        hw = hwp[0]; hwt = hwp[1];
+      }
+      /* ysFn：压低/抬高肩线。侧墙的范围是 [ys, yt]，玻璃带这类"贴在车身外侧
+         的暗色窗带"需要自己的肩线比车身低，否则会被同高度的车身侧墙遮住。 */
+      if (opt.ysFn) ys = opt.ysFn(z, ys);
       if (opt.ybFn) yb = opt.ybFn(z, yb, yt);
       if (opt.ytFn) yt = opt.ytFn(z, yb, yt);
       /* 高度守卫：侧墙至少 minH 高。贴面壳（如车顶亮棱贴玻璃面）
@@ -686,6 +697,11 @@
     if (ax >= hw) return ys;
     var u = (ax - hwt) / Math.max(1e-4, hw - hwt);
     return yt + (ys - yt) * (u * u * (3 - 2 * u));
+  }
+
+  /* 车壳肩线高度（参数表第 5 列 ys），用来把贴片的下缘对到腰带线上 */
+  function surfaceProfileYs(table, z) {
+    return sampleProfile(table, z)[3];
   }
 
   /* 车壳侧面在 (z, y) 处的 x —— 用来把进气口、侧鳃贴到曲面上 */
@@ -776,8 +792,13 @@
       color: 0x7b828a, metalness: 0.70, roughness: 0.30, envMapIntensity: 0.85
     });
     /* 碳件/车顶暗玻璃：官方侧视实测是暖暗棕灰（rgb≈39,34,31 / 58,46,43，
-       即 r−b≈+8~+15），冷蓝黑在银漆车身上会显出一片蓝 */
-    var carbon = new T.MeshStandardMaterial({ color: 0x1a1510, metalness: 0.46, roughness: 0.48 });
+       即 r−b≈+8~+15），冷蓝黑在银漆车身上会显出一片蓝。
+       metalness 必须低（0.46 → 0.08）：金属材质在明亮环境贴图下会把
+       暗色反射成浅灰，玻璃带就"消失"在银色车身里了（曾是这个状态）。
+       roughness 提高让反射散开，暗色才压得住，读出深色玻璃带。 */
+    var carbon = new T.MeshStandardMaterial({
+      color: 0x140f0c, metalness: 0.08, roughness: 0.82, envMapIntensity: 0.35
+    });
     /* 车顶亮棱：官方侧视顶缘那条 2.3~3.6cm 宽的亮银棱（峰值 rgb≈227,227,229），
        比车身漆更亮更挺 —— 漆面顶棱正面捕光 */
     var roofEdge = new T.MeshStandardMaterial({ color: 0xaab2bc, metalness: 0.82, roughness: 0.24, envMapIntensity: 1.0 });
@@ -931,27 +952,29 @@
       return 1.094 - 0.0067 * d - 0.0427 * d * d;
     }
 
-    /* 车顶面板：黑色，只盖住车顶中段。下缘（ybFn）压在官方玻璃顶线上，
-       肩线从 cabinTable 的 ys 升到 yt —— 侧面看去就是腰带线上方那条
-       暖暗玻璃带（碳色 0x1a1510 与官方暖暗玻璃同色系）。
-       范围覆盖整个风挡到后窗：z -0.86 ~ 1.00（原来 -0.16 起步，
-       风挡整段没有暗色，官方侧视里风挡是深色的） */
+    /* 车顶面板：暗玻璃带，盖住整个风挡到后窗。下缘（ybFn）压在官方玻璃顶线上，
+       肩线从 ys 升到 yt —— 侧面看到的就是腰带线上方那条暖暗玻璃带
+       （官方实测 rgb≈39,34,31 暖暗棕灰）。
+       关键：cabinTable 的 hw 只有 0.94，而车身在同一 z 是 1.00~1.045 ——
+       碳壳整体比车身窄，侧视时玻璃带整条被车身侧墙遮住，侧面只剩一片银色
+       （实测座舱侧面像素全是 110,125,135 的银灰）。
+       所以底宽 hw 必须按车身型面逐 z 贴上去（+6mm 才能压在外面不打架），
+       但顶宽 hwt 仍用 cabinTable 自己的窄值 —— 两条都加宽会把车顶
+       顶成一块宽平板，座舱结构就散了。 */
     car.add(new T.Mesh(buildShell(cabinTable, {
       z0: -0.86, z1: 1.00, step: 0.038, scale: 1.008, facet: true,
       ybFn: function (z) { return glassTopFn(z); }
     }), carbon));
 
     /* 银色亮棱 + 行李厢面：官方车顶不是整片黑 —— 玻璃带上方压着一条
-       2.3~3.6cm 宽的亮银棱（峰值 rgb 227,227,229），棱的顶线就是 roofline
-       （1.128@0.25 平坦 → 1.074@1.00）。银壳 ys 与 yb 同时 := glassTopFn，
-       侧墙退化为零、只露肩线 [glassTop, yt] 这条亮棱；scale 1.010 比碳壳
-       1.006 更宽，顶弧永远压住下层不共面。
-       crown 取负值：银壳顶面中央下凹，被上层玻璃/碳壳盖住 ——
-       俯视时车顶看到的是深色玻璃（官方俯视图就是这样），银壳只从侧面
-       露出那条亮棱；原来是正 crown，整块车顶从上方看全是银的。
-       下凹量 0.012：只需让银壳顶面低于碳壳顶面（碳壳 scale 1.008 比银壳
-       1.010 窄，靠 crown 差分离两层）—— 太大（曾试 -0.038）会把银壳整个
-       埋进碳壳里、连侧面亮棱都看不到。
+       2.3~3.6cm 宽的亮银棱（峰值 rgb 227,227,229），棱的顶线就是 roofline。
+       银壳 ys 与 yb 同时 := glassTopFn，侧墙退化为零、只露肩线
+       [glassTop, yt] 这条亮棱。scale 1.010 比碳壳的 1.020 窄 ——
+       这样碳壳（暗玻璃带）在外层、银壳在内层，侧视先看到暗玻璃带，
+       顶视看到银壳顶弧。反过来（银壳更宽）会把玻璃带整个遮住。
+       crown 取负值 0.012：银壳顶面中央下凹一点，顶视时被碳壳盖住、
+       只从侧面露出那条亮棱；取正 crown 会让整块车顶从上往下看全是银的。
+       下凹量不能再大（曾试 -0.038，会把银壳彻底埋掉、亮棱消失）。
        z>0.86 顶面拉平 1.2cm 对齐官方平坦行李厢面（1.085~1.089），
        z1=1.03 延过玻璃壳末端接过车身行李厢面 1.067，消除 roofline 跌落台阶。 */
     car.add(new T.Mesh(buildShell(cabinTable.map(function (r) {
@@ -1132,6 +1155,58 @@
       car.add(intake);
     });
 
+    /* ---------- 侧窗带 ----------
+       官方侧视里，腰带线（约 0.88 m）以上到车顶这一整片都是暖暗玻璃，
+       而不是银色车身。车身壳是单一银色材质，没法只把这一块染暗；
+       舱壳（碳壳）比车身窄，侧视被车身侧墙挡住也露不出来。
+       所以单独做一条贴片：沿车身侧面（surfaceSideX 逐点贴合）从腰带线
+       铺到玻璃顶线，两侧各一条，外扩 4mm 避免共面闪烁。
+       z 范围 -0.80~1.00 覆盖风挡到后窗。 */
+    (function sideWindows() {
+      var Z0 = -0.80, Z1 = 0.98, N = 26;
+      var pos = [], idx = [];
+      /* 用舱壳自身的横截面取 x：车身在上部已经收窄，若按 bodyTable 的
+         最大半宽去取，贴片会被推到车外、悬在空中（曾是这个状态）。 */
+      function sideXat(z, y) { return surfaceSideX(bodyTable, z, y); }
+      for (var side = 0; side < 2; side++) {
+        var sg = side === 0 ? 1 : -1;
+        var base = pos.length / 3;
+        for (var i = 0; i <= N; i++) {
+          var z = Z0 + (Z1 - Z0) * (i / N);
+          var gTop = glassTopFn(z);
+          /* 窗台高度按官方实测：腰带线约 0.88 m，窗顶随玻璃顶线走
+             （顶线以下 6mm 留那条银棱）。用固定下限而不是车身肩线 ——
+             车身肩线在尾部会掉到 0.47，窗带就会一路压到车身中部。 */
+          var yBot = Math.max(surfaceProfileYs(bodyTable, z) + 0.010, 0.880);
+          /* 窗顶取车身顶面再往上 4mm：要盖住银壳肩线，
+             否则只剩一条细缝（银壳顶面正好压在玻璃顶线上）。
+             车身顶 = yt + crown - dip，取它 +4mm 让窗带压在外面。 */
+          var bp2 = sampleProfile(bodyTable, z);
+          var bodyTop = bp2[4] + CROWN - (bp2[6] || 0);
+          var yTop = Math.max(gTop + 0.004, bodyTop + 0.004);
+          if (yTop < yBot + 0.02) yTop = yBot + 0.02;
+          var xB = sideXat(z, yBot) + 0.005;
+          var xT = sideXat(z, yTop) + 0.005;
+          pos.push(sg * xB, yBot, z);
+          pos.push(sg * xT, yTop, z);
+        }
+        for (var k = 0; k < N; k++) {
+          var a = base + k * 2, b = base + k * 2 + 1;
+          var c = base + (k + 1) * 2, d = base + (k + 1) * 2 + 1;
+          if (sg > 0) idx.push(a, b, d, a, d, c);
+          else idx.push(a, d, b, a, c, d);
+        }
+      }
+      var geo = new T.BufferGeometry();
+      geo.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+      geo.setIndex(idx);
+      geo.computeVertexNormals();
+      car.add(new T.Mesh(geo, new T.MeshStandardMaterial({
+        color: 0x140f0c, metalness: 0.08, roughness: 0.82,
+        envMapIntensity: 0.35, side: T.DoubleSide
+      })));
+    })();
+
     /* 前轮后方的侧鳃 —— 贴着翼子板曲面的细长斜缝（Roadster 的标志性细节） */
     [-1, 1].forEach(function (s) {
       var zc = -0.80, yc = 0.700;
@@ -1206,10 +1281,20 @@
       });
     });
 
-    /* 底盘护板 */
-    var floor = new T.Mesh(new T.BoxGeometry(1.70, 0.05, 3.20), matte);
-    floor.position.set(0, 0.158, 0.200);
-    car.add(floor);
+    /* 底盘护板：按车身参数表放样，两端随车头/车尾收窄 ——
+       原来是一块 1.70×3.20 的矩形平板，车尾（半宽 0.615）远比它窄，
+       从下方/斜后方看就露出一块方板。scale 0.94 让它始终缩在车身轮廓以内。 */
+    var floorRows = [];
+    for (var fri = 0; fri < bodyTable.length; fri++) {
+      var fr = bodyTable[fri];
+      floorRows.push([fr[0], fr[1], fr[2], fr[3], fr[4], 0.150, fr[6]]);
+    }
+    car.add(new T.Mesh(buildShell(floorRows, {
+      z0: -2.20, z1: 2.20, step: 0.12, scale: 0.94, facet: true,
+      minH: 0.005,
+      ytFn: function (z, yb, yt) { return 0.150; },
+      ybFn: function (z, yb) { return 0.120; }
+    }), matte));
 
     /* ---------- 冷气推进器 ---------- */
     /* 白雾羽流：高压气体喷出后骤冷，水汽凝结 —— 没有火焰 */
@@ -1309,20 +1394,12 @@
     });
 
     /* 车底冷光（气体膨胀致冷的感觉） */
+    /* 车底冷光：只留一个向下的点光源。原方案是一块 2.6×4.0 m 的水平
+       加色平面贴在车底，车一升空、相机俯视时整块平面就露出来，读成
+       "车底下垫了一块灰板" —— 已移除，冷光效果交给点光源 + 白色冷雾。 */
     var thrustLight = new T.PointLight(0xbfe4ff, 0, 16, 2);
     thrustLight.position.set(0, -0.35, 0);
     car.add(thrustLight);
-
-    var glow = new T.Mesh(
-      new T.PlaneGeometry(2.6, 4.0),
-      new T.MeshBasicMaterial({
-        color: 0xcfeaff, transparent: true, opacity: 0,
-        blending: T.AdditiveBlending, depthWrite: false
-      })
-    );
-    glow.rotation.x = -Math.PI / 2;
-    glow.position.set(0, 0.14, 0);
-    car.add(glow);
 
     car.traverse(function (o) {
       if (o.isMesh && o.material && !o.material.transparent) o.castShadow = true;
@@ -1334,7 +1411,6 @@
       plumeOp: PLUME_OP,
       plumeLen: PLUME_LEN,
       thrustLight: thrustLight,
-      glow: glow,
       wheels: wheels
     };
   }
@@ -1810,7 +1886,6 @@
       g.userData.plumes.forEach(function (p) { p.visible = false; });
     });
     roadster.thrustLight.intensity = 0;
-    roadster.glow.material.opacity = 0;
 
     psExhaust.reset();
     psBoom.reset();
@@ -2203,8 +2278,6 @@
           sideL * power, sideR * power
         );
 
-        var glowTarget = on ? (0.16 + boost * 0.20) : 0;
-        roadster.glow.material.opacity += (glowTarget - roadster.glow.material.opacity) * (1 - Math.pow(0.02, dt));
         roadster.thrustLight.intensity += ((on ? 1.6 : 0) - roadster.thrustLight.intensity) * (1 - Math.pow(0.01, dt));
 
         /* ---- 白雾粒子：高压气体膨胀致冷，水汽凝结成白雾 ---- */
@@ -2299,8 +2372,7 @@
       car.rotation.y += state.spin * 0.45 * dt;
 
       roadster.thrustLight.intensity = 0;
-      roadster.glow.material.opacity = 0;
-      roadster.jets.forEach(function (g) {
+        roadster.jets.forEach(function (g) {
         g.userData.plumes.forEach(function (p) { p.visible = false; });
       });
 
