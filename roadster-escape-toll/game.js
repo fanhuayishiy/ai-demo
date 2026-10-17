@@ -956,6 +956,17 @@
       ytFn: function (z, yb, yt) { return z > 0.86 ? yt - 0.012 : yt; }
     }), roofEdge));
 
+    /* 全景玻璃顶后段 —— 官方俯视图里那块深色玻璃一直铺到接近车尾（车长 ~95%），
+       不是到座舱后缘 z=1.03 就断掉。这里补一条贴在行李厢面上的极薄玻璃片：
+       只有顶面（yb 提到 yt-5mm），scale 0.962 让两侧各留约 3cm 银边，
+       crown 0.016 让它比车身顶面高 2mm 不共面。侧视几乎看不见（侧壁 5mm），
+       俯视看到的是深色玻璃顶。 */
+    car.add(new T.Mesh(buildShell(bodyTable, {
+      z0: 1.03, z1: 2.10, step: 0.045, scale: 0.962, crown: 0.016, facet: true,
+      minH: 0.004,
+      ybFn: function (z, yb, yt) { return yt - 0.005; }
+    }), glass));
+
     /* 内饰：两张座椅 + 中控屏 + 方向盘（都不能戳出顶篷和内衬） */
     (function interior() {
       [-0.33, 0.33].forEach(function (x) {
