@@ -766,11 +766,11 @@
       [1.03, 1.027, 0.977, 0.958, 0.494, 1.059, 0.200, 0.006],
       [1.10, 1.029, 0.990, 0.960, 0.500, 1.050, 0.200, 0.006],
       [1.22, 1.040, 1.000, 0.970, 0.560, 1.035, 0.210, 0.005],
-      [1.50, 1.000, 0.985, 0.930, 0.500, 0.995, 0.230, 0.004],
-      [1.80, 0.985, 0.970, 0.915, 0.490, 0.935, 0.240, 0.004],
-      [2.00, 0.970, 0.940, 0.900, 0.485, 0.913, 0.200, 0.004],
-      [2.15, 0.960, 0.920, 0.890, 0.480, 0.910, 0.180, 0.004],
-      [2.35, 0.950, 0.890, 0.880, 0.470, 0.905, 0.150, 0.004]
+      [1.50, 0.990, 0.945, 0.912, 0.500, 0.995, 0.230, 0.004],
+      [1.80, 0.940, 0.895, 0.860, 0.490, 0.935, 0.240, 0.004],
+      [2.00, 0.885, 0.848, 0.810, 0.485, 0.913, 0.200, 0.004],
+      [2.15, 0.820, 0.788, 0.752, 0.480, 0.910, 0.180, 0.004],
+      [2.35, 0.750, 0.720, 0.688, 0.470, 0.905, 0.150, 0.004]
     ];
 
     var bodyMesh = new T.Mesh(buildShell(bodyTable, {
@@ -1035,46 +1035,48 @@
        （0.91 → 0.15）。切面上部银白车身面，中部嵌一条横贯式尾灯，
        下部是「深色面板 + 外露扩散器」两层：深色面板只占灯条下方一小段，
        再往下是带竖鳍的碳黑扩散器（官方 3/4 后视图里层次分明）。
-       宽度按官方 3/4 后视图实测：尾板近乎满宽（z=2.35 满宽 1.90，hw 0.95），
-       灯条从尾板一角横贯到另一角（宽 1.80），不再收成薄刃。 */
-    var tailPanel = new T.Mesh(new T.BoxGeometry(1.88, 0.210, 0.085), matte);
-    tailPanel.position.set(0, 0.485, 2.322);
+       宽度按官方 3/4 后视图实测：尾板满宽 1.32（hw 0.66），约为后翼子板峰
+       2.08 的 63% —— 尾板明显窄于车身，两侧有肩部过渡；
+       灯条从尾板一角横贯到另一角（1.26 宽 × 0.11 厚 ≈ 11.5:1，与官方 12:1 一致）。 */
+    var tailPanel = new T.Mesh(new T.BoxGeometry(1.48, 0.210, 0.050), matte);
+    tailPanel.position.set(0, 0.485, 2.324);
     car.add(tailPanel);
     /* 贯穿式尾灯：官方 3/4 后视图里灯带几乎占满尾板宽度（一角到另一角），
-       灯带本身相当厚（官方 736×62 px ≈ 12:1，这里 1.84×0.11 ≈ 17:1），
-       嵌在切面中部偏上（尾板约 1/3 高度） */
-    var tailBar = new T.Mesh(new T.BoxGeometry(1.84, 0.110, 0.055), tailMat);
-    tailBar.position.set(0, 0.635, 2.342);
+       灯带本身相当厚（官方 736×62 px ≈ 12:1，这里 1.32×0.11 = 12:1），
+       嵌在切面中部偏上（尾板约 1/3 高度）。后表面与尾板面齐平（z=2.349），
+       厚度收薄到 3cm —— 从 3/4 视角看是嵌进尾板，不是贴上去的盒子 */
+    var tailBar = new T.Mesh(new T.BoxGeometry(1.32, 0.110, 0.030), tailMat);
+    tailBar.position.set(0, 0.635, 2.334);
     car.add(tailBar);
     /* 灯带两端沿尾板转角包过去一点，做出「绕着走」的感觉 */
     [-1, 1].forEach(function (s) {
-      var cap = new T.Mesh(new T.BoxGeometry(0.070, 0.110, 0.085), tailMat);
-      cap.position.set(s * 0.920, 0.635, 2.318);
+      var cap = new T.Mesh(new T.BoxGeometry(0.070, 0.110, 0.060), tailMat);
+      cap.position.set(s * 0.660, 0.635, 2.320);
       cap.rotation.y = s * -0.42;
       car.add(cap);
     });
 
     /* 尾部扩散器（带竖鳍）—— 后缘与尾板面齐平，从正后方就能看到
        深色面板下面这一层碳黑扩散器，而不是一整块平深色板 */
-    var diff = new T.Mesh(new T.BoxGeometry(1.70, 0.230, 0.220), carbon);
-    diff.position.set(0, 0.265, 2.240);
+    var diff = new T.Mesh(new T.BoxGeometry(1.34, 0.230, 0.220), carbon);
+    diff.position.set(0, 0.265, 2.239);
     car.add(diff);
     for (var fi = -2; fi <= 2; fi++) {
       var fin = new T.Mesh(new T.BoxGeometry(0.020, 0.220, 0.200), matte);
-      fin.position.set(fi * 0.340, 0.265, 2.250);
+      fin.position.set(fi * 0.265, 0.265, 2.249);
       car.add(fin);
     }
 
     /* 主动尾翼（收起位）—— 官方 3/4 后视图里这条薄唇就压在尾板上沿，
        即甲板后缘的「鸭尾」：不是立在尾箱中段，而是贴着尾板顶缘向外探出。
        前缘随甲板坡度扎进 deck、后缘抬起约 3 cm，做出收起位鸭尾的样子。 */
-    var wingBlade = new T.Mesh(new T.BoxGeometry(1.72, 0.024, 0.20), carbon);
+    var wingBlade = new T.Mesh(new T.BoxGeometry(1.40, 0.024, 0.20), carbon);
     wingBlade.position.set(0, 0.925, 2.280);
     wingBlade.rotation.x = -0.09;
     car.add(wingBlade);
     [-1, 1].forEach(function (s) {
       var end = new T.Mesh(new T.BoxGeometry(0.012, 0.036, 0.20), carbon);
-      end.position.set(s * 0.850, 0.919, 2.280);
+      end.position.set(s * 0.690, 0.919, 2.280);
       end.rotation.x = -0.09;
       car.add(end);
     });
@@ -1181,7 +1183,7 @@
     nozBack.translate(0, -0.060, 0);
     var frostRingB = new T.TorusGeometry(0.058, 0.008, 6, 18);
     frostRingB.rotateX(Math.PI / 2);
-    [[-0.300, 0.300], [0.300, 0.300], [-0.300, 0.420], [0.300, 0.420]].forEach(function (p) {
+    [[-0.200, 0.300], [0.200, 0.300], [-0.200, 0.420], [0.200, 0.420]].forEach(function (p) {
       makeJet('rear', p[0], p[1], 2.345, Math.PI / 2, 0, 0, nozBack, frostRingB);
     });
 
