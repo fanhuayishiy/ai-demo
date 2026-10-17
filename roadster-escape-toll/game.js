@@ -73,7 +73,7 @@
 
   var scene = new T.Scene();
   var HORIZON = 0xa9cce9;                    // 雾色与天空地平线保持同色，避免出现硬边
-  scene.fog = new T.Fog(0xffffff, 110, 620);
+  scene.fog = new T.Fog(0xffffff, 70, 470);
   scene.fog.color.setHex(HORIZON).convertSRGBToLinear();
 
   var camera = new T.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.6, 1600);
@@ -92,9 +92,24 @@
       'void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
     fragmentShader:
       'uniform vec3 cTop; uniform vec3 cMid; uniform vec3 cBot; varying vec3 vP;' +
+      'float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }' +
+      'float noise(vec2 p){' +
+      '  vec2 i = floor(p), f = fract(p);' +
+      '  f = f * f * (3.0 - 2.0 * f);' +
+      '  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),' +
+      '             mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);' +
+      '}' +
       'void main(){' +
-      '  float h = normalize(vP).y;' +
+      '  vec3 d = normalize(vP);' +
+      '  float h = d.y;' +
       '  vec3 c = h > 0.0 ? mix(cMid, cTop, pow(h, 0.62)) : mix(cMid, cBot, pow(-h, 0.42));' +
+      /* 淡淡的云层：三层噪声叠出大团块，靠近地平线淡出，避免规则条带 */
+      '  if (h > 0.015) {' +
+      '    vec2 uv = d.xz / (h + 0.22) * 1.35;' +
+      '    float n = noise(uv) * 0.55 + noise(uv * 2.4) * 0.30 + noise(uv * 5.3) * 0.15;' +
+      '    float cl = smoothstep(0.52, 0.86, n) * smoothstep(0.015, 0.30, h);' +
+      '    c = mix(c, vec3(1.0, 1.0, 0.985), cl * 0.62);' +
+      '  }' +
       '  gl_FragColor = vec4(c, 1.0);' +
       '}'
   });
@@ -165,9 +180,65 @@
    * ------------------------------------------------------------------ */
   var GROUND_LEN = 1400;
 
+  /* ---------------- 程序化地表纹理 ----------------
+     纯色平面在远景会读成一块塑料板：加一层斑驳噪声后近处有草皮/沥青颗粒，
+     远处被雾吃掉也不会显脏。纹理随世界滚动（见 updateWorldRecycle 里的 offset），
+     否则平面跟着车走会像传送带。 */
+  function makeGrassTex() {
+    var cv = document.createElement('canvas');
+    cv.width = cv.height = 256;
+    var g = cv.getContext('2d');
+    g.fillStyle = '#57763f'; g.fillRect(0, 0, 256, 256);
+    for (var i = 0; i < 3400; i++) {
+      var x = Math.random() * 256, y = Math.random() * 256;
+      var r = 1 + Math.random() * 3.2;
+      g.fillStyle = Math.random() < 0.55
+        ? 'rgba(58,80,44,' + (0.10 + Math.random() * 0.22).toFixed(3) + ')'
+        : 'rgba(126,152,94,' + (0.06 + Math.random() * 0.16).toFixed(3) + ')';
+      g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill();
+    }
+    for (var j = 0; j < 30; j++) {          /* 几缕干草/浅色条纹，避免过于均匀 */
+      g.strokeStyle = 'rgba(140,158,104,' + (0.04 + Math.random() * 0.07).toFixed(3) + ')';
+      g.lineWidth = 1 + Math.random() * 2.4;
+      g.beginPath();
+      var sx = Math.random() * 256, sy = Math.random() * 256;
+      g.moveTo(sx, sy);
+      g.lineTo(sx + (Math.random() - 0.5) * 96, sy + (Math.random() - 0.5) * 96);
+      g.stroke();
+    }
+    var t = new T.CanvasTexture(cv);
+    t.wrapS = t.wrapT = T.RepeatWrapping;
+    t.repeat.set(1700 / 16, GROUND_LEN / 16);
+    t.encoding = T.sRGBEncoding;
+    t.anisotropy = 4;
+    return t;
+  }
+
+  function makeAsphaltTex() {
+    var cv = document.createElement('canvas');
+    cv.width = cv.height = 256;
+    var g = cv.getContext('2d');
+    g.fillStyle = '#3b4048'; g.fillRect(0, 0, 256, 256);
+    for (var i = 0; i < 5200; i++) {
+      var x = Math.random() * 256, y = Math.random() * 256;
+      g.fillStyle = Math.random() < 0.62
+        ? 'rgba(26,29,34,' + (0.10 + Math.random() * 0.20).toFixed(3) + ')'
+        : 'rgba(96,102,112,' + (0.05 + Math.random() * 0.13).toFixed(3) + ')';
+      g.fillRect(x, y, 1 + Math.random() * 2, 1 + Math.random() * 2);
+    }
+    var t = new T.CanvasTexture(cv);
+    t.wrapS = t.wrapT = T.RepeatWrapping;
+    t.repeat.set(4, GROUND_LEN / 8);
+    t.encoding = T.sRGBEncoding;
+    t.anisotropy = 8;
+    return t;
+  }
+
+  var grassTex = makeGrassTex(), asphaltTex = makeAsphaltTex();
+
   var grass = new T.Mesh(
     new T.PlaneGeometry(1700, GROUND_LEN),
-    new T.MeshStandardMaterial({ color: 0x5c7d47, roughness: 1, metalness: 0 })
+    new T.MeshStandardMaterial({ color: 0xffffff, map: grassTex, roughness: 1, metalness: 0 })
   );
   grass.rotation.x = -Math.PI / 2;
   grass.position.y = -0.04;
@@ -175,7 +246,7 @@
 
   var road = new T.Mesh(
     new T.PlaneGeometry(CFG.ROAD_HALF * 2, GROUND_LEN),
-    new T.MeshStandardMaterial({ color: 0x3b4048, roughness: 0.94, metalness: 0.02 })
+    new T.MeshStandardMaterial({ color: 0xffffff, map: asphaltTex, roughness: 0.94, metalness: 0.02 })
   );
   road.rotation.x = -Math.PI / 2;
   road.receiveShadow = true;
@@ -252,11 +323,11 @@
   var poleZ = new Float32Array(POLE_N);
   for (var qi = 0; qi < POLE_N; qi++) poleZ[qi] = 30 - qi * POLE_GAP;
 
-  /* 远处树丛 */
+  /* 远处树丛（低矮灌木球，不是尖锥——尖锥在远景会读成"圣诞树"） */
   var TREE_N = 40, TREE_SPAN = 900;
   var treeIM = new T.InstancedMesh(
-    new T.ConeGeometry(2.2, 6.4, 7),
-    new T.MeshStandardMaterial({ color: 0x33562f, roughness: 1 }),
+    new T.SphereGeometry(1, 8, 5),
+    new T.MeshStandardMaterial({ color: 0x35552f, roughness: 1 }),
     TREE_N
   );
   treeIM.frustumCulled = false;
@@ -264,7 +335,28 @@
   var treeZ = new Float32Array(TREE_N), treeX = new Float32Array(TREE_N);
   for (var ti = 0; ti < TREE_N; ti++) {
     treeZ[ti] = 20 - (ti % 20) * 46;
-    treeX[ti] = (ti % 2 === 0 ? -1 : 1) * (16 + ((ti * 7) % 26));
+    treeX[ti] = (ti % 2 === 0 ? -1 : 1) * (38 + ((ti * 7) % 50));
+  }
+
+  /* 远景丘陵带：沿公路两侧铺到 400 m 外，在地平线附近形成起伏的深绿轮廓。
+     原来草地平面直接切到天空是一条硬边，远处读起来像纸片。
+     用压扁的球（只露出上半）叠成连绵山脊，比一排尖锥自然得多 */
+  var TL_N = 220, TL_SPAN = 1100;
+  var tlIM = new T.InstancedMesh(
+    new T.SphereGeometry(1, 7, 4),
+    new T.MeshStandardMaterial({ color: 0x47603f, roughness: 1 }),
+    TL_N
+  );
+  tlIM.frustumCulled = false;
+  scene.add(tlIM);
+  var tlZ = new Float32Array(TL_N), tlX = new Float32Array(TL_N),
+    tlH = new Float32Array(TL_N), tlW = new Float32Array(TL_N);
+  for (var li = 0; li < TL_N; li++) {
+    tlZ[li] = 90 - (li % 70) * 15.5;
+    var sd = li % 2 === 0 ? -1 : 1;
+    tlX[li] = sd * (120 + ((li * 37) % 260));
+    tlH[li] = 5.0 + ((li * 13) % 5) * 1.6;
+    tlW[li] = 22 + ((li * 7) % 7) * 7;
   }
 
   /* ------------------------------------------------------------------ *
@@ -767,11 +859,11 @@
       [1.03, 1.027, 0.977, 0.958, 0.494, 1.059, 0.200, 0.006],
       [1.10, 1.029, 0.990, 0.960, 0.500, 1.050, 0.200, 0.006],
       [1.22, 1.040, 1.000, 0.970, 0.560, 1.035, 0.210, 0.005],
-      [1.50, 0.990, 0.945, 0.912, 0.500, 0.995, 0.230, 0.004],
-      [1.80, 0.940, 0.895, 0.860, 0.490, 0.935, 0.240, 0.004],
-      [2.00, 0.885, 0.848, 0.810, 0.485, 0.913, 0.200, 0.004],
-      [2.15, 0.820, 0.788, 0.752, 0.480, 0.910, 0.180, 0.004],
-      [2.35, 0.750, 0.720, 0.688, 0.470, 0.905, 0.150, 0.004]
+      [1.50, 0.965, 0.735, 0.890, 0.500, 0.995, 0.230, 0.004],
+      [1.80, 0.880, 0.645, 0.805, 0.490, 0.935, 0.240, 0.004],
+      [2.00, 0.785, 0.565, 0.725, 0.485, 0.913, 0.200, 0.004],
+      [2.15, 0.710, 0.500, 0.650, 0.480, 0.910, 0.180, 0.004],
+      [2.35, 0.640, 0.450, 0.585, 0.470, 0.905, 0.150, 0.004]
     ];
 
     var bodyMesh = new T.Mesh(buildShell(bodyTable, {
@@ -850,12 +942,15 @@
        （1.128@0.25 平坦 → 1.074@1.00）。银壳 ys 与 yb 同时 := glassTopFn，
        侧墙退化为零、只露肩线 [glassTop, yt] 这条亮棱；scale 1.010 比碳壳
        1.006 更宽，顶弧永远压住下层不共面。
+       crown 取负值：银壳顶面中央下凹 3.8cm，被上层玻璃/碳壳盖住 ——
+       俯视时车顶看到的是深色玻璃（官方俯视图就是这样），银壳只从侧面
+       露出那条亮棱；原来是正 crown，整块车顶从上方看全是银的。
        z>0.86 顶面拉平 1.2cm 对齐官方平坦行李厢面（1.085~1.089），
        z1=1.03 延过玻璃壳末端接过车身行李厢面 1.067，消除 roofline 跌落台阶。 */
     car.add(new T.Mesh(buildShell(cabinTable.map(function (r) {
       return [r[0], r[1], r[2], r[3], glassTopFn(r[0]), r[5], r[6]];
     }), {
-      z0: -0.72, z1: 1.03, step: 0.038, scale: 1.010, crown: 0.014, facet: true,
+      z0: -0.72, z1: 1.03, step: 0.038, scale: 1.010, crown: -0.038, facet: true,
       minH: 0.004,
       ybFn: function (z) { return glassTopFn(z); },
       ytFn: function (z, yb, yt) { return z > 0.86 ? yt - 0.012 : yt; }
@@ -1040,45 +1135,44 @@
        宽度按官方 3/4 后视图实测：尾板满宽 1.32（hw 0.66），约为后翼子板峰
        2.08 的 63% —— 尾板明显窄于车身，两侧有肩部过渡；
        灯条从尾板一角横贯到另一角（1.26 宽 × 0.11 厚 ≈ 11.5:1，与官方 12:1 一致）。 */
-    var tailPanel = new T.Mesh(new T.BoxGeometry(1.48, 0.210, 0.050), matte);
+    var tailPanel = new T.Mesh(new T.BoxGeometry(1.18, 0.210, 0.050), matte);
     tailPanel.position.set(0, 0.485, 2.324);
     car.add(tailPanel);
-    /* 贯穿式尾灯：官方 3/4 后视图里灯带几乎占满尾板宽度（一角到另一角），
-       灯带本身相当厚（官方 736×62 px ≈ 12:1，这里 1.32×0.11 = 12:1），
-       嵌在切面中部偏上（尾板约 1/3 高度）。后表面与尾板面齐平（z=2.349），
-       厚度收薄到 3cm —— 从 3/4 视角看是嵌进尾板，不是贴上去的盒子 */
-    var tailBar = new T.Mesh(new T.BoxGeometry(1.32, 0.110, 0.030), tailMat);
+    /* 贯穿式尾灯：官方正后视图里灯带几乎占满尾板宽度（约 90%），
+       高宽比约 16:1（灯带很细）；嵌在切面中部偏上（尾板约 1/3 高度）。
+       后表面与尾板面齐平（z=2.349），厚度 3cm —— 从 3/4 视角看是嵌进尾板 */
+    var tailBar = new T.Mesh(new T.BoxGeometry(1.08, 0.075, 0.030), tailMat);
     tailBar.position.set(0, 0.635, 2.334);
     car.add(tailBar);
     /* 灯带两端沿尾板转角包过去一点，做出「绕着走」的感觉 */
     [-1, 1].forEach(function (s) {
-      var cap = new T.Mesh(new T.BoxGeometry(0.070, 0.110, 0.060), tailMat);
-      cap.position.set(s * 0.660, 0.635, 2.320);
+      var cap = new T.Mesh(new T.BoxGeometry(0.070, 0.075, 0.060), tailMat);
+      cap.position.set(s * 0.540, 0.635, 2.320);
       cap.rotation.y = s * -0.42;
       car.add(cap);
     });
 
     /* 尾部扩散器（带竖鳍）—— 后缘与尾板面齐平，从正后方就能看到
        深色面板下面这一层碳黑扩散器，而不是一整块平深色板 */
-    var diff = new T.Mesh(new T.BoxGeometry(1.34, 0.230, 0.220), carbon);
+    var diff = new T.Mesh(new T.BoxGeometry(1.12, 0.230, 0.220), carbon);
     diff.position.set(0, 0.265, 2.239);
     car.add(diff);
     for (var fi = -2; fi <= 2; fi++) {
       var fin = new T.Mesh(new T.BoxGeometry(0.020, 0.220, 0.200), matte);
-      fin.position.set(fi * 0.265, 0.265, 2.249);
+      fin.position.set(fi * 0.225, 0.265, 2.249);
       car.add(fin);
     }
 
     /* 主动尾翼（收起位）—— 官方 3/4 后视图里这条薄唇就压在尾板上沿，
        即甲板后缘的「鸭尾」：不是立在尾箱中段，而是贴着尾板顶缘向外探出。
        前缘随甲板坡度扎进 deck、后缘抬起约 3 cm，做出收起位鸭尾的样子。 */
-    var wingBlade = new T.Mesh(new T.BoxGeometry(1.40, 0.024, 0.20), carbon);
+    var wingBlade = new T.Mesh(new T.BoxGeometry(0.90, 0.024, 0.20), carbon);
     wingBlade.position.set(0, 0.925, 2.280);
     wingBlade.rotation.x = -0.09;
     car.add(wingBlade);
     [-1, 1].forEach(function (s) {
       var end = new T.Mesh(new T.BoxGeometry(0.012, 0.036, 0.20), carbon);
-      end.position.set(s * 0.690, 0.919, 2.280);
+      end.position.set(s * 0.440, 0.919, 2.280);
       end.rotation.x = -0.09;
       car.add(end);
     });
@@ -1185,7 +1279,7 @@
     nozBack.translate(0, -0.060, 0);
     var frostRingB = new T.TorusGeometry(0.058, 0.008, 6, 18);
     frostRingB.rotateX(Math.PI / 2);
-    [[-0.200, 0.300], [0.200, 0.300], [-0.200, 0.420], [0.200, 0.420]].forEach(function (p) {
+    [[-0.165, 0.300], [0.165, 0.300], [-0.165, 0.420], [0.165, 0.420]].forEach(function (p) {
       makeJet('rear', p[0], p[1], 2.345, Math.PI / 2, 0, 0, nozBack, frostRingB);
     });
 
@@ -1893,10 +1987,24 @@
     /* 树 */
     for (var t2 = 0; t2 < TREE_N; t2++) {
       if (treeZ[t2] > cz + 80) treeZ[t2] -= TREE_SPAN;
-      m.makeTranslation(treeX[t2], 3.0, treeZ[t2]);
+      m.makeScale(2.2, 1.6, 2.2);
+      m.setPosition(treeX[t2], 1.1, treeZ[t2]);
       treeIM.setMatrixAt(t2, m);
     }
     treeIM.instanceMatrix.needsUpdate = true;
+
+    /* 远景丘陵带 */
+    for (var l2 = 0; l2 < TL_N; l2++) {
+      if (tlZ[l2] > cz + 140) tlZ[l2] -= TL_SPAN;
+      m.makeScale(tlW[l2], tlH[l2], tlW[l2] * 1.5);
+      m.setPosition(tlX[l2], 0, tlZ[l2]);
+      tlIM.setMatrixAt(l2, m);
+    }
+    tlIM.instanceMatrix.needsUpdate = true;
+
+    /* 地表纹理随世界滚动：抵消平面跟车移动，否则地面像传送带 */
+    grassTex.offset.y = -cz / 16;
+    asphaltTex.offset.y = -cz / 8;
 
     /* 收费站回收 */
     for (var g = 0; g < tolls.length; g++) {
