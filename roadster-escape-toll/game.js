@@ -2079,20 +2079,32 @@
     el.gasCaption.textContent = '冷气 ' + Math.round(g * 100) + '%';
   }
 
+  /* 跟车相机：斜后方 3/4 视角（正后方会把车拍成一个方盒子，
+     斜着看才有官方渲染图那种车身透视 —— 能看到车顶、侧面和尾部） */
+  var CAM_SIDE = 2.75;        /* 相机相对车的横向偏移（右后方） */
+  var CAM_BACK = 6.40;        /* 纵向距离 */
+  var CAM_UP = 2.45;          /* 基础高度 */
+
   function updateCamera(dt) {
     var alt = state.alt;
     var spd = state.speed;
 
     camDesired.set(
-      car.position.x * 0.5,
-      4.7 + alt * 0.86,
-      car.position.z + 13.5 + (spd - CFG.BASE_SPEED) * 0.045
+      car.position.x * 0.5 + CAM_SIDE,
+      CAM_UP + alt * 0.86,
+      car.position.z + CAM_BACK + (spd - CFG.BASE_SPEED) * 0.045
     );
 
     var k1 = 1 - Math.pow(0.0016, dt);
     camera.position.lerp(camDesired, k1);
 
-    lookDesired.set(car.position.x * 0.7, alt * 0.92 + 1.3, car.position.z - 16);
+    /* 视线目标夹在车与相机之间（同样带一点横偏），车身落在画面中偏左，
+       右侧留出道路纵深 —— 斜视角该有的构图 */
+    lookDesired.set(
+      car.position.x * 0.7 + CAM_SIDE * 0.22,
+      alt * 0.92 + 1.15,
+      car.position.z - 15
+    );
     camLook.lerp(lookDesired, 1 - Math.pow(0.0022, dt));
     camera.lookAt(camLook);
 
