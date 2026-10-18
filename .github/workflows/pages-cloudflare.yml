@@ -5,6 +5,10 @@ on:
     branches: [main]
     paths:
       - 'roadster-escape-toll/**'
+      - 'scripts/**'
+      - 'shared/**'
+      - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/pages-cloudflare.yml'
   workflow_dispatch:
 
@@ -34,17 +38,18 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Stage game files
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
         if: steps.creds.outputs.ready == 'true'
-        run: |
-          mkdir -p _pages_dist/libs
-          cp roadster-escape-toll/index.html \
-             roadster-escape-toll/game.js \
-             roadster-escape-toll/roadster-model.js \
-             roadster-escape-toll/style.css \
-             _pages_dist/
-          cp roadster-escape-toll/libs/three.min.js _pages_dist/libs/
-          ls -R _pages_dist
+        run: npm ci
+
+      - name: Build shared GitHub entry
+        if: steps.creds.outputs.ready == 'true'
+        run: npm run build:pages
 
       - name: Deploy to Cloudflare Pages
         if: steps.creds.outputs.ready == 'true'
@@ -52,4 +57,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy _pages_dist --project-name roadster --branch main
+          command: pages deploy _site/roadster-escape-toll --project-name roadster --branch main
