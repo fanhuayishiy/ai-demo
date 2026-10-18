@@ -884,11 +884,14 @@
       [1.03, 1.027, 0.977, 0.958, 0.534, 1.091, 0.200, 0.006],
       [1.10, 1.029, 0.990, 0.960, 0.540, 1.087, 0.200, 0.006],
       [1.22, 1.040, 1.000, 0.970, 0.570, 1.077, 0.210, 0.005],
-      [1.50, 0.965, 0.760, 0.900, 0.530, 1.038, 0.230, 0.004],
-      [1.80, 0.925, 0.725, 0.865, 0.500, 0.958, 0.240, 0.004],
-      [2.00, 0.895, 0.700, 0.840, 0.492, 0.913, 0.200, 0.004],
-      [2.15, 0.870, 0.680, 0.815, 0.485, 0.902, 0.180, 0.004],
-      [2.35, 0.845, 0.660, 0.790, 0.475, 0.867, 0.150, 0.004]
+      /* 尾部五行：hw 与 hwt 的差值要收小 —— 若 hwt 明显小于 hw，
+         尾板两侧会张开成斜面、从 3/4 视角看就是两个直角耳朵。
+         官方尾板接近一个平切面，所以这里让 hwt ≈ hw×0.93。 */
+      [1.50, 0.965, 0.898, 0.900, 0.545, 1.038, 0.230, 0.004],
+      [1.80, 0.925, 0.860, 0.865, 0.530, 0.958, 0.240, 0.004],
+      [2.00, 0.895, 0.832, 0.840, 0.522, 0.913, 0.200, 0.004],
+      [2.15, 0.870, 0.809, 0.815, 0.518, 0.902, 0.180, 0.004],
+      [2.35, 0.845, 0.786, 0.790, 0.512, 0.867, 0.150, 0.004]
     ];
 
     var bodyMesh = new T.Mesh(buildShell(bodyTable, {
@@ -1238,17 +1241,17 @@
        宽度：官方尾板 549px / 整体车尾 660px ≈ 83%，所以尾板接近满宽，
        两侧只留很窄的肩部（不是之前 63% 那种"窄尾"。 */
     /* ③ 银色尾板面 */
-    var tailFace = new T.Mesh(new T.BoxGeometry(1.74, 0.215, 0.040), roofEdge);
-    tailFace.position.set(0, 0.520, 2.330);
+    var tailFace = new T.Mesh(new T.BoxGeometry(1.62, 0.105, 0.040), roofEdge);
+    tailFace.position.set(0, 0.594, 2.330);
     car.add(tailFace);
     /* ② 贯穿式尾灯：横贯尾板整宽，厚 8.5cm（官方 553×51 px ≈ 10.8:1） */
-    var tailBar = new T.Mesh(new T.BoxGeometry(1.74, 0.085, 0.030), tailMat);
-    tailBar.position.set(0, 0.660, 2.338);
+    var tailBar = new T.Mesh(new T.BoxGeometry(1.62, 0.052, 0.028), tailMat);
+    tailBar.position.set(0, 0.672, 2.338);
     car.add(tailBar);
     /* 灯带两端沿尾板转角包过去 */
     [-1, 1].forEach(function (s) {
       var cap = new T.Mesh(new T.BoxGeometry(0.070, 0.085, 0.060), tailMat);
-      cap.position.set(s * 0.868, 0.660, 2.322);
+      cap.position.set(s * 0.808, 0.672, 2.322);
       cap.rotation.y = s * -0.42;
       car.add(cap);
     });
@@ -1258,15 +1261,20 @@
     car.add(plate);
 
     /* ④ 深色面板（排气口所在层）+ 碳黑扩散器 */
-    var tailDark = new T.Mesh(new T.BoxGeometry(1.72, 0.215, 0.045), matte);
-    tailDark.position.set(0, 0.306, 2.332);
+    /* 深色面板：后表面与尾板面齐平（2.349），不要外凸成方块 ——
+       之前深度 0.045 且中心的 2.332 让后表面到 2.354，
+       从 3/4 视角能看到它的侧立面。 */
+    var tailDark = new T.Mesh(new T.BoxGeometry(1.60, 0.335, 0.038), matte);
+    tailDark.position.set(0, 0.372, 2.330);
     car.add(tailDark);
-    var diff = new T.Mesh(new T.BoxGeometry(1.70, 0.220, 0.220), carbon);
-    diff.position.set(0, 0.132, 2.245);
+    /* 扩散器：整体收进尾板下缘以内（z 到 2.338 为止、宽 1.50），
+       否则 3/4 视角会看到一块横向凸台支在车尾下方。 */
+    var diff = new T.Mesh(new T.BoxGeometry(1.50, 0.150, 0.170), carbon);
+    diff.position.set(0, 0.145, 2.253);
     car.add(diff);
     for (var fi = -2; fi <= 2; fi++) {
-      var fin = new T.Mesh(new T.BoxGeometry(0.020, 0.190, 0.200), matte);
-      fin.position.set(fi * 0.320, 0.132, 2.255);
+      var fin = new T.Mesh(new T.BoxGeometry(0.018, 0.130, 0.180), matte);
+      fin.position.set(fi * 0.300, 0.145, 2.248);
       car.add(fin);
     }
 
@@ -1393,12 +1401,14 @@
     /* 车尾 4 个：**一排 4 个**（官方正后视图就是这个排布，不是 2×2），
        向后喷 → 向前推。收小并嵌进尾部深色件里，别做成抢眼的大白圈。
        官方排气口 x ≈ ±0.10 / ±0.31（间距约 84mm），y ≈ 0.30 */
-    var nozBack = new T.CylinderGeometry(0.062, 0.048, 0.12, 16, 1, true);
-    nozBack.translate(0, -0.060, 0);
-    var frostRingB = new T.TorusGeometry(0.052, 0.008, 6, 18);
+    var nozBack = new T.CylinderGeometry(0.050, 0.040, 0.10, 16, 1, true);
+    nozBack.translate(0, -0.050, 0);
+    /* 官方排气口是很细的环 —— 环管径 0.008→0.005，半径 0.052→0.042，
+       否则正面看是一圈抢眼的白环 */
+    var frostRingB = new T.TorusGeometry(0.042, 0.005, 6, 16);
     frostRingB.rotateX(Math.PI / 2);
-    [-0.315, -0.105, 0.105, 0.315].forEach(function (x) {
-      makeJet('rear', x, 0.300, 2.345, Math.PI / 2, 0, 0, nozBack, frostRingB);
+    [-0.255, -0.085, 0.085, 0.255].forEach(function (x) {
+      makeJet('rear', x, 0.352, 2.345, Math.PI / 2, 0, 0, nozBack, frostRingB);
     });
 
     /* 车身两侧成对：姿态控制 */
