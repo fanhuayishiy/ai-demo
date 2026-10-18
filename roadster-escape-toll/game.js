@@ -880,11 +880,11 @@
       [1.03, 1.027, 0.977, 0.958, 0.534, 1.091, 0.200, 0.006],
       [1.10, 1.029, 0.990, 0.960, 0.540, 1.087, 0.200, 0.006],
       [1.22, 1.040, 1.000, 0.970, 0.570, 1.077, 0.210, 0.005],
-      [1.50, 0.945, 0.735, 0.880, 0.530, 1.038, 0.230, 0.004],
-      [1.80, 0.855, 0.660, 0.795, 0.500, 0.958, 0.240, 0.004],
-      [2.00, 0.775, 0.590, 0.720, 0.492, 0.913, 0.200, 0.004],
-      [2.15, 0.700, 0.520, 0.650, 0.485, 0.902, 0.180, 0.004],
-      [2.35, 0.615, 0.450, 0.570, 0.475, 0.867, 0.150, 0.004]
+      [1.50, 0.965, 0.760, 0.900, 0.530, 1.038, 0.230, 0.004],
+      [1.80, 0.925, 0.725, 0.865, 0.500, 0.958, 0.240, 0.004],
+      [2.00, 0.895, 0.700, 0.840, 0.492, 0.913, 0.200, 0.004],
+      [2.15, 0.870, 0.680, 0.815, 0.485, 0.902, 0.180, 0.004],
+      [2.35, 0.845, 0.660, 0.790, 0.475, 0.867, 0.150, 0.004]
     ];
 
     var bodyMesh = new T.Mesh(buildShell(bodyTable, {
@@ -1219,51 +1219,57 @@
     });
 
     /* ---------- 车尾 ----------
-       官方侧视图尾部：行李厢面滑到 z=+2.0 的 0.91 m 后是一道垂直尾板切面
-       （0.91 → 0.15）。切面上部银白车身面，中部嵌一条横贯式尾灯，
-       下部是「深色面板 + 外露扩散器」两层：深色面板只占灯条下方一小段，
-       再往下是带竖鳍的碳黑扩散器（官方 3/4 后视图里层次分明）。
-       宽度按官方 3/4 后视图实测：尾板满宽 1.32（hw 0.66），约为后翼子板峰
-       2.08 的 63% —— 尾板明显窄于车身，两侧有肩部过渡；
-       灯条从尾板一角横贯到另一角（1.26 宽 × 0.11 厚 ≈ 11.5:1，与官方 12:1 一致）。 */
-    var tailPanel = new T.Mesh(new T.BoxGeometry(1.16, 0.210, 0.050), matte);
-    tailPanel.position.set(0, 0.485, 2.324);
-    car.add(tailPanel);
-    /* 贯穿式尾灯：官方正后视图里灯带几乎占满尾板宽度（约 90%），
-       高宽比约 16:1（灯带很细）；嵌在切面中部偏上（尾板约 1/3 高度）。
-       后表面与尾板面齐平（z=2.349），厚度 3cm —— 从 3/4 视角看是嵌进尾板 */
-    var tailBar = new T.Mesh(new T.BoxGeometry(1.08, 0.075, 0.030), tailMat);
-    tailBar.position.set(0, 0.635, 2.334);
+       按官方正后视图（发布会现场）实测的层次，从上到下四段：
+         ① 银色车身上部 + 车顶肩部
+         ② 贯穿式红灯条 —— 横贯整个尾板，宽 = 尾板宽（实测 549/549 px）
+         ③ 银色尾板面（占尾面约 1/3，中间挂牌照）—— **是银的，不是深的**
+         ④ 深色面板：一排 4 个圆形排气口 + 下方碳黑扩散器
+       之前把 ③ 做成深色面板、并把排气口摆成 2×2，都与官方不符。
+       宽度：官方尾板 549px / 整体车尾 660px ≈ 83%，所以尾板接近满宽，
+       两侧只留很窄的肩部（不是之前 63% 那种"窄尾"。 */
+    /* ③ 银色尾板面 */
+    var tailFace = new T.Mesh(new T.BoxGeometry(1.74, 0.215, 0.040), roofEdge);
+    tailFace.position.set(0, 0.520, 2.330);
+    car.add(tailFace);
+    /* ② 贯穿式尾灯：横贯尾板整宽，厚 8.5cm（官方 553×51 px ≈ 10.8:1） */
+    var tailBar = new T.Mesh(new T.BoxGeometry(1.74, 0.085, 0.030), tailMat);
+    tailBar.position.set(0, 0.660, 2.338);
     car.add(tailBar);
-    /* 灯带两端沿尾板转角包过去一点，做出「绕着走」的感觉 */
+    /* 灯带两端沿尾板转角包过去 */
     [-1, 1].forEach(function (s) {
-      var cap = new T.Mesh(new T.BoxGeometry(0.070, 0.075, 0.060), tailMat);
-      cap.position.set(s * 0.530, 0.635, 2.320);
+      var cap = new T.Mesh(new T.BoxGeometry(0.070, 0.085, 0.060), tailMat);
+      cap.position.set(s * 0.868, 0.660, 2.322);
       cap.rotation.y = s * -0.42;
       car.add(cap);
     });
+    /* 牌照（官方尾板上那块浅色方牌，居中偏上） */
+    var plate = new T.Mesh(new T.BoxGeometry(0.30, 0.115, 0.012), chrome);
+    plate.position.set(0, 0.525, 2.352);
+    car.add(plate);
 
-    /* 尾部扩散器（带竖鳍）—— 后缘与尾板面齐平，从正后方就能看到
-       深色面板下面这一层碳黑扩散器，而不是一整块平深色板 */
-    var diff = new T.Mesh(new T.BoxGeometry(1.10, 0.230, 0.220), carbon);
-    diff.position.set(0, 0.265, 2.239);
+    /* ④ 深色面板（排气口所在层）+ 碳黑扩散器 */
+    var tailDark = new T.Mesh(new T.BoxGeometry(1.72, 0.215, 0.045), matte);
+    tailDark.position.set(0, 0.306, 2.332);
+    car.add(tailDark);
+    var diff = new T.Mesh(new T.BoxGeometry(1.70, 0.220, 0.220), carbon);
+    diff.position.set(0, 0.132, 2.245);
     car.add(diff);
     for (var fi = -2; fi <= 2; fi++) {
-      var fin = new T.Mesh(new T.BoxGeometry(0.020, 0.220, 0.200), matte);
-      fin.position.set(fi * 0.220, 0.265, 2.249);
+      var fin = new T.Mesh(new T.BoxGeometry(0.020, 0.190, 0.200), matte);
+      fin.position.set(fi * 0.320, 0.132, 2.255);
       car.add(fin);
     }
 
     /* 主动尾翼（收起位）—— 官方 3/4 后视图里这条薄唇就压在尾板上沿，
        即甲板后缘的「鸭尾」：不是立在尾箱中段，而是贴着尾板顶缘向外探出。
        前缘随甲板坡度扎进 deck、后缘抬起约 3 cm，做出收起位鸭尾的样子。 */
-    var wingBlade = new T.Mesh(new T.BoxGeometry(0.92, 0.024, 0.20), carbon);
+    var wingBlade = new T.Mesh(new T.BoxGeometry(1.44, 0.024, 0.20), carbon);
     wingBlade.position.set(0, 0.882, 2.280);
     wingBlade.rotation.x = -0.09;
     car.add(wingBlade);
     [-1, 1].forEach(function (s) {
       var end = new T.Mesh(new T.BoxGeometry(0.012, 0.036, 0.20), carbon);
-      end.position.set(s * 0.450, 0.876, 2.280);
+      end.position.set(s * 0.705, 0.876, 2.280);
       end.rotation.x = -0.09;
       car.add(end);
     });
@@ -1374,14 +1380,15 @@
       makeJet('under', p[0], 0.175, p[1], Math.PI, 0, 0, nozDown, frostRing);
     });
 
-    /* 车尾 4 个：2×2 圆形簇，向后喷 → 向前推。真车尾部就是这组圆口，
-       收小并嵌进尾部深色件里（0.15~0.49 区间），别做成抢眼的大白圈 */
-    var nozBack = new T.CylinderGeometry(0.070, 0.054, 0.12, 16, 1, true);
+    /* 车尾 4 个：**一排 4 个**（官方正后视图就是这个排布，不是 2×2），
+       向后喷 → 向前推。收小并嵌进尾部深色件里，别做成抢眼的大白圈。
+       官方排气口 x ≈ ±0.10 / ±0.31（间距约 84mm），y ≈ 0.30 */
+    var nozBack = new T.CylinderGeometry(0.062, 0.048, 0.12, 16, 1, true);
     nozBack.translate(0, -0.060, 0);
-    var frostRingB = new T.TorusGeometry(0.058, 0.008, 6, 18);
+    var frostRingB = new T.TorusGeometry(0.052, 0.008, 6, 18);
     frostRingB.rotateX(Math.PI / 2);
-    [[-0.155, 0.300], [0.155, 0.300], [-0.155, 0.420], [0.155, 0.420]].forEach(function (p) {
-      makeJet('rear', p[0], p[1], 2.345, Math.PI / 2, 0, 0, nozBack, frostRingB);
+    [-0.315, -0.105, 0.105, 0.315].forEach(function (x) {
+      makeJet('rear', x, 0.300, 2.345, Math.PI / 2, 0, 0, nozBack, frostRingB);
     });
 
     /* 车身两侧成对：姿态控制 */
