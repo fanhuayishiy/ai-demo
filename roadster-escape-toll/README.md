@@ -59,7 +59,7 @@ https://www.tesla.cn/roadster/reserve#payment 你模型查看这个地址比对�
 
 ## 技术栈
 
-Three.js r149 精简构建（本地 `libs/three.min.js`，446 KB / gzip 115 KB，见下节）+ 原生 JavaScript 单 IIFE，无构建步骤、无外部依赖、无 CDN，双击 `index.html` 即可离线运行（`file://` 协议实测通过）。
+Three.js r149 精简构建（本地 `libs/three-r149.min.js`，446 KB / gzip 115 KB，见下节）+ 原生 JavaScript 单 IIFE，无构建步骤、无外部依赖、无 CDN，双击 `index.html` 即可离线运行（`file://` 协议实测通过）。
 
 关键实现：
 
@@ -73,7 +73,7 @@ Three.js r149 精简构建（本地 `libs/three.min.js`，446 KB / gzip 115 KB�
 
 ### three.js 精简包
 
-`libs/three.min.js` 不是官方完整构建，而是用 esbuild 从 `three@0.149.0` 按需打包的精简版：只导出游戏与离线工具实际引用的 47 个符号（完整构建导出 407 个）。608 KB → 446 KB，gzip 153 KB → 115 KB；同一场景下与完整构建相比，三通道均值差 < 0.1/255。
+`libs/three-r149.min.js` 不是官方完整构建，而是用 esbuild 从 `three@0.149.0` 按需打包的精简版：只导出游戏与离线工具实际引用的 47 个符号（完整构建导出 407 个）。608 KB → 446 KB，gzip 153 KB → 115 KB；同一场景下与完整构建相比，三通道均值差 < 0.1/255。
 
 符号列表**必须扫描生成，不要手写** —— 漏一个符号不会报错，而是静默降级。第一次打包漏了 `sRGBEncoding`，`renderer.outputEncoding` 变成 `undefined`，整场画面偏亮发灰。
 
@@ -84,7 +84,7 @@ grep -ohE '\bT\.[A-Za-z_][A-Za-z0-9_]*' game.js roadster-model.js tools/*.cjs \
   | sed 's/^T\.//' | sort -u        # 生成 import/export 同一份列表 → entry.js
 # 2. 打包：IIFE + 全局 THREE，并补 CommonJS 导出供 Node 工具 require
 npx esbuild entry.js --bundle --format=iife --global-name=THREE --minify \
-  --target=es2018 --outfile=libs/three.min.js \
+  --target=es2018 --outfile=libs/three-r149.min.js \
   --footer:js="if(typeof module!=='undefined'&&module.exports){module.exports=THREE;}"
 ```
 
@@ -119,7 +119,7 @@ roadster-escape-toll/
 ├── og-cover.jpg        # 1200×630 社交分享卡片图
 ├── _headers            # Cloudflare Pages 缓存策略
 ├── libs/
-│   └── three.min.js    # Three.js r149 精简构建（446 KB）
+│   └── three-r149.min.js  # Three.js r149 精简构建（446 KB，文件名带版本号）
 └── docs/
     └── official-render-compare.png   # 模型侧影 vs tesla.cn 官方渲染图叠加对比
 ```

@@ -7,9 +7,10 @@
 /*.css
   Cache-Control: public, max-age=600, must-revalidate
 
-# 版本固定的第三方库：内容不会变，可长期强缓存
+# 第三方库：文件名带版本号（three-r149.min.js），改版本就换文件名
+# 不要加 immutable —— URL 不含内容哈希，加了会让新版本永远命中旧缓存
 /libs/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=86400, must-revalidate
 
 # 分享卡片图：一天
 /*.jpg
