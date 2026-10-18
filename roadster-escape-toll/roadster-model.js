@@ -499,6 +499,69 @@ function buildWheel(radius, halfWidth) {
       if (o.isMesh && o.material && !o.material.transparent) o.castShadow = true;
     });
 
+    /* ------------------------------------------------------------------ *
+     *  合批：按材质把刚性组内的静态网格合成一个 Mesh，降低 draw call。
+     *  只处理不透明、非实例化、非地标的网格；轮子与推进器各自作为
+     *  刚性组单独合并，组本身的变换（滚动 / 摆动）不受影响。
+     *  合并前先把每个网格的局部矩阵烘进几何体，视觉结果与合并前一致。
+     * ------------------------------------------------------------------ */
+    var KEEP_SEPARATE = {
+      'full-width-red-tail-lamp': 1,
+      'license-plate': 1,
+      'diffuser-roof': 1,
+      'stowed-active-spoiler': 1
+    };
+
+    function mergeRigidGroup(group, tag) {
+      var buckets = new Map();
+      group.children.slice().forEach(function (o) {
+        if (!o.isMesh || o.isInstancedMesh || o.isPoints) return;
+        if (KEEP_SEPARATE[o.name]) return;
+        var mat = o.material;
+        if (!mat || Array.isArray(mat) || mat.transparent) return;
+        var list = buckets.get(mat);
+        if (list) list.push(o); else buckets.set(mat, [o]);
+      });
+      var index = 0;
+      buckets.forEach(function (list, mat) {
+        if (list.length < 2) return;
+        var positions = [], normals = [], uvs = [], indices = [], base = 0;
+        list.forEach(function (o) {
+          o.updateMatrix();
+          var g = o.geometry.clone().applyMatrix4(o.matrix);
+          var p = g.attributes.position, n = g.attributes.normal, u = g.attributes.uv;
+          for (var i = 0; i < p.count; i++) {
+            positions.push(p.getX(i), p.getY(i), p.getZ(i));
+            if (n) normals.push(n.getX(i), n.getY(i), n.getZ(i)); else normals.push(0, 1, 0);
+            if (u) uvs.push(u.getX(i), u.getY(i)); else uvs.push(0, 0);
+          }
+          if (g.index) {
+            var a = g.index.array;
+            for (var j = 0; j < a.length; j++) indices.push(a[j] + base);
+          } else {
+            for (var k = 0; k < p.count; k++) indices.push(k + base);
+          }
+          base += p.count;
+        });
+        var merged = new T.BufferGeometry();
+        merged.setAttribute('position', new T.Float32BufferAttribute(positions, 3));
+        merged.setAttribute('normal', new T.Float32BufferAttribute(normals, 3));
+        merged.setAttribute('uv', new T.Float32BufferAttribute(uvs, 2));
+        merged.setIndex(indices);
+        merged.computeBoundingSphere();
+        var batch = new T.Mesh(merged, mat);
+        batch.name = 'merged-' + tag + '-' + (index++);
+        batch.castShadow = true;
+        batch.receiveShadow = true;
+        list.forEach(function (o) { group.remove(o); });
+        group.add(batch);
+      });
+    }
+
+    mergeRigidGroup(car, 'body');
+    wheels.forEach(function (w, i) { mergeRigidGroup(w, 'wheel' + i); });
+    jets.forEach(function (j, i) { mergeRigidGroup(j, 'jet' + i); });
+
     return {
       group: car,
       jets: jets,

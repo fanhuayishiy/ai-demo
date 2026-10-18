@@ -55,10 +55,11 @@ https://www.tesla.cn/roadster/reserve#payment 你模型查看这个地址比对�
 - **完整的失败判定**：点火太晚撞收费站（前缘进入/后缘穿出两段检测 + 最低高度采样，避免高速穿模）；飞过 CLEAR_ALT 8.6 m 算通过；超过 MAX_ALT 34 m 判「飞过头冲出马路」。
 - **WebAudio 程序合成音效**：EV 电机为 sine/triangle 低鸣 + 高频逆变器啸叫；冷气推进器为高通 1250 Hz + 带通 4600 Hz 的气流嘶声，阀门开启瞬间叠加泄气爆破音。
 - 路面蓝色光带提示最佳点火位置（按数值积分实时算出到达 CLEAR_ALT 所需时间 × 当前车速）；HUD 双仪表（冷气 / 高度，含危险区与安全区）；每过一站提速 2.4，上限 84。
+- **分享与移动端**：带 OG / Twitter 卡片（1200×630 实机封面），链接分享到社交平台有标题、描述与缩略图；小屏下开始卡片与底部 HUD 自动让开左下角的 GitHub 悬浮入口，两个仪表标签也不再互相挤压。
 
 ## 技术栈
 
-Three.js r149 UMD 构建（本地 `libs/three.min.js`，608 KB）+ 原生 JavaScript 单 IIFE，无构建步骤、无外部依赖、无 CDN，双击 `index.html` 即可离线运行（`file://` 协议实测通过）。
+Three.js r149 精简构建（本地 `libs/three.min.js`，446 KB / gzip 115 KB，见下节）+ 原生 JavaScript 单 IIFE，无构建步骤、无外部依赖、无 CDN，双击 `index.html` 即可离线运行（`file://` 协议实测通过）。
 
 关键实现：
 
@@ -69,6 +70,34 @@ Three.js r149 UMD 构建（本地 `libs/three.min.js`，608 KB）+ 原生 JavaSc
 - **羽流 shader**：`along = 1 - vUv.y`（喷口在几何体底端）+ fresnel 边缘增强；白雾用 NormalBlending（遮挡而非发光），不做颜色 alpha 预乘。
 - **物理双时钟**：物理用封顶 0.05 s 的 `dt`，结算动画用 `dtReal`，低帧率下结算不会拖成慢动作。
 - 粒子 `gl_PointSize` 是像素单位，需按世界尺寸给值并在 shader 里 clamp。
+
+### three.js 精简包
+
+`libs/three.min.js` 不是官方完整构建，而是用 esbuild 从 `three@0.149.0` 按需打包的精简版：只导出游戏与离线工具实际引用的 47 个符号（完整构建导出 407 个）。608 KB → 446 KB，gzip 153 KB → 115 KB；同一场景下与完整构建相比，三通道均值差 < 0.1/255。
+
+符号列表**必须扫描生成，不要手写** —— 漏一个符号不会报错，而是静默降级。第一次打包漏了 `sRGBEncoding`，`renderer.outputEncoding` 变成 `undefined`，整场画面偏亮发灰。
+
+```bash
+npm i -D three@0.149.0 esbuild
+# 1. 扫描所有 T.Xxx 引用（游戏 + 离线工具）
+grep -ohE '\bT\.[A-Za-z_][A-Za-z0-9_]*' game.js roadster-model.js tools/*.cjs \
+  | sed 's/^T\.//' | sort -u        # 生成 import/export 同一份列表 → entry.js
+# 2. 打包：IIFE + 全局 THREE，并补 CommonJS 导出供 Node 工具 require
+npx esbuild entry.js --bundle --format=iife --global-name=THREE --minify \
+  --target=es2018 --outfile=libs/three.min.js \
+  --footer:js="if(typeof module!=='undefined'&&module.exports){module.exports=THREE;}"
+```
+
+改动 `game.js` / `roadster-model.js` 后若引入了新的 `T.Xxx`，需重新扫描并重建，否则运行时才暴露。
+
+### 合批降 draw call
+
+车身原本 235 个独立 Mesh（每个一次 draw call）。`roadster-model.js` 末尾的 `mergeRigidGroup()` 在模型构建完成后，按材质把**刚性组内**的不透明网格合并成单个 BufferGeometry：车体一组，4 个轮子、12 个推进器各自一组（组本身的滚动 / 摆动变换不受影响）。
+
+- 合并前先把每个网格的局部矩阵 `applyMatrix4` 烘进几何体，因此视觉无损：离线渲染 6 个视角逐像素比对，60 万像素里最多 4 个像素不同（三角边缘浮点取整）；
+- 保留 `full-width-red-tail-lamp` / `license-plate` / `diffuser-roof` / `stowed-active-spoiler` 四个地标网格不合并，供 `check-model` 校验尾部层次；
+- 透明材质（羽流）、`InstancedMesh` 一律跳过；
+- 实测：模型 Mesh 235 → 87，全场景 draw call 373 → 221，三角面数不变，帧率不变。
 
 ## 运行方式
 
@@ -83,11 +112,14 @@ Three.js r149 UMD 构建（本地 `libs/three.min.js`，608 KB）+ 原生 JavaSc
 
 ```
 roadster-escape-toll/
-├── index.html          # 页面结构 / HUD / 开始与结算界面（含本地排行榜面板）
-├── style.css           # 全部样式
-├── game.js             # 游戏全部逻辑（约 2100 行，单 IIFE）
+├── index.html          # 页面结构 / HUD / 开始与结算界面（含 OG 分享卡片标签）
+├── style.css           # 全部样式（含移动端安全区适配）
+├── game.js             # 游戏逻辑：物理、计分、HUD、场景
+├── roadster-model.js   # 车身模型（独立模块，导出 window.createRoadsterModel）
+├── og-cover.jpg        # 1200×630 社交分享卡片图
+├── _headers            # Cloudflare Pages 缓存策略
 ├── libs/
-│   └── three.min.js    # Three.js r149 UMD（本地化，608 KB）
+│   └── three.min.js    # Three.js r149 精简构建（446 KB）
 └── docs/
     └── official-render-compare.png   # 模型侧影 vs tesla.cn 官方渲染图叠加对比
 ```
@@ -101,5 +133,7 @@ roadster-escape-toll/
   - 冷气系统：单次点火约耗 13%、一罐约够 7 站、余量只减不增、罐空后按不动；
   - 排行榜：空榜提示 / 降序排序 / 同分紧邻 / 本次高亮 / 刷新持久化 / 超 10 条截断 / 低分被挤出，全部通过；
   - 尺寸实测：车身包围盒 4.721 × 2.051 × 1.130 m，与官方渲染图标定（385.5 px/m）逐列比对；
+  - 合批无损性：离线渲染 6 个视角逐像素比对，60 万像素里最多 4 个像素不同（三角边缘浮点取整），三角面数 49972 保持不变；
+  - three.js 精简包：与完整构建同场景对比，三通道均值差 < 0.1/255、亮度直方图最大偏差 0.12%；
   - 全部用例零 pageerror、零 console error，`file://` 直开正常。
 - **边界说明**：车辆造型按公开渲染图 1:1 对齐，但推进器物理、冷气消耗速率、赛道参数均为娱乐化演示设定；音效为程序合成，非实车录音；排行榜仅存本机浏览器 localStorage，不同浏览器/设备不互通。
