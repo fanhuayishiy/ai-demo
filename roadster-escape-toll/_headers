@@ -1,0 +1,20 @@
+# Cloudflare Pages 缓存策略
+# 规则按顺序匹配，后匹配的覆盖先匹配的
+
+/*.js
+  Cache-Control: public, max-age=600, must-revalidate
+
+/*.css
+  Cache-Control: public, max-age=600, must-revalidate
+
+# 版本固定的第三方库：内容不会变，可长期强缓存
+/libs/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# 分享卡片图：一天
+/*.jpg
+  Cache-Control: public, max-age=86400
+
+# 入口 HTML 每次校验，保证发版立即生效
+/
+  Cache-Control: public, max-age=0, must-revalidate
