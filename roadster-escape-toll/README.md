@@ -2,7 +2,7 @@
 
 2026 年 10 月 16 日特斯拉第二代 Roadster 发布（搭载 SpaceX 冷气推进器 A71，可空中悬浮与翻滚），网友玩梗「开特斯拉的人谁还过收费站，直接飞过去」。本 Demo 据此做成一个单文件结构的 Three.js 网页小游戏：长按点火，在收费站前起飞飞越，点火太晚会撞上收费站，推力过猛会飞过头冲出马路。
 
-[在线预览](https://fanhuayishiy.github.io/ai-demo/roadster-escape-toll/) · [官方渲染图侧视叠加对比](./docs/official-render-compare.png)
+[短地址](https://r.fhysy.com/) · [在线预览](https://fanhuayishiy.github.io/ai-demo/roadster-escape-toll/) · [官方渲染图侧视叠加对比](./docs/official-render-compare.png)
 
 **本 Demo 为概念娱乐作品。车辆造型按特斯拉官网公开渲染图对齐，游戏物理、冷气消耗与赛道均为演示设定，不代表特斯拉官方产品或任何真实飞行器性能。**
 

@@ -1,0 +1,55 @@
+name: Deploy Roadster to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'roadster-escape-toll/**'
+      - '.github/workflows/pages-cloudflare.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cf-pages-roadster
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Cloudflare credentials
+        id: creds
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CF_TOKEN" ] || [ -z "$CF_ACCOUNT" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not configured, skipping Cloudflare Pages deploy."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stage game files
+        if: steps.creds.outputs.ready == 'true'
+        run: |
+          mkdir -p _pages_dist/libs
+          cp roadster-escape-toll/index.html \
+             roadster-escape-toll/game.js \
+             roadster-escape-toll/roadster-model.js \
+             roadster-escape-toll/style.css \
+             _pages_dist/
+          cp roadster-escape-toll/libs/three.min.js _pages_dist/libs/
+          ls -R _pages_dist
+
+      - name: Deploy to Cloudflare Pages
+        if: steps.creds.outputs.ready == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy _pages_dist --project-name roadster --branch main
