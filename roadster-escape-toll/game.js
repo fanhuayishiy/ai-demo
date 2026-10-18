@@ -39,7 +39,22 @@
     /* 冷气（氮气）推进剂：一次性装填，全程不再补充 */
     GAS_MAX: 100,            // 总装填量（%）
     GAS_BURN: 20,            // 每秒消耗（%）→ 满罐只有 5 秒总点火时间
-    GAS_LOW: 25              // 低量警戒线（%）
+    GAS_LOW: 25,             // 低量警戒线（%）
+
+    /* 低空飞越返还：点火越晚、穿站越低，回收的冷气越多。
+       门槛按实测标定 —— 跟着蓝色提示点火并抬到 9.3 时，穿站高度约 19；
+       每延迟点火 80ms 约降低 1 个高度单位，压到 13 已是精细操作。 */
+    GAS_REFUND_TIGHT: 8,     // 车底最低点 ≤ CLEAR_ALT + TIGHT_MARGIN
+    GAS_REFUND_CLEAN: 4,     // ≤ CLEAR_ALT + CLEAN_MARGIN
+    TIGHT_MARGIN: 4.4,       // → 13.0
+    CLEAN_MARGIN: 8.4,       // → 17.0
+    REFUND_SCORE: 6,         // 每返还 1% 冷气额外给的分
+
+    /* 收费站间距：正常 170–250 随机，每 DOUBLE_EVERY 个间隔插一次「连站」 */
+    TOLL_GAP_MIN: 170,
+    TOLL_GAP_MAX: 250,
+    TOLL_GAP_DOUBLE: 110,
+    DOUBLE_EVERY: 4
   };
   CFG.ROOF_TOP = CFG.ROOF_BOTTOM + CFG.ROOF_THICK;
   CFG.HALF_DEPTH = CFG.TOLL_DEPTH / 2;
@@ -489,6 +504,14 @@
     tolls.push(tl);
   }
 
+  /* 间距生成器：正常 170–250 随机，每 DOUBLE_EVERY 个间隔来一次「连站」 */
+  var gapCount = 0;
+  function nextTollGap() {
+    gapCount++;
+    if (gapCount % CFG.DOUBLE_EVERY === 0) return CFG.TOLL_GAP_DOUBLE + Math.random() * 14;
+    return CFG.TOLL_GAP_MIN + Math.random() * (CFG.TOLL_GAP_MAX - CFG.TOLL_GAP_MIN);
+  }
+
   /* 最佳点火光带 */
   var takeoffLine = new T.Group();
   var tlBand = new T.Mesh(
@@ -649,7 +672,7 @@
       try { ctx = new AC(); } catch (e) { return; }
 
       master = ctx.createGain();
-      master.gain.value = 0.42;
+      master.gain.value = muted ? 0 : 0.42;
       master.connect(ctx.destination);
 
       /* 电机：纯电驱动，只有轻微低频嗡鸣 + 高频逆变器啸叫 */
@@ -840,6 +863,8 @@
     boardEmpty: document.getElementById('boardEmpty'),
     btnStart: document.getElementById('btnStart'),
     btnRetry: document.getElementById('btnRetry'),
+    btnMute: document.getElementById('btnMute'),
+    overGap: document.getElementById('overGap'),
     flash: document.getElementById('flash')
   };
 
@@ -859,6 +884,7 @@
    * ------------------------------------------------------------------ */
   var BEST_KEY = 'roadster_toll_best_v1';
   var BOARD_KEY = 'roadster_board_v1';
+  var MUTE_KEY = 'roadster_muted_v1';
   var BOARD_MAX = 10;
 
   /* ------------------------------------------------------------------ *
@@ -925,6 +951,7 @@
     speed: CFG.BASE_SPEED,
     score: 0,
     cleared: 0,
+    refunds: 0,         // 贴顶/干净飞越次数（返还冷气的站数）
     best: 0,
     thrusting: false,
     gas: CFG.GAS_MAX,   // 剩余冷气（%），只减不增
@@ -956,6 +983,7 @@
     state.speed = CFG.BASE_SPEED;
     state.score = 0;
     state.cleared = 0;
+    state.refunds = 0;
     state.thrusting = false;
     state.gas = CFG.GAS_MAX;      // 每次重新出发都是满罐，中途不会补充
     state.gasDry = false;
@@ -972,6 +1000,7 @@
       tolls[i].userData.passed = false;
       tolls[i].userData.minAlt = Infinity;
     }
+    gapCount = 0;
     for (var d = 0; d < DASH_N; d++) dashZ[d] = 30 - d * DASH_GAP;
     for (var p = 0; p < POST_N; p++) postZ[p] = 30 - p * POST_GAP;
     for (var q = 0; q < POLE_N; q++) poleZ[q] = 30 - q * POLE_GAP;
@@ -1053,6 +1082,7 @@
     Sound.engine(false);
     Sound.thrust(false);
 
+    var prevBest = state.best;
     if (state.score > state.best) {
       state.best = state.score;
       try { localStorage.setItem(BEST_KEY, String(state.best)); } catch (e) { }
@@ -1079,6 +1109,24 @@
     el.finalSpeed.textContent = Math.round(state.maxSpeed * 3.6);
     el.finalBest.textContent = state.best;
 
+    /* 距最高分 / 新纪录 —— 比只看历史分更能推动「再来一把」 */
+    if (el.overGap) {
+      var tight = state.refunds ? '  ·  贴顶飞越 ' + state.refunds + ' 次' : '';
+      if (prevBest > 0 && state.score > prevBest) {
+        el.overGap.textContent = '新纪录！比上次多 ' + (state.score - prevBest) + ' 分' + tight;
+        el.overGap.className = 'over-gap record';
+      } else if (prevBest > 0 && state.score === prevBest) {
+        el.overGap.textContent = '追平最高分' + tight;
+        el.overGap.className = 'over-gap record';
+      } else if (prevBest > 0) {
+        el.overGap.textContent = '距最高分还差 ' + (prevBest - state.score) + ' 分' + tight;
+        el.overGap.className = 'over-gap';
+      } else {
+        el.overGap.textContent = '首个纪录：' + state.score + ' 分' + tight;
+        el.overGap.className = 'over-gap record';
+      }
+    }
+
     /* 记入本地排行榜并高亮本次这一行 */
     var pushed = pushBoard({
       score: state.score,
@@ -1102,14 +1150,27 @@
   /* ------------------------------------------------------------------ *
    *  通过收费站
    * ------------------------------------------------------------------ */
-  function onCleared() {
+  function onCleared(minAlt) {
     state.cleared++;
-    var gain = CFG.SCORE_PER_TOLL + Math.round((state.speed - CFG.BASE_SPEED) * 4);
+
+    /* 贴顶程度决定冷气返还：贴着顶棚飞比猛喷更划算 */
+    var margin = minAlt - CFG.CLEAR_ALT;
+    var refund = 0, label = '';
+    if (margin <= CFG.TIGHT_MARGIN) { refund = CFG.GAS_REFUND_TIGHT; label = '贴顶飞越'; }
+    else if (margin <= CFG.CLEAN_MARGIN) { refund = CFG.GAS_REFUND_CLEAN; label = '低空飞越'; }
+    if (refund > 0) state.gas = Math.min(CFG.GAS_MAX, state.gas + refund);
+
+    var gain = CFG.SCORE_PER_TOLL + Math.round((state.speed - CFG.BASE_SPEED) * 4) + refund * CFG.REFUND_SCORE;
     state.score += gain;
     state.speed = Math.min(CFG.MAX_SPEED, CFG.BASE_SPEED + state.cleared * CFG.SPEED_STEP);
     Sound.ding();
     Sound.whoosh();
-    toast('飞越成功  +' + gain, '#6ff0c0');
+    if (label) {
+      state.refunds++;
+      toast(label + '  +' + gain + '  ·  冷气 +' + refund + '%', '#6ff0c0');
+    } else {
+      toast('飞越成功  +' + gain, '#6ff0c0');
+    }
     if (state.cleared % 5 === 0) toast('连飞 ' + state.cleared + ' 站！', '#ffd166');
   }
 
@@ -1193,11 +1254,15 @@
     grassTex.offset.y = -cz / 16;
     asphaltTex.offset.y = -cz / 8;
 
-    /* 收费站回收 */
+    /* 收费站回收：间距随机，每 DOUBLE_EVERY 个间隔插一次「连站」 */
     for (var g = 0; g < tolls.length; g++) {
       var tt = tolls[g];
       if (cz < tt.position.z - 50) {
-        tt.position.z -= CFG.TOLL_SPACING * CFG.TOLL_COUNT;
+        var frontZ = Infinity;
+        for (var q = 0; q < tolls.length; q++) {
+          if (tolls[q] !== tt && tolls[q].position.z < frontZ) frontZ = tolls[q].position.z;
+        }
+        tt.position.z = frontZ - nextTollGap();
         tt.userData.passed = false;
         tt.userData.minAlt = Infinity;
       }
@@ -1224,7 +1289,7 @@
       if (prevZ > zB && cz <= zB) {
         ud.passed = true;
         if (ud.minAlt < CFG.CLEAR_ALT) { crash('toll'); return; }
-        onCleared();
+        onCleared(ud.minAlt);
       }
     }
 
@@ -1518,6 +1583,8 @@
       else if (state.mode === 'over') resetGame();
     } else if (e.key === 'r' || e.key === 'R') {
       if (state.mode === 'over') resetGame();
+    } else if (e.key === 'm' || e.key === 'M') {
+      applyMute(!mutedPref);
     }
   });
   window.addEventListener('keyup', function (e) {
@@ -1535,6 +1602,28 @@
 
   el.btnStart.addEventListener('click', function () { resetGame(); });
   el.btnRetry.addEventListener('click', function () { resetGame(); });
+
+  /* ------------------------------------------------------------------ *
+   *  静音开关（按钮 / M 键，状态存本机）
+   * ------------------------------------------------------------------ */
+  var mutedPref = false;
+  try { mutedPref = localStorage.getItem(MUTE_KEY) === '1'; } catch (e) { }
+  function applyMute(v) {
+    mutedPref = v;
+    Sound.mute(v);
+    if (el.btnMute) {
+      el.btnMute.setAttribute('aria-pressed', v ? 'true' : 'false');
+      el.btnMute.setAttribute('aria-label', v ? '取消静音' : '静音');
+    }
+    try { localStorage.setItem(MUTE_KEY, v ? '1' : '0'); } catch (e) { }
+  }
+  applyMute(mutedPref);
+  if (el.btnMute) {
+    el.btnMute.addEventListener('click', function (e) {
+      e.stopPropagation();
+      applyMute(!mutedPref);
+    });
+  }
 
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) { pressUp(); Sound.engine(false); }
