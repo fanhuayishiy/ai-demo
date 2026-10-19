@@ -50,6 +50,19 @@
     CLEAN_MARGIN: 8.4,       // → 17.0
     REFUND_SCORE: 4,         // 每返还 1% 冷气额外给的分
 
+    /* 空中翻转（A71 姿态控制）—— 照发布会现场那套做：
+       车身绕纵轴左右横滚整圈，10 个喷嘴边翻边配平，落地自己回正，不会歪着砸下来 */
+    FLIP_DUR: 0.62,          // 一次 360° 空翻耗时（秒）
+    FLIP_GAS: 5,             // 每次空翻消耗冷气（%），喷嘴配平也得烧气
+    FLIP_MIN_ALT: 2.5,       // 离地低于这个高度翻不动
+    FLIP_SCORE: 80,          // 每完成一次空翻的基础分
+    FLIP_CHAIN: 0.5,         // 同一次腾空里第 n 次空翻 → 得分 ×(1 + 0.5(n-1))
+    FLIP_AIR_BONUS: 60,      // 带着空翻飞越收费站，额外加分
+    FLIP_DIR: -1,            // 横滚方向：-1 = 向右横滚（车顶朝镜头这边翻）
+    FLIP_PIVOT: 0.70,        // 旋转轴心离车底的高度（车重中心大致在轮心上方）
+    FLIP_FLOOR: 1.0,         // 横滚时喷嘴把车托在这个最低高度（侧翻到 90° 轮胎会低于车底 0.54）
+    FLIP_GRAVITY: 0.45,      // 空翻期间喷嘴托着车身，重力只按 45% 生效
+
     /* 收费站间距：正常 170–250 随机，每 DOUBLE_EVERY 个间隔插一次「连站」 */
     TOLL_GAP_MIN: 170,
     TOLL_GAP_MAX: 250,
@@ -825,11 +838,27 @@
       o.start(ctx.currentTime + 0.05); o.stop(ctx.currentTime + 0.65);
     }
 
+    /* 空翻点火：几组喷嘴同时开阀，一记短促的高压泄气声，尾音往上挑 */
+    function flip() {
+      if (!ready || muted) return;
+      noiseBurst(0.42, 4200, 0.24, 'highpass');
+      noiseBurst(0.22, 900, 0.20, 'lowpass');
+      var o = ctx.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(95, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(330, ctx.currentTime + 0.42);
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.16, ctx.currentTime + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+      o.connect(g); g.connect(master);
+      o.start(); o.stop(ctx.currentTime + 0.52);
+    }
+
     function mute(v) { muted = v; if (master) master.gain.value = v ? 0 : 0.42; }
 
     return {
       init: init, engine: engine, engineSpeed: engineSpeed, thrust: thrust,
-      boom: boom, ding: ding, whoosh: whoosh, warn: warn, dry: dry, mute: mute
+      boom: boom, ding: ding, whoosh: whoosh, warn: warn, dry: dry, flip: flip, mute: mute
     };
   })();
 
@@ -865,8 +894,12 @@
     btnRetry: document.getElementById('btnRetry'),
     btnMute: document.getElementById('btnMute'),
     overGap: document.getElementById('overGap'),
+    btnFlip: document.getElementById('btnFlip'),
     flash: document.getElementById('flash')
   };
+
+  /* 触屏设备：提示语写「点右下角」而不是「按 F」 */
+  var TOUCH = !!(window.matchMedia && window.matchMedia('(hover: none)').matches);
 
   /* 仪表标尺 */
   (function layoutGauge() {
@@ -962,7 +995,17 @@
     shake: 0,
     maxSpeed: 0,
     spin: 0,
-    time: 0
+    time: 0,
+
+    /* 空中翻转 */
+    flip: 0,            // 当前空翻角度（弧度，0 → 2π）
+    flipping: false,    // 是否正在翻
+    flipT: 0,           // 本次空翻进度 0..1
+    flipCool: 0,        // 两次空翻之间的间隔
+    flips: 0,           // 全场完成次数
+    airFlips: 0,        // 本次腾空完成次数（落地清零，用来算连翻）
+    pitch: 0,           // 基础俯仰（不含空翻角度）
+    camFlip: 0          // 空翻时的镜头侧移量（缓动）
   };
 
   try { state.best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10) || 0; } catch (e) { state.best = 0; }
@@ -993,6 +1036,14 @@
     state.shake = 0;
     state.maxSpeed = CFG.BASE_SPEED;
     state.spin = 0;
+    state.flip = 0;
+    state.flipping = false;
+    state.flipT = 0;
+    state.flipCool = 0;
+    state.flips = 0;
+    state.airFlips = 0;
+    state.pitch = 0;
+    state.camFlip = 0;
 
     for (var i = 0; i < tolls.length; i++) {
       tolls[i].position.z = -(CFG.FIRST_TOLL + i * CFG.TOLL_SPACING);
@@ -1040,6 +1091,8 @@
     state.crashTimer = 0;
     state.shake = 1;
     state.thrusting = false;
+    /* 半空翻着撞上也不硬掰回来：把当前翻转角度冻住，让残骸接着翻出去 */
+    state.flipping = false;
 
     Sound.thrust(false);
     Sound.engine(false);
@@ -1112,6 +1165,7 @@
     /* 距最高分 / 新纪录 —— 比只看历史分更能推动「再来一把」 */
     if (el.overGap) {
       var tight = state.refunds ? '  ·  贴顶飞越 ' + state.refunds + ' 次' : '';
+      if (state.flips) tight += '  ·  横滚 ' + state.flips + ' 次';
       if (prevBest > 0 && state.score > prevBest) {
         el.overGap.textContent = '新纪录！比上次多 ' + (state.score - prevBest) + ' 分' + tight;
         el.overGap.className = 'over-gap record';
@@ -1148,6 +1202,54 @@
   }
 
   /* ------------------------------------------------------------------ *
+   *  空中翻转（A71 姿态控制）
+   * ------------------------------------------------------------------ */
+  /* 车体局部坐标 → 世界坐标，绕 (0, alt + FLIP_PIVOT, carZ) 横滚 state.flip */
+  function flipPoint(lx, ly, lz) {
+    var H = CFG.FLIP_PIVOT, th = state.flip * CFG.FLIP_DIR;
+    var y = ly - H, c = Math.cos(th), s = Math.sin(th);
+    return {
+      x: lx * c - y * s,
+      y: state.alt + H + lx * s + y * c,
+      z: state.carZ + lz
+    };
+  }
+
+  function startFlip() {
+    if (state.mode !== 'playing') return false;
+    if (state.flipping || state.flipCool > 0) return false;
+    if (state.alt < CFG.FLIP_MIN_ALT) {
+      state.flipCool = 0.45;
+      toast('先飞起来再翻', '#ffc46b');
+      return false;
+    }
+    if (state.gas < CFG.FLIP_GAS) {
+      state.flipCool = 0.45;
+      toast('冷气不够，喷嘴顶不起来', '#ff8a6b');
+      return false;
+    }
+    state.gas = Math.max(0, state.gas - CFG.FLIP_GAS);
+    state.flipping = true;
+    state.flipT = 0;
+    state.flip = 0;
+    Sound.flip();
+    return true;
+  }
+
+  function completeFlip() {
+    state.flipping = false;
+    state.flip = 0;
+    state.flipT = 1;
+    state.flipCool = 0.16;
+    state.flips++;
+    state.airFlips++;
+    var gain = Math.round(CFG.FLIP_SCORE * (1 + CFG.FLIP_CHAIN * (state.airFlips - 1)));
+    state.score += gain;
+    Sound.whoosh();
+    toast(state.airFlips > 1 ? '横滚 ×' + state.airFlips + '  +' + gain : '空中横滚  +' + gain, '#9fd0ff');
+  }
+
+  /* ------------------------------------------------------------------ *
    *  通过收费站
    * ------------------------------------------------------------------ */
   function onCleared(minAlt) {
@@ -1160,17 +1262,21 @@
     else if (margin <= CFG.CLEAN_MARGIN) { refund = CFG.GAS_REFUND_CLEAN; label = '低空飞越'; }
     if (refund > 0) state.gas = Math.min(CFG.GAS_MAX, state.gas + refund);
 
-    var gain = CFG.SCORE_PER_TOLL + Math.round((state.speed - CFG.BASE_SPEED) * 4) + refund * CFG.REFUND_SCORE;
+    /* 带着空翻飞过收费站 —— 发布会同款动作，额外给分 */
+    var airBonus = state.airFlips > 0 ? CFG.FLIP_AIR_BONUS * Math.min(state.airFlips, 3) : 0;
+
+    var gain = CFG.SCORE_PER_TOLL + Math.round((state.speed - CFG.BASE_SPEED) * 4) + refund * CFG.REFUND_SCORE + airBonus;
     state.score += gain;
     state.speed = Math.min(CFG.MAX_SPEED, CFG.BASE_SPEED + state.cleared * CFG.SPEED_STEP);
     Sound.ding();
     Sound.whoosh();
-    if (label) {
-      state.refunds++;
-      toast(label + '  +' + gain + '  ·  冷气 +' + refund + '%', '#6ff0c0');
-    } else {
-      toast('飞越成功  +' + gain, '#6ff0c0');
-    }
+    var parts = [];
+    if (label) { state.refunds++; parts.push(label); }
+    else parts.push('飞越成功');
+    if (airBonus) parts.push('横滚飞越');
+    parts.push('+' + gain);
+    if (refund) parts.push('冷气 +' + refund + '%');
+    toast(parts.join('  ·  '), airBonus ? '#9fd0ff' : '#6ff0c0');
     if (state.cleared % 5 === 0) toast('连飞 ' + state.cleared + ' 站！', '#ffd166');
   }
 
@@ -1313,6 +1419,16 @@
     el.gasTrack.classList.toggle('low', low && g > 0.0005);
     el.gasCaption.classList.toggle('low', low);
     el.gasCaption.textContent = '冷气 ' + Math.round(g * 100) + '%';
+
+    /* 翻转按钮：现在能不能按、按下去是不是正在翻 */
+    if (el.btnFlip) {
+      var canFlip = state.mode === 'playing' && !state.flipping &&
+        state.alt >= CFG.FLIP_MIN_ALT && state.gas >= CFG.FLIP_GAS;
+      el.btnFlip.classList.toggle('on', canFlip);
+      el.btnFlip.classList.toggle('flipping', state.flipping);
+      el.btnFlip.classList.toggle('empty', state.gas < CFG.FLIP_GAS);
+      el.btnFlip.style.setProperty('--p', state.flipping ? (state.flipT * 100).toFixed(1) : '0');
+    }
   }
 
   /* 跟车相机：斜后方 3/4 视角（正后方会把车拍成一个方盒子，
@@ -1325,10 +1441,13 @@
     var alt = state.alt;
     var spd = state.speed;
 
+    /* 横滚时镜头往右后方让一点、退一点：车身在画面里是斜着转圈的，不至于糊成一团黑 */
+    state.camFlip += ((state.flipping ? 1 : 0) - state.camFlip) * (1 - Math.pow(0.002, dt));
+
     camDesired.set(
-      car.position.x * 0.5 + CAM_SIDE,
-      CAM_UP + alt * 0.86,
-      car.position.z + CAM_BACK + (spd - CFG.BASE_SPEED) * 0.045
+      car.position.x * 0.5 + CAM_SIDE + state.camFlip * 2.4,
+      CAM_UP + alt * 0.86 + state.camFlip * 0.8,
+      car.position.z + CAM_BACK + (spd - CFG.BASE_SPEED) * 0.045 + state.camFlip * 1.4
     );
 
     var k1 = 1 - Math.pow(0.0016, dt);
@@ -1337,8 +1456,8 @@
     /* 视线目标夹在车与相机之间（同样带一点横偏），车身落在画面中偏左，
        右侧留出道路纵深 —— 斜视角该有的构图 */
     lookDesired.set(
-      car.position.x * 0.7 + CAM_SIDE * 0.22,
-      alt * 0.92 + 1.15,
+      car.position.x * 0.7 + CAM_SIDE * 0.22 + state.camFlip * 0.2,
+      alt * 0.92 + 1.15 + state.camFlip * 0.5,
       car.position.z - 14
     );
     camLook.lerp(lookDesired, 1 - Math.pow(0.0022, dt));
@@ -1362,6 +1481,7 @@
    *  主循环
    * ------------------------------------------------------------------ */
   var clock = new T.Clock();
+  var paused = false;   // 调试用：暂停时间推进但仍渲染（截图取姿态）
 
   function rollWheels(distance) {
     roadster.wheels.forEach(function (wheel) {
@@ -1371,7 +1491,7 @@
 
   function tick() {
     var dtReal = clock.getDelta();
-    var dt = Math.min(dtReal, 0.05);   // 物理步长封顶，避免卡顿时穿模
+    var dt = paused ? 0 : Math.min(dtReal, 0.05);   // 物理步长封顶，避免卡顿时穿模
     state.time += dt;
 
     var thrusting = false;
@@ -1401,22 +1521,39 @@
           toast('冷气耗尽 —— 无法再起飞', '#ff8a6b');
         }
       } else {
-        state.vy = Math.max(-CFG.MAX_UP_V * 1.4, state.vy - CFG.GRAVITY * dt);
+        /* 空翻期间喷嘴一直在配平，车身被托住，重力只按一部分生效 */
+        var gScale = state.flipping ? CFG.FLIP_GRAVITY : 1;
+        state.vy = Math.max(-CFG.MAX_UP_V * 1.4, state.vy - CFG.GRAVITY * gScale * dt);
       }
       state.alt += state.vy * dt;
-      if (state.alt <= 0) {
-        state.alt = 0;
+      /* 翻转中喷嘴托着车身：不让车头在 270° 那一下啃进路面 */
+      var floorY = state.flipping ? CFG.FLIP_FLOOR : 0;
+      if (state.alt <= floorY) {
+        state.alt = floorY;
         if (state.vy < 0) {
-          if (state.vy < -6) Sound.whoosh();
+          if (state.vy < -6 && floorY === 0) Sound.whoosh();
           state.vy = 0;
         }
+        if (!state.flipping) state.airFlips = 0;   // 落地：连翻计数清零
       }
 
-      /* 车姿态 */
-      car.position.set(0, state.alt, state.carZ);
-      var pitch = Math.max(-0.42, Math.min(0.42, state.vy * 0.017));
-      car.rotation.x += (pitch - car.rotation.x) * (1 - Math.pow(0.001, dt));
-      car.rotation.z = Math.sin(state.time * 3.4) * 0.008;
+      /* 空中翻转：推进进度并结算 */
+      if (state.flipCool > 0) state.flipCool = Math.max(0, state.flipCool - dt);
+      if (state.flipping) {
+        state.flipT = Math.min(1, state.flipT + dt / CFG.FLIP_DUR);
+        /* 匀顺的整圈：起翻不突兀，收尾自己回正 */
+        var ft = state.flipT;
+        state.flip = ft * ft * (3 - 2 * ft) * Math.PI * 2;
+        if (state.flipT >= 1) completeFlip();
+      }
+
+      /* 车姿态：绕车身纵轴横滚（发布会那个左右翻），轴心在车重中心而不是车底 */
+      var fH = CFG.FLIP_PIVOT, fTh = state.flip * CFG.FLIP_DIR;
+      car.position.set(fH * Math.sin(fTh), state.alt + fH * (1 - Math.cos(fTh)), state.carZ);
+      var pitch = Math.max(-0.42, Math.min(0.42, state.vy * 0.017)) * (state.flipping ? 0.25 : 1);
+      state.pitch += (pitch - state.pitch) * (1 - Math.pow(0.001, dt));
+      car.rotation.x = state.pitch;
+      car.rotation.z = fTh + Math.sin(state.time * 3.4) * 0.008;
 
       updateWorldRecycle();
       updateTollLogic();
@@ -1426,6 +1563,7 @@
         var on = thrusting;
         var boost = Math.min(1, Math.max(0, state.vy / CFG.MAX_UP_V));
         var airborne = state.alt > 0.6;
+        var flipping = state.flipping;
 
         var sidePhase = (state.time % 0.72) / 0.72;
         var sideWave = Math.sin(sidePhase * Math.PI * 2);
@@ -1440,16 +1578,24 @@
         }
         var power = on ? sputter : 0;
 
-        setJets(
-          power * (0.55 + boost * 0.45),
-          power * (0.45 + boost * 0.55),
-          sideL * power, sideR * power
-        );
+        var underJet = power * (0.55 + boost * 0.45);
+        var rearJet = power * (0.45 + boost * 0.55);
 
-        roadster.thrustLight.intensity += ((on ? 1.6 : 0) - roadster.thrustLight.intensity) * (1 - Math.pow(0.01, dt));
+        /* 空翻时姿态喷口接管：左右侧交替猛喷把车身翻过去，底喷托着不让它掉 */
+        if (flipping) {
+          var fw = Math.sin(state.flipT * Math.PI * 4);
+          sideR = Math.max(0, fw);
+          sideL = Math.max(0, -fw);
+          underJet = Math.max(underJet, 0.34);
+          rearJet = Math.max(rearJet, 0.18);
+        }
+
+        setJets(underJet, rearJet, sideL, sideR);
+
+        roadster.thrustLight.intensity += (((on || flipping) ? 1.6 : 0) - roadster.thrustLight.intensity) * (1 - Math.pow(0.01, dt));
 
         /* ---- 白雾粒子：高压气体膨胀致冷，水汽凝结成白雾 ---- */
-        if (on) {
+        if (on && !flipping && !paused) {
           var spread = state.alt < 1.7 ? 3.4 : 1.1;   // 贴近地面时气流向四周铺开
           for (var pe = 0; pe < 4; pe++) {
             psExhaust.spawn(
@@ -1480,6 +1626,38 @@
             );
           }
         }
+
+        /* ---- 空翻配平：白雾从车身两侧甩出去，跟着车身一起转 ---- */
+        if (flipping && !paused) {
+          var fSign = Math.sin(state.flipT * Math.PI * 4) >= 0 ? 1 : -1;
+          for (var pf = 0; pf < 3; pf++) {
+            var fp = flipPoint(fSign * (0.80 + Math.random() * 0.25), 0.50, (Math.random() - 0.5) * 2.4);
+            psExhaust.spawn(
+              fp.x, fp.y, fp.z,
+              fSign * (3.5 + Math.random() * 5.5),
+              (Math.random() - 0.5) * 2.6,
+              (Math.random() - 0.5) * 3.4,
+              0.94, 0.97, 1.0,
+              0.26 + Math.random() * 0.34,
+              0.20 + Math.random() * 0.22,
+              0.90, 1.1, 1.3
+            );
+          }
+          /* 底喷托举 */
+          for (var pb = 0; pb < 2; pb++) {
+            var bp = flipPoint((Math.random() < 0.5 ? -0.55 : 0.55), 0.08, (Math.random() < 0.5 ? -0.75 : 1.30));
+            psExhaust.spawn(
+              bp.x, bp.y, bp.z,
+              (Math.random() - 0.5) * 1.6,
+              -2.4 - Math.random() * 3.2,
+              (Math.random() - 0.5) * 1.6,
+              0.94, 0.97, 1.0,
+              0.28 + Math.random() * 0.30,
+              0.18 + Math.random() * 0.20,
+              0.90, 1.0, 1.3
+            );
+          }
+        }
       }
 
       /* 速度音 */
@@ -1491,6 +1669,9 @@
       /* 最佳点火光带 + 提示 */
       var nt = findNextToll();
       var dry = state.gas <= 0;
+      /* 能横滚的时候，把快捷键缀在「不着急」的提示后面 —— 赶时间的两句不缀 */
+      var flipReady = !state.flipping && state.alt >= CFG.FLIP_MIN_ALT && state.gas >= CFG.FLIP_GAS;
+      var flipHint = flipReady ? (TOUCH ? '右下角「翻转」' : '<kbd>F</kbd>/右键 横滚') : '';
 
       if (dry) {
         takeoffLine.visible = false;
@@ -1518,14 +1699,24 @@
           el.prompt.textContent = '太晚了 —— 快拉起来！';
         } else {
           el.prompt.classList.remove('hot');
-          el.prompt.textContent = '准备点火…';
+          el.prompt.innerHTML = flipHint ? '准备点火…  ·  ' + flipHint : '准备点火…';
         }
       } else {
         takeoffLine.visible = false;
         el.dist.textContent = nt ? Math.round(nt.dist) : '---';
         el.prompt.classList.remove('hot');
         el.prompt.classList.remove('dry');
-        el.prompt.textContent = state.alt > 0.5 ? '松开就下落 —— 稳住高度' : '长按 <kbd>空格</kbd> / 点击屏幕 点火起飞';
+        if (state.flipping) {
+          el.prompt.textContent = '横滚中 —— 喷嘴在配平';
+        } else if (flipReady) {
+          el.prompt.innerHTML = TOUCH
+            ? '点右下角「翻转」横滚一圈'
+            : '按 <kbd>F</kbd> 或鼠标右键 横滚一圈 · 冷气 −' + CFG.FLIP_GAS + '%';
+        } else if (state.alt > 0.5) {
+          el.prompt.textContent = '松开就下落 —— 稳住高度';
+        } else {
+          el.prompt.innerHTML = '长按 <kbd>空格</kbd> / 点击屏幕 点火起飞';
+        }
       }
     } else if (state.mode === 'crashing') {
       state.crashTimer += Math.min(dtReal, 0.25);   // 用真实时间，低帧率下结算也不会拖慢
@@ -1535,7 +1726,8 @@
       state.vy -= CFG.GRAVITY * 0.55 * dt;
       state.alt = Math.max(0, state.alt + state.vy * dt);
 
-      car.position.set(0, state.alt, state.carZ);
+      var cTh = state.flip * CFG.FLIP_DIR;
+      car.position.set(CFG.FLIP_PIVOT * Math.sin(cTh), state.alt + CFG.FLIP_PIVOT * (1 - Math.cos(cTh)), state.carZ);
       car.rotation.x += state.spin * dt;
       car.rotation.z += state.spin * 0.7 * dt;
       car.rotation.y += state.spin * 0.45 * dt;
@@ -1575,14 +1767,22 @@
   function pressUp() {
     state.thrusting = false;
   }
+  var thrustIds = {};   // 正在按住 canvas 的指针
 
   window.addEventListener('keydown', function (e) {
+    /* Ctrl+F / Cmd+F 是浏览器查找，别当成横滚 */
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.code === 'Space' || e.key === ' ') {
       e.preventDefault();
       if (state.mode === 'playing') pressDown();
       else if (state.mode === 'over') resetGame();
     } else if (e.key === 'r' || e.key === 'R') {
       if (state.mode === 'over') resetGame();
+    } else if (e.code === 'KeyF' || e.key === 'f' || e.key === 'F' ||
+               e.code === 'ArrowUp' || e.key === 'ArrowUp' || e.key === 'Shift') {
+      e.preventDefault();
+      if (e.repeat) return;
+      startFlip();
     } else if (e.key === 'm' || e.key === 'M') {
       applyMute(!mutedPref);
     }
@@ -1594,14 +1794,40 @@
   canvas.addEventListener('pointerdown', function (e) {
     e.preventDefault();
     Sound.init();
+    /* 鼠标右键 = 横滚，不点火；左键/手指仍然是点火 */
+    if (e.button === 2) { startFlip(); return; }
+    thrustIds[e.pointerId] = true;
     pressDown();
   });
-  window.addEventListener('pointerup', pressUp);
-  window.addEventListener('pointercancel', pressUp);
-  window.addEventListener('blur', pressUp);
+  /* 右键菜单会挡住画面，直接吃掉 */
+  canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  /* 只认「按在 canvas 上」的手指：右手点翻转按钮时，别把左手的推力一起掐了 */
+  window.addEventListener('pointerup', function (e) {
+    if (!thrustIds[e.pointerId]) return;
+    delete thrustIds[e.pointerId];
+    for (var k in thrustIds) { if (thrustIds[k]) return; }
+    pressUp();
+  });
+  window.addEventListener('pointercancel', function (e) {
+    if (!thrustIds[e.pointerId]) return;
+    delete thrustIds[e.pointerId];
+    for (var k in thrustIds) { if (thrustIds[k]) return; }
+    pressUp();
+  });
+  window.addEventListener('blur', function () { thrustIds = {}; pressUp(); });
 
   el.btnStart.addEventListener('click', function () { resetGame(); });
   el.btnRetry.addEventListener('click', function () { resetGame(); });
+
+  /* 翻转按钮（手机主入口，桌面也能点）—— 必须挡住，别让指针事件落到 canvas 上变成点火 */
+  if (el.btnFlip) {
+    el.btnFlip.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      Sound.init();
+      startFlip();
+    });
+  }
 
   /* ------------------------------------------------------------------ *
    *  静音开关（按钮 / M 键，状态存本机）
@@ -1626,7 +1852,7 @@
   }
 
   document.addEventListener('visibilitychange', function () {
-    if (document.hidden) { pressUp(); Sound.engine(false); }
+    if (document.hidden) { thrustIds = {}; pressUp(); Sound.engine(false); }
     else if (state.mode === 'playing') { Sound.init(); Sound.engine(true); }
   });
 
@@ -1666,7 +1892,8 @@
 
   /* 调试钩子：可在控制台查看状态、手动改参数 */
   window.__roadster = {
-    state: state, CFG: CFG, tolls: tolls, reset: resetGame,
+    state: state, CFG: CFG, tolls: tolls, reset: resetGame, flip: startFlip,
+    pause: function (v) { paused = v !== false; }, camLook: camLook, ps: psExhaust,
     renderer: renderer, camera: camera, scene: scene, car: car, roadster: roadster
   };
 })();

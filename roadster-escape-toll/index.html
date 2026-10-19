@@ -65,6 +65,16 @@
 
   <div class="toast" id="toast"></div>
 
+  <!-- 空中翻转（A71 姿态控制） -->
+  <button id="btnFlip" class="flip-btn" type="button" aria-label="空中翻转" title="空中翻转（F / Shift / 鼠标右键）">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.2 12a8.2 8.2 0 1 1-2.7-6.1"/>
+      <path d="M20.4 4.4V9.6h-5.2"/>
+    </svg>
+    <span class="flip-label">翻转</span>
+    <i class="flip-key">F</i>
+  </button>
+
   <button id="btnMute" class="mute-btn" type="button" aria-label="静音" aria-pressed="false" title="静音（M）">
     <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path class="spk" d="M4.5 9.5v5h3.2L12 18V6L7.7 9.5H4.5z" fill="currentColor" stroke="none"/>
@@ -86,6 +96,7 @@
       <li>不燃烧、无尾焰：高压气体喷出后骤冷，水汽凝结成白雾</li>
       <li><b class="warn">冷气是定量的</b>：一趟只装一罐，<b>烧完不补充</b>；满罐只有 5 秒总点火时间，约够点 7 次火 —— 按住不放最费气</li>
       <li>在收费站<b>前方</b>点火，飞越整座收费站即得 100 分</li>
+      <li>腾空后按 <b>F</b> / <b>Shift</b> / <b>鼠标右键</b> / 点右下角「翻转」—— 车身左右横滚一整圈，喷嘴自动配平、落地自己回正；每翻一次 <b>+80</b> 分，同一次腾空连翻还能加成（每次耗 5% 冷气）</li>
       <li>点火太晚 &rarr; <span class="bad">撞上收费站</span>；推力过猛 &rarr; <span class="bad">飞过头冲出马路</span></li>
     </ul>
     <button id="btnStart" class="btn">开始起飞</button>
