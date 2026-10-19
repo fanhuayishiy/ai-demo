@@ -422,12 +422,19 @@ kbd {
 @keyframes blink { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
 
 @media (max-width: 560px) {
-  .gauges { right: 10px; gap: 9px; }
+  .gauges { right: 10px; gap: 10px; }
+  .gauge { min-width: 58px; }
   .gauge-track { height: 170px; }
-  .gauge-caption { font-size: 9px; letter-spacing: 1px; }
+  .gauge-caption { font-size: 9px; letter-spacing: 0; }
   .hud-top { padding: 12px; }
   .score-main { font-size: 26px; }
   .speed-num { font-size: 22px; }
-  .card { padding: 24px 20px 20px; border-radius: 18px; }
+  .card { padding: 20px 18px 18px; border-radius: 18px; }
   .over-score .big { font-size: 46px; }
+  /* 底部让开左下角约 66px 高的 GitHub 悬浮入口，避免遮挡提示语 */
+  .hud-bottom { bottom: 84px; }
+  .overlay { padding: 14px 14px 84px; }
+  .rules { gap: 7px; margin-bottom: 18px; }
+  .rules li { font-size: 12.5px; line-height: 1.52; padding-left: 18px; }
+  .rules li::before { top: 7px; width: 6px; height: 6px; }
 }
