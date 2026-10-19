@@ -44,11 +44,11 @@
     /* 低空飞越返还：点火越晚、穿站越低，回收的冷气越多。
        门槛按实测标定 —— 跟着蓝色提示点火并抬到 9.3 时，穿站高度约 19；
        每延迟点火 80ms 约降低 1 个高度单位，压到 13 已是精细操作。 */
-    GAS_REFUND_TIGHT: 8,     // 车底最低点 ≤ CLEAR_ALT + TIGHT_MARGIN
-    GAS_REFUND_CLEAN: 4,     // ≤ CLEAR_ALT + CLEAN_MARGIN
+    GAS_REFUND_TIGHT: 5,     // 车底最低点 ≤ CLEAR_ALT + TIGHT_MARGIN
+    GAS_REFUND_CLEAN: 2,     // ≤ CLEAR_ALT + CLEAN_MARGIN
     TIGHT_MARGIN: 4.4,       // → 13.0
     CLEAN_MARGIN: 8.4,       // → 17.0
-    REFUND_SCORE: 6,         // 每返还 1% 冷气额外给的分
+    REFUND_SCORE: 4,         // 每返还 1% 冷气额外给的分
 
     /* 收费站间距：正常 170–250 随机，每 DOUBLE_EVERY 个间隔插一次「连站」 */
     TOLL_GAP_MIN: 170,
