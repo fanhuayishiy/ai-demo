@@ -51,6 +51,25 @@ jobs:
         if: steps.creds.outputs.ready == 'true'
         run: npm run build:pages
 
+      # Cloudflare 会把静态资源的 Cache-Control 抬到 4 小时且部署不清缓存，
+      # 给资源加上提交哈希作为查询串，URL 一变就绕开旧缓存。
+      - name: Stamp asset version
+        if: steps.creds.outputs.ready == 'true'
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          node -e '
+          const fs = require("fs");
+          const p = "_site/roadster-escape-toll/index.html";
+          const v = process.env.SHA.slice(0, 8);
+          let s = fs.readFileSync(p, "utf8");
+          for (const f of ["game.js", "roadster-model.js", "style.css"]) {
+            s = s.split("\"./" + f + "\"").join("\"./" + f + "?v=" + v + "\"");
+          }
+          fs.writeFileSync(p, s);
+          console.log("stamped", v);
+          '
+
       - name: Deploy to Cloudflare Pages
         if: steps.creds.outputs.ready == 'true'
         uses: cloudflare/wrangler-action@v3
