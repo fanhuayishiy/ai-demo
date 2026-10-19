@@ -1,0 +1,2619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>浅海 · Ocean Shallows</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #04121c; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #cap {
+    position: fixed; left: 22px; bottom: 18px; pointer-events: none; user-select: none;
+    font: 11px/1.7 "Helvetica Neue", "PingFang SC", Arial, sans-serif;
+    letter-spacing: .34em; text-transform: uppercase;
+    color: rgba(255,255,255,.42); text-shadow: 0 1px 6px rgba(0,0,0,.55);
+  }
+  #cap b { display:block; font-weight: 500; font-size: 13px; letter-spacing: .42em; color: rgba(255,255,255,.62); }
+  #err {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    color: #cfe9f2; font: 14px/1.8 monospace; background: #04121c; padding: 40px; white-space: pre-wrap;
+  }
+  /* 后期氛围层：纯 CSS 合成，不占 GPU 绘制开销。
+     只做一层很轻的暗角，把视线收向画面中心；强度必须克制，
+     否则整幅画面会发闷、色彩变脏。 */
+  #grade {
+    position: fixed; inset: 0; pointer-events: none; z-index: 2;
+    background:
+      radial-gradient(125% 115% at 50% 42%,
+        rgba(0, 0, 0, 0) 52%,
+        rgba(4, 28, 44, .10) 78%,
+        rgba(3, 20, 33, .22) 100%);
+  }
+</style>
+</head>
+<body>
+<div id="grade"></div>
+<div id="cap"><b>Ocean Shallows</b>浅海 · 潮间带</div>
+<div id="err"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  if (!window.THREE) {
+    var e = document.getElementById('err');
+    e.style.display = 'flex';
+    e.textContent = 'Three.js 加载失败，请检查网络（cdnjs）。';
+    return;
+  }
+
+  /* =========================================================
+     常量：海岸线是一个大圆弧，圆心在画面左上角之外
+     世界上 xz 平面；d = |p - C| - R ，d > 0 为海，d < 0 为陆
+     ========================================================= */
+  var SHORE_CX = -64.0, SHORE_CZ = -52.0, SHORE_R = 58.0;
+
+  var PALM = { x: -29.5, z: -13.5 };
+  var PALM_TOP = new THREE.Vector2(4.8, 3.2);   // 树冠相对树根的水平偏移
+  var PALM_HEIGHT = 12.5;
+
+  // 太阳方向（指向太阳）：约 59° 高度角，影子短而清楚，落在沙滩与浅海上
+  var SUN = new THREE.Vector3(-0.26, 0.86, -0.44).normalize();
+
+  var SIM_N = 256;
+  var SIM_CX = -5.0, SIM_CZ = -12.0, SIM_SIZE = 160.0;
+
+  /* =========================================================
+     Renderer / Scene / Camera
+     ========================================================= */
+  var renderer;
+  try {
+    // 关闭 MSAA：本身会在 DPR 下渲染，AA 的带宽开销大于收益
+    renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance' });
+  } catch (err) {
+    var el = document.getElementById('err');
+    el.style.display = 'flex';
+    el.textContent = 'WebGL 初始化失败：' + err.message;
+    return;
+  }
+  // 分辨率倍率由自适应控制器维护（见 tuneQuality）
+  // 上限就取 1.0：3D 场景在 1x 下已足够清晰，而像素数与倍率是平方关系
+  var pixelRatio = Math.min(window.devicePixelRatio || 1, 1.0);
+  renderer.setPixelRatio(pixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x061a24, 1);
+  document.body.appendChild(renderer.domElement);
+
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.5, 900);
+  camera.position.set(10, 33, 26);
+  camera.lookAt(-7, 0, -11);
+
+  // 只有棕榈树用真实光照（水面与沙滩是自定义着色器）
+  var sunLight = new THREE.DirectionalLight(0xfff0d6, 1.25);
+  sunLight.position.copy(SUN).multiplyScalar(60);
+  scene.add(sunLight);
+  scene.add(new THREE.HemisphereLight(0xbfe6ff, 0x6e5a3c, 0.85));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.18));
+
+  /* =========================================================
+     GLSL 公共库
+     ========================================================= */
+  var GLSL_HEAD = [
+    '#define PI 3.14159265359',
+    '#define SHORE_C vec2(' + SHORE_CX.toFixed(2) + ', ' + SHORE_CZ.toFixed(2) + ')',
+    '#define SHORE_R ' + SHORE_R.toFixed(2),
+    '#define SIM_C vec2(' + SIM_CX.toFixed(2) + ', ' + SIM_CZ.toFixed(2) + ')',
+    '#define SIM_S ' + SIM_SIZE.toFixed(2),
+    ''
+  ].join('\n');
+
+  // 海岸线：在圆弧上叠加多尺度角向扰动，得到自然蜿蜒的岸线
+  var GLSL_SHORE = [
+    'float shoreD(vec2 q){',
+    '  vec2 rel = q - SHORE_C;',
+    '  float r = length(rel);',
+    '  float a = atan(rel.y, rel.x);',
+    '  float wob = 2.35 * sin(a * 3.0 + 0.65)',
+    '            + 1.30 * sin(a * 5.0 - 1.15)',
+    '            + 0.62 * sin(a * 8.0 + 2.30)',
+    '            + 0.28 * sin(a * 14.0 - 0.80);',
+    '  return r - SHORE_R + wob;',
+    '}',
+    ''
+  ].join('\n');
+
+  var GLSL_UNIFORMS = [
+    'uniform float uTime;',
+    'uniform vec3  uSunDir;',
+    'uniform vec2  uPalmBase;',
+    'uniform vec2  uPalmTop;',
+    'uniform float uPalmHeight;',
+    'uniform vec2  uSway;',
+    'uniform sampler2D uSim;',
+    'uniform sampler2D uScene;',
+    'uniform vec2  uRes;',
+    'uniform vec4  uRip[4];',   // xy=中心 xz, z=起始时间, w=强度
+    ''
+  ].join('\n');
+
+  // 点击水面的涟漪：解析式同心环。
+  // 环在半径 front 内是行波（尚未传到的外侧为 0），随距离与时间指数衰减。
+  // uRipN 是当前活跃数量：没有涟漪时整段直接跳过，正常播放时这一项零开销。
+  var GLSL_RIPPLE = [
+    'uniform float uRipN;',
+    'float rippleH(vec2 q, float t){',
+    '  if (uRipN < 0.5) return 0.0;',
+    '  float h = 0.0;',
+    '  for (int i = 0; i < 4; i++){',
+    '    if (float(i) >= uRipN) break;',
+    '    vec4 rp = uRip[i];',
+    '    float age = t - rp.z;',
+    '    float r = length(q - rp.xy);',
+    '    float front = age * 2.4;',
+    '    // 波前用很宽的过渡（而不是窄 smoothstep），否则环的外缘会出现硬台阶',
+    '    float gate = 1.0 - smoothstep(front * 0.55, front, r);',
+    '    float env = exp(-r * 0.16) * exp(-age * 0.32);',
+    '    h += sin(r * 1.7 - age * 3.4) * env * gate * rp.w;',
+    '  }',
+    '  return h;',
+    '}',
+    '// 涟漪对水面法线的贡献（解析梯度，省掉额外采样）',
+    'vec2 rippleGrad(vec2 q, float t){',
+    '  if (uRipN < 0.5) return vec2(0.0);',
+    '  vec2 g = vec2(0.0);',
+    '  for (int i = 0; i < 4; i++){',
+    '    if (float(i) >= uRipN) break;',
+    '    vec4 rp = uRip[i];',
+    '    float age = t - rp.z;',
+    '    vec2 dv = q - rp.xy;',
+    '    float r = max(length(dv), 1e-4);',
+    '    float front = age * 2.4;',
+    '    float gate = 1.0 - smoothstep(front * 0.55, front, r);',
+    '    float env = exp(-r * 0.16) * exp(-age * 0.32);',
+    '    float s = sin(r * 1.7 - age * 3.4);',
+    '    float c = cos(r * 1.7 - age * 3.4);',
+    '    // d/dr [ sin(r k) * exp(-r a) ] = (k cos - a sin) exp(-r a)',
+    '    float dr = (1.7 * c - 0.16 * s) * env * gate;',
+    '    g += (dv / r) * dr * rp.w;',
+    '  }',
+    '  return g;',
+    '}',
+    ''
+  ].join('\n');
+
+  var GLSL_NOISE = [
+    // 程序化值噪声：4 次 hash 换 1 个 sample，在移动 GPU 上比纹理采样更划算
+    'float hash21(vec2 p){',
+    '  p = fract(p * vec2(127.1, 311.7));',
+    '  p += dot(p, p + 34.23);',
+    '  return fract(p.x * p.y * 3.71);',
+    '}',
+    'float vnoise(vec2 p){',
+    '  vec2 i = floor(p);',
+    '  vec2 f = p - i;',
+    '  f = f * f * (3.0 - 2.0 * f);',
+    '  float a = hash21(i);',
+    '  float b = hash21(i + vec2(1.0, 0.0));',
+    '  float c = hash21(i + vec2(0.0, 1.0));',
+    '  float dd = hash21(i + vec2(1.0, 1.0));',
+    '  return mix(mix(a, b, f.x), mix(c, dd, f.x), f.y);',
+    '}',
+    'float fbm2(vec2 p){ return vnoise(p) * 0.64 + vnoise(p * 2.03 + 11.3) * 0.36; }',
+    ''
+  ].join('\n');
+
+  // 涌浪：以岛屿圆心为中心的径向长波，向岸边推进
+  // 注意：这个函数在顶点和片元里都会被调用，必须保持廉价。
+  // 同时输出解析梯度 grad（水面法线用），避免在片元里做 4 次额外求值。
+  var GLSL_WAVE = [
+    'float swellHG(vec2 q, float t, out vec2 grad){',
+    '  vec2 rel = q - SHORE_C;',
+    '  float r = max(length(rel), 1e-3);',
+    '  float ang = atan(rel.y, rel.x);',
+    '  // 岸线扰动与 shoreD 共用同一组系数',
+    '  float wob = 2.35 * sin(ang * 3.0 + 0.65)',
+    '            + 1.30 * sin(ang * 5.0 - 1.15)',
+    '            + 0.62 * sin(ang * 8.0 + 2.30)',
+    '            + 0.28 * sin(ang * 14.0 - 0.80);',
+    '  float d = r - SHORE_R + wob;',
+    '  float shoal = smoothstep(52.0, 3.0, d);',
+    '',
+    '  // 两层低频扰动：让波峰蜿蜒，而不是同心圆',
+    '  float w1 = vnoise(q * 0.055 + vec2(t * 0.014, 0.0));',
+    '  float w2 = vnoise(q * 0.145 - vec2(0.0, t * 0.011));',
+    '  float rr = r + (w1 - 0.5) * 11.0 + (w2 - 0.5) * 4.2',
+    '                + 1.6 * sin(ang * 3.0 + t * 0.12)',
+    '                + 0.9 * sin(ang * 5.0 - t * 0.09);',
+    '  float ph = rr * 0.40 - t * 0.58;',
+    '  float h  = sin(ph) * 0.420 * shoal;',
+    '  h += sin(ph * 2.0 + 2.1) * 0.080 * shoal;',
+    '',
+    '  // ---- 解析梯度：d(h)/dq ≈ d(h)/dr * dirR ----',
+    '  float c1 = cos(ph);',
+    '  float c2 = cos(ph * 2.0 + 2.1);',
+    '  float dhdr = c1 * 0.420 * 0.40 * shoal + c2 * 0.080 * 0.80 * shoal;',
+    '  grad = (rel / r) * dhdr;',
+    '',
+    '  // 风浪：静态相位偏移，省掉域扭曲噪声',
+    '  h += sin(q.x * 0.74 + q.y * 0.55 - t * 0.62) * 0.030;',
+    '  h += sin(-q.x * 0.83 + q.y * 1.16 - t * 0.84) * 0.020;',
+    '  grad += vec2(0.74, 0.55) * cos(q.x * 0.74 + q.y * 0.55 - t * 0.62) * 0.030;',
+    '  grad += vec2(-0.83, 1.16) * cos(-q.x * 0.83 + q.y * 1.16 - t * 0.84) * 0.020;',
+    '',
+    '  grad *= 1.85;   // 俯瞰视角下放大坡度，长波才看得出来',
+    '  return h;',
+    '}',
+    'float swellH(vec2 q, float t){',
+    '  vec2 g;',
+    '  return swellHG(q, t, g);',
+    '}',
+    ''
+  ].join('\n');
+
+  // 周期性拍岸涌浪 0..1（周期放慢）
+  var GLSL_SURF = [
+    'float surfPulse(float t){',
+    '  float p = fract(t * 0.095);',
+    '  return smoothstep(0.0, 0.30, p) * (1.0 - smoothstep(0.30, 0.94, p));',
+    '}',
+    '// 泡沫涌上沙滩的最远距离（内陆，米）',
+    'float runupOf(float pulse){ return 0.8 + 2.6 * pulse; }',
+    ''
+  ].join('\n');
+
+  // 水面波纹：解析式细网（比迭代式焦散便宜一个量级）
+  var GLSL_CAUSTIC = [
+    // 焦散：三组不同方向的行波，各自取「过零点」附近的脊线，取最大值得到
+    // 相互交错的细亮网——这正是阳光透过起伏水面聚焦在海底的样子。
+    // 两级域扭曲：低频让网线整体弯折，中频把笔直的线打碎成不规则曲线，
+    // 否则一眼就能看出是规则网格。全程 7 个 sin + 1 个 pow，开销可控。
+    'float caustics(vec2 p, float t){',
+    '  vec2 w  = vec2(sin(p.y * 0.62 + t * 0.35),',
+    '                 cos(p.x * 0.55 - t * 0.28)) * 0.85;',
+    '  w += vec2(sin(p.y * 1.90 - t * 0.52),',
+    '            cos(p.x * 1.70 + t * 0.45)) * 0.78;',
+    '  vec2 q = p + w;',
+    '  float a = 1.0 - abs(sin(q.x * 5.60 + q.y * 1.85 + t * 0.42));',
+    '  float b = 1.0 - abs(sin(q.y * 5.25 - q.x * 1.72 - t * 0.36));',
+    '  float c = 1.0 - abs(sin((q.x - q.y) * 4.05 + t * 0.29));',
+    '  float net = max(max(a, b), c);',
+    '  return pow(net, 10.0);',
+    '}',
+    ''
+  ].join('\n');
+
+  /* ---------- 棕榈树阴影（沙滩与浅海共用） ---------- */
+  var FROND_DEFS = [
+    [-2.95, 8.2], [-2.36, 9.6], [-1.74, 8.6], [-1.10, 9.8],
+    [-0.44, 8.8], [0.22, 9.9], [0.86, 8.7], [1.50, 9.4],
+    [2.14, 8.4], [2.76, 8.9], [3.34, 7.2], [3.86, 6.0]
+  ];
+
+  var GLSL_SHADOW = (function () {
+    var s = [];
+    s.push('float sdSeg(vec2 p, vec2 a, vec2 b, float r0, float r1){');
+    s.push('  vec2 pa = p - a, ba = b - a;');
+    s.push('  float h = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-4), 0.0, 1.0);');
+    s.push('  return length(pa - ba * h) - mix(r0, r1, h);');
+    s.push('}');
+
+    // 单叶阴影：返回 0..1 的遮挡量，边缘柔和、带羽状碎齿
+    s.push('float frondShadow(vec2 p, vec2 c, float ang, float len, float seed){');
+    s.push('  vec2 dir = vec2(cos(ang), -sin(ang));');
+    s.push('  vec2 perp = vec2(-dir.y, dir.x);');
+    s.push('  vec2 q = p - c;');
+    s.push('  float along = dot(q, dir);');
+    s.push('  float across = dot(q, perp);');
+    s.push('  float tt = clamp(along / len, 0.0, 1.0);');
+    // 叶片下垂：中轴是一条弧线
+    s.push('  float bend = 0.45 + fract(seed * 0.37) * 0.55;');
+    s.push('  across += bend * tt * tt * len * 0.42;');
+    // 叶形：根部窄、中段宽、叶尖收尖
+    s.push('  float w = mix(0.34, 0.82, smoothstep(0.0, 0.34, tt)) * (1.0 - 0.84 * pow(tt, 2.2));');
+    // 边缘被羽状小叶打出碎齿（降采样噪声，近看是羽毛状轮廓）
+    s.push('  float rag = (vnoise(vec2(along * 2.4, seed * 5.1)) - 0.5) * 0.30;');
+    s.push('  float dEdge = abs(across) - w + rag;');
+    // 关键：过渡区间很宽 => 柔软的叶片影子，而不是硬边扇形
+    s.push('  float body = 1.0 - smoothstep(-0.62, 0.52, dEdge);');
+    s.push('  body *= smoothstep(1.02, 0.55, tt);');
+    s.push('  body *= smoothstep(-0.85, 0.35, along);');
+    // 羽状分裂造成的细密透光（幅度小，远看是柔和的斑驳）
+    s.push('  float rach = clamp(abs(across) / max(w, 0.001), 0.0, 1.0);');
+    s.push('  float leaflet = 0.5 + 0.5 * sin(along * 16.0 + seed * 4.3 + rach * 2.4);');
+    s.push('  body *= mix(0.46, 1.0, smoothstep(0.0, 0.92, leaflet));');
+    s.push('  return body;');
+    s.push('}');
+
+    s.push('float palmShadow(vec2 p){');
+    s.push('  vec2 c = uPalmBase + uPalmTop + uSway - (uSunDir.xz / max(uSunDir.y, 0.001)) * uPalmHeight;');
+    // 早退：影子只占画面很小一块，范围内的像素才做 12 片叶子的 SDF 计算。
+    s.push('  if (length(p - c) > 16.0) return 1.0;');
+    s.push('  // 1) 树冠的整体软阴影：一个大而柔的椭圆，作为影子的底');
+    s.push('  vec2 dq = p - c;');
+    s.push('  float ca = cos(0.35), sa = sin(0.35);');
+    s.push('  vec2 rq = mat2(ca, -sa, sa, ca) * dq;');
+    s.push('  rq.y *= 1.28;');
+    s.push('  float blob = 1.0 - smoothstep(0.8, 4.2, length(rq));');
+    s.push('  blob *= 0.42;');
+    s.push('  // 2) 各叶片的碎影：取 max 保留叶形，不做求和（求和会饱和成一团）');
+    s.push('  float occ = blob;');
+    for (var i = 0; i < FROND_DEFS.length; i++) {
+      s.push('  occ = max(occ, frondShadow(p, c, ' + FROND_DEFS[i][0].toFixed(3) + ', ' +
+        FROND_DEFS[i][1].toFixed(2) + ', ' + (i + 1).toFixed(1) + ') * 0.92);');
+    }
+    s.push('  // 3) 树干阴影：细长，指向画面内侧');
+    s.push('  occ += (1.0 - smoothstep(-1.30, 1.55, sdSeg(p, uPalmBase, c, 0.62, 0.34))) * 0.85;');
+    s.push('  // 4) 整体软饱和：避免叠加后变成一团死黑');
+    s.push('  occ = clamp(occ, 0.0, 1.0);');
+    s.push('  occ = occ * occ * (3.0 - 2.0 * occ);');
+    s.push('  return 1.0 - occ * 0.58;');
+    s.push('}');
+    return s.join('\n') + '\n';
+  })();
+
+  /* ---------- 阴影图采样 ----------
+     12 片叶子的 SDF 每像素算一遍太贵（实测占整帧 35%）。
+     改为每帧把 palmShadow 渲进一张 384² 的小贴图，
+     水面/沙滩各做一次采样即可。 */
+  var GLSL_SHADOWMAP = [
+    'uniform sampler2D uShadow;',
+    'uniform vec3  uShadowXf;',   // xy=阴影中心, z=1/(2R)
+    'float palmShadowTex(vec2 p){',
+    '  vec2 uv = (p - uShadowXf.xy) * uShadowXf.z + 0.5;',
+    '  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 1.0;',
+    '  return texture2D(uShadow, uv).r;',
+    '}',
+    ''
+  ].join('\n');
+
+  var COMMON = GLSL_HEAD + GLSL_SHORE + GLSL_UNIFORMS + GLSL_NOISE + GLSL_RIPPLE + GLSL_WAVE + GLSL_SURF + GLSL_CAUSTIC + GLSL_SHADOWMAP;
+
+  /* =========================================================
+     共享 uniform
+     ========================================================= */
+  var U = {
+    uTime: { value: 0 },
+    uSunDir: { value: SUN.clone() },
+    uPalmBase: { value: new THREE.Vector2(PALM.x, PALM.z) },
+    uPalmTop: { value: PALM_TOP.clone() },
+    uPalmHeight: { value: PALM_HEIGHT },
+    uSway: { value: new THREE.Vector2(0, 0) },
+    uSim: { value: null },
+    uScene: { value: null },
+    uRes: { value: new THREE.Vector2(1, 1) },
+    uRip: { value: [
+      new THREE.Vector4(0, 0, -999, 0), new THREE.Vector4(0, 0, -999, 0),
+      new THREE.Vector4(0, 0, -999, 0), new THREE.Vector4(0, 0, -999, 0)
+    ] },
+    uRipN: { value: 0 },
+    uTerr: { value: null },
+    uMisc: { value: new THREE.Vector4(0, 0, 1 / 460, 0) },
+    uShadow: { value: null },
+    uShadowXf: { value: new THREE.Vector3(0, 0, 1 / 44) },   // xy=中心, z=1/(2R)
+    uWave: { value: null },
+    uWaveXf: { value: new THREE.Vector3(0, 0, 1 / 460) },
+    uDetail: { value: null }
+  };
+
+  /* =========================================================
+     GPU 高度场（height-field）波模拟 · ping-pong FBO
+     ========================================================= */
+  var isWebGL2 = renderer.capabilities.isWebGL2;
+  var gl = renderer.getContext();
+  var canFloat = isWebGL2 ? !!gl.getExtension('EXT_color_buffer_float')
+                          : !!gl.getExtension('OES_texture_float');
+  var simType = canFloat ? THREE.FloatType : THREE.HalfFloatType;
+  var simFilter = canFloat ? THREE.NearestFilter : THREE.LinearFilter;
+
+  function makeSimRT() {
+    return new THREE.WebGLRenderTarget(SIM_N, SIM_N, {
+      minFilter: simFilter,
+      magFilter: simFilter,
+      format: THREE.RGBAFormat,
+      type: simType,
+      wrapS: THREE.ClampToEdgeWrapping,
+      wrapT: THREE.ClampToEdgeWrapping,
+      depthBuffer: false,
+      stencilBuffer: false
+    });
+  }
+
+  var simRT = [makeSimRT(), makeSimRT()];
+  var simCur = 0;
+
+  var simMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uState: { value: null },
+      uTexel: { value: new THREE.Vector2(1 / SIM_N, 1 / SIM_N) },
+      uDamp: { value: 0.9955 },
+      uDrops: { value: [
+        new THREE.Vector4(0, 0, 0, 0), new THREE.Vector4(0, 0, 0, 0),
+        new THREE.Vector4(0, 0, 0, 0), new THREE.Vector4(0, 0, 0, 0)
+      ] }
+    },
+    vertexShader: [
+      'varying vec2 vUv;',
+      'void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }'
+    ].join('\n'),
+    fragmentShader: [
+      'uniform sampler2D uState;',
+      'uniform vec2  uTexel;',
+      'uniform float uDamp;',
+      'uniform vec4  uDrops[4];',
+      'varying vec2 vUv;',
+      '',
+      'void main(){',
+      '  vec4 s  = texture2D(uState, vUv);',
+      '  float h  = s.r;',
+      '  float hp = s.g;',
+      '',
+      '  float hl = texture2D(uState, vUv + vec2(-uTexel.x, 0.0)).r;',
+      '  float hr = texture2D(uState, vUv + vec2( uTexel.x, 0.0)).r;',
+      '  float hd = texture2D(uState, vUv + vec2(0.0, -uTexel.y)).r;',
+      '  float hu = texture2D(uState, vUv + vec2(0.0,  uTexel.y)).r;',
+      '',
+      '  float lap = hl + hr + hd + hu - 4.0 * h;',
+      '  float nh  = (2.0 * h - hp) + 0.30 * lap;',
+      '',
+      '  // ---- 边缘吸收：外围海绵层，把波能吃掉，杜绝边界反射 ----',
+      '  float edge = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y));',
+      '  nh *= mix(0.86, 1.0, smoothstep(0.0, 0.11, edge));',
+      '',
+      '  nh *= uDamp;',
+      '',
+      '  // ---- 阵风扰动（冲量注入） ----',
+      '  for (int i = 0; i < 4; i++){',
+      '    vec2 dv = vUv - uDrops[i].xy;',
+      '    float d2 = dot(dv, dv);',
+      '    nh += uDrops[i].w * exp(-d2 / max(uDrops[i].z, 1e-6));',
+      '  }',
+      '',
+      '  gl_FragColor = vec4(nh, h, 0.0, 1.0);',
+      '}'
+    ].join('\n'),
+    depthTest: false,
+    depthWrite: false
+  });
+
+  var simScene = new THREE.Scene();
+  var simCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  simScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), simMat));
+
+  // 每帧只推进 1 步（原来 2 步）：波速减半、开销减半
+  function stepSim(steps) {
+    var n = steps === undefined ? 1 : steps;
+    for (var i = 0; i < n; i++) {
+      simMat.uniforms.uState.value = simRT[simCur].texture;
+      renderer.setRenderTarget(simRT[1 - simCur]);
+      renderer.clear(true, false, false);
+      renderer.render(simScene, simCam);
+      simCur = 1 - simCur;
+    }
+    renderer.setRenderTarget(null);
+    U.uSim.value = simRT[simCur].texture;
+  }
+
+  var dropTimer = -1;
+  function updateDrops(t) {
+    var drops = simMat.uniforms.uDrops.value;
+    if (t - dropTimer > 0.34) {
+      dropTimer = t;
+      for (var i = 0; i < drops.length; i++) {
+        // 只在海域内撒扰动
+        var ux, uz, wx, wz, d, tries = 0;
+        do {
+          ux = Math.random(); uz = Math.random();
+          wx = SIM_CX + (ux - 0.5) * SIM_SIZE;
+          wz = SIM_CZ + (uz - 0.5) * SIM_SIZE;
+          d = Math.hypot(wx - SHORE_CX, wz - SHORE_CZ) - SHORE_R;
+          tries++;
+        } while (d < 1.0 && tries < 24);
+        var s = 0.010 + Math.random() * 0.016;
+        drops[i].set(ux, uz, 0.0011, s);
+      }
+    } else {
+      for (var j = 0; j < drops.length; j++) drops[j].w = 0;
+    }
+  }
+
+  /* =========================================================
+     沙滩 / 海床网格
+     ========================================================= */
+  var GLSL_GROUND_H = [
+    'float groundH(vec2 q){',
+    '  float d = shoreD(q);',
+    '  float dd = max(d, 0.0);',
+    '  // 近岸缓坡：从水线开始平缓下沉，离岸再加速变深',
+    '  float h = -(0.112 * dd + 0.0104 * dd * dd);',
+    '  // 陆上一侧的沙丘',
+    '  h += pow(smoothstep(-2.0, -50.0, d), 1.8) * 6.2;',
+    '  // 沙丘起伏：沙滩本身是平坦的就会像一张纸。这两层给了它 10~20m 的',
+    '  // 缓坡与 6~8m 的细起伏，靠明暗就能读出地形。只作用在陆地上。',
+    '  h += (fbm2(q * 0.052 + 9.1) - 0.5) * 3.4 * smoothstep(-3.0, -15.0, d);',
+    '  h += (fbm2(q * 0.135 + 5.5) - 0.5) * 0.95 * smoothstep(-2.0, -9.0, d);',
+      '  // 离岸沙坝与礁丘：让海底有起伏层次，浪在此处破碎。',
+      '  // 必须乘 smoothstep 从 0 起：exp() 在 d=0 处仍有非零值，',
+      '  // 会把水线附近的海床抬到水面之上，造成一小块"没有水面"的沙斑。',
+      '  float barMask = smoothstep(0.5, 5.0, dd);',
+      '  h += exp(-pow((dd - 11.0) / 8.0, 2.0)) * 0.26 * barMask;',
+      '  h += exp(-pow((dd - 28.0) / 13.0, 2.0)) * 0.48 * smoothstep(4.0, 14.0, dd);',
+    '  // 起伏：振幅随离岸距离渐增。近岸必须几乎为 0，',
+    '  // 否则噪声会把浅滩顶出水面，形成一条突兀的沙脊（曾经踩过的坑）。',
+    '  float und = (fbm2(q * 0.085 + 2.3) - 0.5) * 1.9',
+    '            + (fbm2(q * 0.240) - 0.5) * 0.55;',
+    '  h += und * smoothstep(3.0, 18.0, dd);',
+    '  h += (fbm2(q * 0.62 + 4.7) - 0.5) * 0.10 * smoothstep(2.0, 9.0, dd);',
+    '  return h;',
+    '}',
+    'float waterDepth(vec2 q){ return max(-groundH(q), 0.0); }'
+  ].join('\n');
+
+  /* =========================================================
+     地形数据烘焙
+     shoreD 里的 atan + 4 个 sin、groundH 里的 exp/pow，每像素算几十次
+     是最大的开销来源。这里在启动时烘焙成一张半浮点纹理，
+     之后所有着色器只做一次线性采样。
+     R: 岸线距离 d（-80..140）
+     G: 水深
+     B: 海底高度
+     ========================================================= */
+  var TERR_CX = 0, TERR_CZ = -25, TERR_SIZE = 460, TERR_N = 2048;
+  var TERR_D_MIN = -80, TERR_D_RANGE = 220;
+  var TERR_DEPTH_MAX = 40;
+
+  var terrRT = new THREE.WebGLRenderTarget(TERR_N, TERR_N, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat,
+    // HalfFloat 在 WebGL2 下是核心支持，线性过滤也有保证（Float 的线性过滤不一定有）
+    type: THREE.HalfFloatType,
+    wrapS: THREE.ClampToEdgeWrapping,
+    wrapT: THREE.ClampToEdgeWrapping,
+    depthBuffer: false,
+    stencilBuffer: false
+  });
+
+
+  function bakeTerrain() {
+    var mat = new THREE.ShaderMaterial({
+      uniforms: {
+        uSize: { value: TERR_SIZE },
+        uCenter: { value: new THREE.Vector2(TERR_CX, TERR_CZ) },
+        uDMin: { value: TERR_D_MIN },
+        uDRange: { value: TERR_D_RANGE },
+        uDepthMax: { value: TERR_DEPTH_MAX }
+      },
+      vertexShader: [
+        'varying vec2 vUv;',
+        'void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }'
+      ].join('\n'),
+      fragmentShader: [
+        COMMON,
+        GLSL_GROUND_H,
+        'uniform float uSize;',
+        'uniform vec2  uCenter;',
+        'uniform float uDMin;',
+        'uniform float uDRange;',
+        'uniform float uDepthMax;',
+        'varying vec2 vUv;',
+        'void main(){',
+        '  vec2 q = uCenter + (vUv - 0.5) * uSize;',
+        '  float d = shoreD(q);',
+        '  float h = groundH(q);',
+        '  float depth = max(-h, 0.0);',
+        '  gl_FragColor = vec4(',
+        '    (d - uDMin) / uDRange,',
+        '    depth / uDepthMax,',
+        '    clamp(h * 0.02 + 0.5, 0.0, 1.0),',
+        '    1.0);',
+        '}'
+      ].join('\n'),
+      depthTest: false,
+      depthWrite: false
+    });
+
+    var sc = new THREE.Scene();
+    var cm = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    sc.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat));
+    renderer.setRenderTarget(terrRT);
+    renderer.clear(true, false, false);
+    renderer.render(sc, cm);
+    renderer.setRenderTarget(null);
+    mat.dispose();
+
+    U.uMisc.value.set(TERR_CX, TERR_CZ, 1 / TERR_SIZE, 0);
+    U.uTerr.value = terrRT.texture;
+  }
+
+  /* =========================================================
+     波场预计算
+     水面片元里每像素要算：涌浪相位（atan + 4 个角向 sin + 2 次噪声）、
+     高度场采样与梯度、涟漪、细波噪声……在 1400×800 上就是几亿次运算。
+     这里把这些统一算进一张 384² 的 RGBA16F 贴图（每帧一次），
+     水面片元只需一次双线性采样。
+       R = 波高
+       G,B = 水面梯度（法线用）
+       A = 波峰斜率 wSlope*0.5+0.5（泡沫与明暗用）
+     ========================================================= */
+  var WAVE_N = 1024;
+  var waveRT = new THREE.WebGLRenderTarget(WAVE_N, WAVE_N, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat,
+    type: THREE.HalfFloatType,
+    wrapS: THREE.ClampToEdgeWrapping,
+    wrapT: THREE.ClampToEdgeWrapping,
+    depthBuffer: false,
+    stencilBuffer: false
+  });
+  U.uWave.value = waveRT.texture;
+  // 波场贴图只覆盖相机视线附近的核心水域，单位面积分辨率才有保障
+  var WAVE_CX = -2, WAVE_CZ = -4, WAVE_SIZE = 240;
+  U.uWaveXf.value.set(WAVE_CX, WAVE_CZ, 1 / WAVE_SIZE);
+
+  // 细节噪声贴图：水面片元要用的 4 层噪声也提前算好。
+  // 每像素省下 4 次 vnoise（16 次 hash），实测这是水片元里最大的一块。
+  var detailRT = new THREE.WebGLRenderTarget(WAVE_N, WAVE_N, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat,
+    type: THREE.UnsignedByteType,
+    wrapS: THREE.ClampToEdgeWrapping,
+    wrapT: THREE.ClampToEdgeWrapping,
+    depthBuffer: false,
+    stencilBuffer: false
+  });
+  U.uDetail.value = detailRT.texture;
+
+  var waveScene = new THREE.Scene();
+  var waveCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  var waveBakeMat = null;
+  var detailMat = null;
+  function buildWaveBake() {
+    waveScene.clear();
+    waveBakeMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: U.uTime,
+        uSim: U.uSim,
+        uRip: U.uRip,
+        uRipN: U.uRipN,
+        uWaveC: { value: new THREE.Vector2(WAVE_CX, WAVE_CZ) },
+        uWaveS: { value: WAVE_SIZE }
+      },
+      vertexShader: [
+        'varying vec2 vUv;',
+        'void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }'
+      ].join('\n'),
+      fragmentShader: [
+        GLSL_HEAD,
+        GLSL_SHORE,
+        GLSL_UNIFORMS,
+        GLSL_NOISE,
+        GLSL_RIPPLE,
+        GLSL_WAVE,
+        GLSL_SURF,
+        'uniform vec2 uWaveC;',
+        'uniform float uWaveS;',
+        'varying vec2 vUv;',
+        '',
+        'float simH(vec2 q){',
+        '  vec2 uv = (q - SIM_C) / SIM_S + 0.5;',
+        '  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 0.0;',
+        '  return texture2D(uSim, uv).r;',
+        '}',
+        '',
+        'void main(){',
+        '  vec2 q = uWaveC + (vUv - 0.5) * uWaveS;',
+        '  float t = uTime;',
+        '  float d = shoreD(q);',
+        '  float mask = smoothstep(-0.8, 2.5, d);',
+        '',
+        '  // 涌浪（含解析梯度）',
+        '  vec2 gS;',
+        '  float h = swellHG(q, t, gS);',
+        '',
+        '  // 高度场细波 + 它的梯度（4 次纹理采样）',
+        '  float hS = simH(q);',
+        '  h += hS * 0.55 * mask;',
+        '  float e = 0.17;',
+        '  vec2 gD = vec2(simH(q + vec2(e, 0.0)) - simH(q - vec2(e, 0.0)),',
+        '                 simH(q + vec2(0.0, e)) - simH(q - vec2(0.0, e)))',
+        '           / (2.0 * e) * (0.55 * 0.85 * mask);',
+        '',
+        '  // 细噪声起伏（只保留一层，够用）',
+        '  h += (vnoise(q * 2.2 + vec2(t * 0.20, t * 0.12)) - 0.5) * 0.030 * mask;',
+        '',
+        '  vec2 g = gS + gD;',
+        '',
+        '  // 着色用的涌浪相位（与水面着色器一致）',
+        '  vec2 wdir = normalize(vec2(-0.78, -0.63));',
+        '  float nA = vnoise(q * 0.048 + 6.1);',
+        '  float nB = vnoise(q * 0.150 - 3.3);',
+        '  vec2 relC = q - SHORE_C;',
+        '  float rrC = length(relC);',
+        '  float phJit = (vnoise(vec2(rrC * 0.11, t * 0.02)) - 0.5) * 1.5;',
+        '  float refr = smoothstep(32.0, 5.0, max(d, 0.0));',
+        '  float phArc = rrC * (0.40 + phJit * 0.055);',
+        '  float wWarp = (nA - 0.5) * 13.0 + (nB - 0.5) * 5.8;',
+        '  float wPh = mix(dot(q, wdir) * 0.40, phArc, refr)',
+        '             + wWarp * mix(1.0, 0.55, refr) - t * 0.58 + phJit;',
+        '  float wSlope = cos(wPh);',
+        '',
+        '  gl_FragColor = vec4(h, g, wSlope * 0.5 + 0.5);',
+        '}'
+      ].join('\n'),
+      depthTest: false,
+      depthWrite: false
+    });
+
+    waveScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), waveBakeMat));
+
+    // 细节噪声 pass：把水面着色器需要的 4 层噪声烘进一张图
+    detailMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: U.uTime,
+        uWaveC: { value: new THREE.Vector2(WAVE_CX, WAVE_CZ) },
+        uWaveS: { value: WAVE_SIZE }
+      },
+      vertexShader: [
+        'varying vec2 vUv;',
+        'void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }'
+      ].join('\n'),
+      fragmentShader: [
+        GLSL_UNIFORMS,
+        GLSL_NOISE,
+        'uniform vec2 uWaveC;',
+        'uniform float uWaveS;',
+        'varying vec2 vUv;',
+        'void main(){',
+        '  vec2 q = uWaveC + (vUv - 0.5) * uWaveS;',
+        '  float t = uTime;',
+        '  gl_FragColor = vec4(',
+        '    vnoise(q * 0.048 + 6.1),',
+        '    vnoise(q * 0.150 - 3.3),',
+        '    vnoise(q * 0.62 + vec2(t * 0.05, -t * 0.03)),',
+        '    1.0);',
+        '}'
+      ].join('\n'),
+      depthTest: false,
+      depthWrite: false
+    });
+    waveScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), detailMat));
+  }
+
+  function bakeWave() {
+    if (!waveBakeMat) return;
+    // 两个材质分别在两张 RT 上渲染
+    waveBakeMat.visible = true;
+    if (detailMat) detailMat.visible = false;
+    renderer.setRenderTarget(waveRT);
+    renderer.clear(true, false, false);
+    renderer.render(waveScene, waveCam);
+
+    if (detailMat) {
+      waveBakeMat.visible = false;
+      detailMat.visible = true;
+      renderer.setRenderTarget(detailRT);
+      renderer.clear(true, false, false);
+      renderer.render(waveScene, waveCam);
+      detailMat.visible = false;
+      waveBakeMat.visible = true;
+    }
+    renderer.setRenderTarget(null);
+  }
+
+  // 采样地形数据（片元里替换 shoreD / waterDepth）
+  var GLSL_TERRAIN = [
+    'uniform sampler2D uTerr;',
+    'uniform vec4 uMisc;',   // xy=中心, z=1/尺寸
+    '#define T_D_MIN ' + TERR_D_MIN.toFixed(1),
+    '#define T_D_RANGE ' + TERR_D_RANGE.toFixed(1),
+    '#define T_DEPTH_MAX ' + TERR_DEPTH_MAX.toFixed(1),
+    'vec2 terrUV(vec2 q){ return (q - uMisc.xy) * uMisc.z + 0.5; }',
+    'float texShoreD(vec2 q){',
+    '  return texture2D(uTerr, terrUV(q)).r * T_D_RANGE + T_D_MIN;',
+    '}',
+    'float texDepth(vec2 q){',
+    '  return texture2D(uTerr, terrUV(q)).g * T_DEPTH_MAX;',
+    '}',
+    // 海底高度（顶点位移用）
+    'float texGroundH(vec2 q){',
+    '  return (texture2D(uTerr, terrUV(q)).b - 0.5) * 50.0;',
+    '}',
+    ''
+  ].join('\n');
+
+  var groundMat = new THREE.ShaderMaterial({
+    uniforms: Object.assign({}, U),
+    vertexShader: [
+      COMMON,
+      GLSL_TERRAIN,
+      'varying vec3 vWorld;',
+      'void main(){',
+      '  vec3 p = position;',
+      '  p.y += texGroundH(p.xz);',
+      '  vWorld = p;',
+      '  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);',
+      '}'
+    ].join('\n'),
+    fragmentShader: [
+      COMMON,
+      GLSL_TERRAIN,
+      'varying vec3 vWorld;',
+      'void main(){',
+      '  vec2 q = vWorld.xz;',
+      '  float t = uTime;',
+      '  float d = texShoreD(q);',
+      '',
+      '  // ---- 沙面法线：直接采样烘焙地形，三次采样代替三次噪声链 ----',
+      '  float e = 0.34;',
+      '  float h0 = texGroundH(q);',
+      '  vec3 N = normalize(vec3(',
+      '    -(texGroundH(q + vec2(e, 0.0)) - h0) / e,',
+      '    1.0,',
+      '    -(texGroundH(q + vec2(0.0, e)) - h0) / e));',
+      '',
+      '  float pulse  = surfPulse(t);',
+      '  float inland = -d;',
+      '  float runup  = runupOf(pulse);',
+      '',
+      '  // ---- 湿度场：浪涌打湿的沙滩，退去后仍留湿痕 ----',
+      '  // 只在陆地上变湿；水下的沙是明亮的海床，不能压暗',
+      '  float wetEdge = runup + 1.0;',
+      '  float wet = 1.0 - smoothstep(wetEdge - 1.2, wetEdge + 2.0, inland);',
+      '  wet *= smoothstep(-0.25, 1.1, inland);',
+      '  wet *= 0.55 + 0.45 * fbm2(q * 0.35 + 4.2);',
+      '  wet = clamp(wet, 0.0, 1.0);',
+      '  // 水下的沙：明亮、微冷调（阳光透过水层照在白沙上）',
+      '  float submerged = smoothstep(-0.4, 1.6, d);',
+      '  wet *= 1.0 - submerged;',
+      '',
+      '  // ---- 沙纹（风与浪留下的细密条纹） ----',
+      '  // 两组不同方向、不同波长的沙纹叠加：单组会显得像整齐的瓦楞。',
+      '  vec2 rq = q + vec2(vnoise(q * 0.30), vnoise(q * 0.30 + 7.3)) * 3.6;',
+      '  rq += vec2(vnoise(q * 1.10 + 2.2), vnoise(q * 1.10 - 4.1)) * 0.85;',
+      '  float rA = sin(dot(rq, vec2(0.94, 0.34)) * 5.4 + vnoise(q * 2.1) * 2.2) * 0.5 + 0.5;',
+      '  float rB = sin(dot(rq, vec2(-0.42, 0.91)) * 8.7 + vnoise(q * 3.3 + 4.4) * 2.6) * 0.5 + 0.5;',
+      '  float ripple = pow(rA, 2.2) * 0.72 + pow(rB, 2.8) * 0.28;',
+      '  float ripMask = smoothstep(0.26, 0.78, fbm2(q * 0.20 + 2.1))',
+      '               * smoothstep(-7.0, 1.0, d) * smoothstep(11.0, 1.0, d);',
+      '  N = normalize(N + (vec3(0.94, 0.0, 0.34) * (rA - 0.5) * 0.36',
+      '                    + vec3(-0.42, 0.0, 0.91) * (rB - 0.5) * 0.18) * ripMask);',
+      '',
+      '  // ---- 沙色 ----',
+      '  float g1 = fbm2(q * 2.6);',
+      '  float g2 = vnoise(q * 19.0);',
+      '  // 中尺度的"干湿斑"：沙滩很少是均匀一片，总有深浅不一的湿气与压实度',
+      '  float patchy = fbm2(q * 0.55 + 17.3);',
+      '  vec3 dryC = vec3(0.872, 0.802, 0.658);',
+      '  vec3 wetC = vec3(0.742, 0.700, 0.606);',
+      '  vec3 col = mix(dryC, wetC, wet);',
+      '  col *= 0.905 + 0.130 * g2;',
+      '  col *= 0.955 + 0.085 * g1;',
+      '  col *= 0.965 + 0.070 * patchy;',
+      '  // 沙纹本身也要有明暗：脊背受光、沟底略暗',
+      '  col *= 1.0 - 0.10 * ripple * ripMask;',
+      '  // 零星深色碎屑（贝壳/珊瑚碎），用阈值把噪声切成小点',
+      '  float debris = smoothstep(0.74, 0.93, vnoise(q * 3.1 + 11.7));',
+      '  debris *= smoothstep(0.55, 0.95, vnoise(q * 9.3 - 2.2));',
+      '  col = mix(col, vec3(0.700, 0.660, 0.600), debris * 0.30);',
+      '',
+      '  // ---- 漂积线：潮水退去后留下的几道细碎深色带，平行于岸线 ----',
+      '  // 这是真实沙滩上最有辨识度的纹理，没有它沙滩会显得过于干净。',
+      '  float wrackBand = sin(inland * 1.35 + fbm2(q * 0.16) * 3.2);',
+      '  float wrack = smoothstep(0.72, 0.99, wrackBand);',
+      '  wrack *= smoothstep(1.0, 3.5, inland) * smoothstep(26.0, 12.0, inland);',
+      '  wrack *= smoothstep(0.35, 0.75, fbm2(q * 0.42 + 6.6));',
+      '  col = mix(col, vec3(0.612, 0.572, 0.492), wrack * 0.26);',
+      '',
+      '  // 水下白沙：只做轻微的压暗与偏冷，保留沙的颗粒和色相。',
+      '  // 早先直接混向 (0.905,0.928,0.905) 的近白色，会把整个海床洗成',
+      '  // 一片没有质感的灰白，焦散和沙纹全都看不出来。',
+      '  float under = smoothstep(0.30, 2.0, d);',
+      '  col = mix(col, col * vec3(0.790, 0.880, 0.862), under * 0.88);',
+      '',
+      '  // 水下沙床的起伏：只用柔和的明暗与色温变化，避免出现硬边脏斑',
+      '  float sub = smoothstep(0.3, 2.5, d);',
+      '  // 大尺度沙洲：比周围略深一点，边缘完全平滑',
+      '  float shoal = fbm2(q * 0.045 + 3.7);',
+      '  col *= mix(1.0, 0.982 + 0.036 * shoal, sub);',
+      '  // 色温：只在 4m 以外的深处做极轻微的暖调，近岸保持干净',
+      '  float warmMask = sub * smoothstep(4.0, 14.0, d);',
+      '  col = mix(col, col * vec3(1.014, 1.002, 0.984), shoal * warmMask * 0.35);',
+      '  // 细碎的贝壳与碎石颗粒',
+      '  float grit = vnoise(q * 26.0) * vnoise(q * 11.0 + 5.3);',
+      '  col *= 1.0 + (grit - 0.28) * 0.10 * sub;',
+      '  // 零星海草：只长在较深处，边界被噪声打散，颜色是暗青绿而非灰褐',
+      '  float weedMask = smoothstep(9.0, 22.0, d);',
+      '  float weed = smoothstep(0.62, 0.80, fbm2(q * 0.115 + 21.0));',
+      '  weed *= weedMask * smoothstep(0.30, 0.80, vnoise(q * 0.42 + 8.1));',
+      '  col = mix(col, vec3(0.180, 0.300, 0.235), weed * 0.42);',
+      '',
+      '  float lam = 0.62 + 0.50 * max(dot(N, uSunDir), 0.0);',
+      '  col *= lam;',
+      '',
+      '  // ---- 焦散：由水面着色器负责（见下），这里不再重复计算 ----',
+      '  // 沙滩着色器里的焦散会被水体吸收大幅稀释，等于白算。',
+      '',
+      '  // ---- 湿沙的微弱反光 ----',
+      '  // 早先这里用了 0.80 强度的镜面项，湿区（wet≈1）在掠射角下会直接',
+      '  // 过曝成一块纯白斑，看起来像岸上凭空多了个亮块。',
+      '  // 湿沙的观感交给颜色差（wetC 比 dryC 略深）就够了，高光只留一丝。',
+      '  vec3 V = normalize(cameraPosition - vWorld);',
+      '  vec3 H = normalize(uSunDir + V);',
+      '  float spec = pow(max(dot(N, H), 0.0), 1400.0);',
+      '  float flatMask = smoothstep(0.30, 0.75, N.y);',
+      '  col += vec3(1.0, 0.97, 0.90) * spec * wet * 0.10 * flatMask;',
+      '',
+      '  // ---- 涌上沙滩的泡沫：沿浪头前沿的一条断续白沫 ----',
+      '  float fA = fbm2(q * 0.90 + vec2(0.0, t * 0.10));',
+      '  float fB = fbm2(q * 2.40 - vec2(t * 0.09, t * 0.16));',
+      '  float fC = vnoise(q * 7.00 - vec2(t * 0.22, t * 0.16));',
+      '  float fD = vnoise(q * 15.0 + vec2(t * 0.35, -t * 0.20));',
+      '  float lace = smoothstep(0.30, 0.74, fA * 0.40 + fB * 0.34 + fC * 0.26);',
+      '',
+      '  // 泡沫前沿：被多层噪声扭曲，形成指状推进的蜿蜒水线',
+      '  float tongue = (fbm2(q * 0.70 + vec2(0.0, t * 0.06)) - 0.5) * 5.2;',
+      '  float tongue2 = (vnoise(q * 2.2 - vec2(t * 0.09, 0.0)) - 0.5) * 2.2;',
+      '  float tongue3 = (vnoise(q * 6.0 + 3.3) - 0.5) * 0.7;',
+      '  float front = runup + tongue + tongue2 + tongue3;',
+      '',
+      '  // 主泡沫带：水线到前沿之间（inland ∈ [0, front]）才可能有泡沫。',
+      '  // 必须做成"区间"而不是"到前沿的距离"：',
+      '  // 距离式写法在前沿之外的沙丘上也会命中，凭空画出一块白斑；',
+      '  // 而且 smoothstep(1.15, 0, x) 在 x<0 时会返回 1（不是 0），',
+      '  // 会让整片陆地都变成泡沫。',
+      '  float band = smoothstep(-0.8, 0.1, inland)',
+      '             * (1.0 - smoothstep(front - 0.9, front + 0.15, inland));',
+      '  float foam = band * smoothstep(0.08, 0.58, fB * 0.45 + fC * 0.35 + fD * 0.20) * 1.75;',
+      '  // 浪退后残留的漂沫：从水线到前沿之间零散分布',
+      '  float drift = smoothstep(-0.8, 1.4, inland) * smoothstep(front + 0.8, front - 1.2, inland);',
+      '  foam = max(foam, drift * smoothstep(0.44, 0.80, lace) * 0.95);',
+      '',
+      '  // 泡沫强度随涌浪周期起伏：涌上时最厚，退去时只剩湿痕',
+      '  foam *= 0.42 + 0.58 * pulse;',
+      '  foam *= 0.72 + 0.28 * smoothstep(0.10, 0.90, fD);',
+      '  foam = clamp(foam, 0.0, 1.0);',
+      '',
+      '  // 浪退后留在湿沙上的细泡沫纹',
+      '  float residue = smoothstep(0.46, 0.82, fbm2(q * 1.9 + 9.1)) * smoothstep(wetEdge, 0.8, inland) * 0.30;',
+      '  foam = max(foam, residue * smoothstep(0.3, 0.8, wet));',
+      '',
+      '  // ---- 棕榈树阴影 ----',
+      '  float sh = palmShadowTex(q);',
+      '  col *= mix(0.40, 1.0, sh);',
+      '  col += vec3(0.018, 0.044, 0.082) * (1.0 - sh);',
+      '',
+      '  col = mix(col, vec3(1.0, 0.998, 0.99) * mix(0.78, 1.0, sh), foam);',
+      '',
+      '  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);',
+      '}'
+    ].join('\n')
+  });
+
+  // 分段数只要够表达大尺度起伏即可：片元里的法线由解析梯度给出，
+  // 顶点密度对画质几乎没有影响（原来 440² 是 19 万个面，纯浪费）
+  var GROUND_W = 440, GROUND_D = 440, GROUND_SEG = 280;
+  var groundGeo = new THREE.PlaneGeometry(GROUND_W, GROUND_D, GROUND_SEG, GROUND_SEG);
+  groundGeo.rotateX(-Math.PI / 2);
+  groundGeo.translate(0, 0, -25);
+  var ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.frustumCulled = false;
+  scene.add(ground);
+
+  /* =========================================================
+     水面
+     关键优化：水面不透明 + 先绘制 + 写深度。
+     它自己采样折射贴图来表现水下，所以不需要与海床做alpha混合；
+     先画并写深度后，后面海床的像素会被 early-Z 直接剔除，
+     省掉整个"水下海床"的填充开销（这是全屏最贵的部分之一）。
+     ========================================================= */
+  var waterMat = new THREE.ShaderMaterial({
+    uniforms: Object.assign({}, U),
+    transparent: false,
+    depthWrite: true,
+    vertexShader: [
+      COMMON,
+      GLSL_TERRAIN,
+      'varying vec3 vWorld;',
+      'void main(){',
+      '  vec3 p = position;',
+      '  float d = texShoreD(p.xz);',
+      '  p.y += swellH(p.xz, uTime);',
+      '  vec2 suv = (p.xz - SIM_C) / SIM_S + 0.5;',
+      '  if (suv.x > 0.0 && suv.x < 1.0 && suv.y > 0.0 && suv.y < 1.0){',
+      '    p.y += texture2D(uSim, suv).r * 0.75 * smoothstep(-2.0, 3.0, d);',
+      '  }',
+      '  vWorld = p;',
+      '  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);',
+      '}'
+    ].join('\n'),
+    fragmentShader: [
+      COMMON,
+      GLSL_TERRAIN,
+      'varying vec3 vWorld;',
+      '',
+      '// ---- 预计算的波场：一次采样代替整串涌浪/高度场求值 ----',
+      '// R=波高  G/B=梯度  A=波峰斜率(wSlope*0.5+0.5)',
+      'uniform sampler2D uWave;',
+      'uniform sampler2D uDetail;',
+      'uniform vec3  uWaveXf;',   // xy=中心, z=1/尺寸',
+      'vec4 waveField(vec2 q){',
+      '  vec2 uv = (q - uWaveXf.xy) * uWaveXf.z + 0.5;',
+      '  vec4 v = texture2D(uWave, clamp(uv, vec2(0.0), vec2(1.0)));',
+      '  // 贴图边界附近平滑淡出到「只有涌浪」的常量，避免出现一条直边',
+      '  vec2 e = min(uv, 1.0 - uv);',
+      '  float edge = smoothstep(0.0, 0.06, min(e.x, e.y));',
+      '  return mix(vec4(0.0, 0.0, 0.0, 0.5), v, edge);',
+      '}',
+      '// 4 层噪声（nA 低频 / nB 中频 / nC 高频 / nD 最高频）一次性取回',
+      'vec4 detailField(vec2 q){',
+      '  vec2 uv = (q - uWaveXf.xy) * uWaveXf.z + 0.5;',
+      '  return texture2D(uDetail, clamp(uv, vec2(0.001), vec2(0.999)));',
+      '}',
+      '',
+      'void main(){',
+      '  vec2 q = vWorld.xz;',
+      '  float t = uTime;',
+      '  float d = texShoreD(q);',
+      '  float pulse0 = surfPulse(t);',
+      '  // 水面覆盖到"真正有水"的地方为止：',
+      '  // 只在海床确实低于水面时绘制。靠近水线处水深趋近 0，',
+      '  // 此时水层几乎全透，颜色自然等于沙色，与沙滩无缝衔接。',
+      '  // 注意不要用"水深不足就 discard"——那会在浅水带留下一圈',
+      '  // 生硬的边界，看起来像一块突兀的亮斑。',
+      '  if (d < 0.0 || texDepth(q) < 0.004) discard;',
+      '  float surfA = smoothstep(0.0, 0.10, texDepth(q));',
+      '',
+      '  vec4 wf = waveField(q);',
+      '  float wH = wf.r;',
+      '  float wSlope = wf.a * 2.0 - 1.0;',
+      '  vec2 gTot = wf.gb;',
+      '  // 涟漪只贡献法线（水面的明暗起伏），不参与 depthV：',
+      '  // 若把它加进水位，水深会被 clamp 成阶梯，出现方形色块。',
+      '  vec2 gRip = vec2(0.0);',
+      '  if (uRipN > 0.5){',
+      '    gRip = rippleGrad(q, t);',
+      '  }',
+      '  vec3 N = normalize(vec3(-(gTot.x + gRip.x * 2.4), 1.0, -(gTot.y + gRip.y * 2.4)));',
+      '',
+      '  vec3 V = normalize(cameraPosition - vWorld);',
+      '  float th = max(d, 0.0);',
+      '  float depth = texDepth(q);',
+      '',
+      '  // 涌浪的波高会改变视线穿过的水层厚度：波峰薄、波谷厚',
+      '  float depthV = max(depth - wH * 3.4, 0.0);',
+      '',
+      '  // ---- 折射：屏幕空间偏移采样海床 ----',
+      '  // 只用波场自身的梯度做偏移。涟漪的梯度幅度大，若混进来会把',
+      '  // 半分辨率的折射贴图拉出重复采样纹（方块/网格）。',
+      '  vec2 suv = gl_FragCoord.xy / uRes;',
+      '  vec2 roff = vec2(-gTot.x, -gTot.y) * (0.016 + 0.0030 * min(depthV, 12.0));',
+      '  vec3 bg = texture2D(uScene, clamp(suv + roff, vec2(0.002), vec2(0.998))).rgb;',
+      '',
+      '  // ---- 按水深着色：浅绿松石 → 蓝宝石 ----',
+      '  // 4 层噪声一次采样取回（已由细节 pass 预烘焙），不再在片元里算 hash',
+      '  vec4 det = detailField(q);',
+      '  float nA = det.r;',
+      '  float nB = det.g;',
+      '  float nC = det.b;',
+      '  // 最高频那层用「正弦求和」而不是「正弦相乘」：',
+      '  // 相乘会形成规则的菱形格纹，求和才是自然的杂乱起伏。',
+      '  float nD = 0.5 + 0.25 * (sin(q.x * 5.1 + q.y * 3.7 + t * 1.6)',
+      '                         + sin(q.x * 2.9 - q.y * 6.1 - t * 1.2));',
+      '',
+      '  // 用低频噪声扰动深度，避免等深线形成同心环带。',
+      '  // 抖动幅度要小：±1.7m 的深度跳变会让水体出现大片浑浊色块。',
+      '  float dJit = depth * (0.82 + 0.36 * nA);',
+      '  dJit += (nB - 0.5) * 1.1;',
+      '  dJit -= wH * 1.8;',
+      '  float dz = max(dJit, 0.0);',
+      '  vec3 cShallow = vec3(0.235, 0.640, 0.600);',
+      '  vec3 cMid     = vec3(0.035, 0.400, 0.510);',
+      '  vec3 cDeep    = vec3(0.014, 0.175, 0.405);',
+      '  vec3 cAbyss   = vec3(0.008, 0.062, 0.255);',
+      '  vec3 body = mix(cShallow, cMid, smoothstep(0.3, 5.5, dz));',
+      '  body = mix(body, cDeep, smoothstep(4.5, 16.0, dz));',
+      '  body = mix(body, cAbyss, smoothstep(14.0, 36.0, dz));',
+      '  // 水体不是一块平涂的蓝：掺入低频起伏，让深浅有呼吸感',
+      '  body *= 0.90 + 0.22 * nA;',
+      '  body = mix(body, body * vec3(0.92, 1.02, 1.06), smoothstep(0.35, 0.80, nB) * 0.50);',
+      '',
+      '  // 分通道吸收。系数按清澈的热带潟湖取（不是外海）：',
+      '  // 红 0.18 意味着 3m 处红色还剩 58%，鱼和沙的颜色才不会被水洗成一片青。',
+      '  vec3 absorb = exp(-vec3(0.235, 0.056, 0.040) * depthV);',
+      '',
+      '  // ---- 焦散：光穿过起伏的水面后在海底聚焦出的亮网 ----',
+      '  // 必须在这里作用于折射贴图。放在沙滩着色器里不行——',
+      '  // 海床颜色经水体吸收后只剩几个百分点，明暗调制会被完全稀释。',
+      '  float cst = 0.0;',
+      '  float cMask = smoothstep(0.05, 1.0, depthV) * exp(-depthV * 0.150);',
+      '  if (cMask > 0.008){',
+      '    cst = caustics(q * 0.34 + vec2(t * 0.011, t * 0.006), t * 0.52);',
+      '    // 中频噪声做斑块：焦散本来就是一片片明暗交替，不是均匀铺满',
+      '    cst *= 0.28 + 1.05 * smoothstep(0.18, 0.82, nB);',
+      '    // 远处的细网会走样成噪点，按距离淡出',
+      '    float distFade = 1.0 - smoothstep(26.0, 75.0, length(cameraPosition - vWorld));',
+      '    bg *= 1.0 + cst * cMask * 0.85 * distFade;',
+      '  }',
+      '',
+      '  // 物理上正确的合成：海床透射光 + 水体自身散射',
+      '  vec3 col = bg * absorb + body * (1.0 - absorb);',
+      '  // 纵深：浅滩明亮、深水沉暗。这一条对"看出水深"的贡献比吸收本身还大。',
+      '  col *= mix(1.0, 0.74, smoothstep(1.5, 24.0, depthV));',
+      '  // 极浅处补一层薄水膜色，避免水线附近直接露出原色沙形成脏带。',
+      '  // 只在 0~2m 内生效，且强度很低——之前的 0.66/7.5m 会把整片水洗成灰蒙。',
+      '  float film = 1.0 - smoothstep(0.0, 2.0, max(depthV, 0.0));',
+      '  col = mix(col, mix(body, vec3(0.42, 0.83, 0.77), 0.34), film * 0.24);',
+      '',
+      '  // ---- 涌浪明暗：相位与斜率已由波场预计算，这里只做着色 ----',
+      '  vec2 wdir = normalize(vec2(-0.78, -0.63));',
+      '  float wAmp = smoothstep(0.0, 1.6, th) * mix(1.0, 0.58, smoothstep(28.0, 72.0, th));',
+      '  // 迎光的前坡更亮、背光的后坡更深',
+      '  col *= 1.0 + wSlope * 0.082 * wAmp;',
+      '  // 波峰顶水层最薄，透出更浅的青色（只在浅水明显）',
+      '  float crestHi = smoothstep(0.62, 1.0, wSlope * 0.5 + 0.5) * smoothstep(13.0, 1.0, th);',
+      '  col = mix(col, body * 1.28 + vec3(0.028, 0.058, 0.052), crestHi * 0.22);',
+      '  // 破碎后的波峰不再平滑：叠加细碎乱流（复用 nC / nD）',
+      '  float chop = (nC - 0.5) + (nD - 0.5) * 0.55;',
+      '  col *= 1.0 + chop * 0.055 * smoothstep(9.0, 2.0, th);',
+      '  // 深水的风纹：细长的明暗条带，顺风向拉长。',
+      '  // 没有这一层，外海会像一块光滑的蓝玻璃。',
+      '  float windStreak = sin(q.x * 0.72 - q.y * 0.95 + sin(q.x * 0.19 + q.y * 0.13 + t * 0.08) * 3.4 + t * 0.30);',
+      '  col *= 1.0 + windStreak * 0.017 * smoothstep(3.0, 16.0, th);',
+      '  // 细碎的短波：让水面在任何距离都有颗粒感',
+      '  col *= 1.0 + (nD - 0.5) * 0.035;',
+      '',
+      '  // ---- 菲涅尔天光 ----',
+      '  float fres = 0.02 + 0.98 * pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 5.0);',
+      '  vec3 skyC = mix(vec3(0.42, 0.68, 0.95), vec3(0.80, 0.91, 1.00), 0.55);',
+      '  col = mix(col, skyC, fres * 0.45);',
+      '',
+      '  float sh = palmShadowTex(q);',
+      '',
+      '  // ---- 阳光闪烁：细碎的高光点，沿波面法线闪动 ----',
+      '  vec3 H = normalize(uSunDir + V);',
+      '  // 高光用的法线不含涟漪：涟漪梯度很陡，放大后会在环上糊出成片白块',
+      '  vec3 Ns = normalize(vec3(-gTot.x, 1.0, -gTot.y));',
+      '  float nh = max(dot(Ns, H), 0.0);',
+      '  // 宽而柔的水面反光（压低强度，否则整条波峰会拉成白色长条）',
+      '  float sheen = pow(nh, 110.0) * 0.085;',
+      '  // 细碎闪点：把法线放得极大，镜面波瓣收窄成一个个小点',
+      '  vec3 Ng = normalize(vec3(Ns.x * 16.0, Ns.y, Ns.z * 16.0));',
+      '  float nh2 = max(dot(Ng, H), 0.0);',
+      '  float glint = pow(nh2, 420.0) * 2.6;',
+      '  // 用两组互不相干的高频正弦相交，得到稀疏的亮点；',
+      '  // 单靠波面梯度会沿波峰连成一片，看起来像划痕。',
+      '  float sp1 = sin(q.x * 8.3 + q.y * 5.9 + t * 3.1) * sin(q.x * 5.1 - q.y * 9.7 - t * 2.3);',
+      '  float sp2 = sin(q.x * 13.7 - q.y * 11.3 + t * 4.4) * sin(q.x * 17.9 + q.y * 7.1 - t * 3.7);',
+      '  float sparkle = pow(max(0.0, sp1 * 0.62 + sp2 * 0.38), 5.0);',
+      '  glint *= smoothstep(0.22, 0.85, nA) * (0.22 + 2.4 * sparkle);',
+      '  glint *= mix(1.0, 0.26, smoothstep(4.0, 22.0, depth));',
+      '  glint += sheen;',
+      '  glint *= mix(0.08, 1.0, sh);',
+      '  col += vec3(1.0, 0.972, 0.905) * min(glint, 1.5) * 0.62;',
+      '',
+      '  // ---- 破碎白浪：沿波峰一段段爆开，而不是整条波峰一起白 ----',
+      '  float pulse = pulse0;',
+      '  // 白浪只在浅水破碎带出现；深水区整段跳过，省掉最多的一次噪声开销',
+      '  float foam = 0.0;',
+      '  float brkZone = smoothstep(6.5, 1.0, depth) * smoothstep(0.18, 0.95, depth);',
+      '  if (brkZone > 0.002){',
+      '    // 全复用 nB / nC / nD，不再新增采样',
+      '    float fB = nB;',
+      '    float mesh = nC;',
+      '    float barLift = smoothstep(0.10, 0.90, (0.098 * th + 0.0082 * th * th) - depth);',
+      '    float brkStrength = brkZone * (0.40 + 0.60 * barLift);',
+      '',
+      '    // 白浪是一段段短弧：沿波峰方向用低频噪声切段',
+      '    float alongCrest = dot(q, vec2(-wdir.y, wdir.x));',
+      '    float segA = vnoise(vec2(alongCrest * 0.115, t * 0.14 + 3.1));',
+      '    float segment = smoothstep(0.34, 0.66, segA);',
+      '    segment = mix(segment, smoothstep(0.26, 0.78, segA * 0.7 + fB * 0.3), 0.55);',
+      '    float onCrest = smoothstep(0.52, 0.96, wSlope * 0.5 + 0.5);',
+      '    float breakers = onCrest * brkStrength * segment * 1.15;',
+      '    breakers *= smoothstep(0.08, 0.72, nA * 0.38 + fB * 0.30 + mesh * 0.32);',
+      '',
+      '    // 破碎后的白水拖尾',
+      '    float wakePh = smoothstep(-1.0, 0.35, wSlope) * smoothstep(0.75, 0.05, wSlope);',
+      '    float wake = wakePh * brkStrength * segment * 0.42;',
+      '    wake *= smoothstep(0.25, 0.80, fB * 0.5 + mesh * 0.5);',
+      '',
+      '    foam = max(breakers, wake);',
+      '',
+      '    // 最贴岸那一道翻腾的白水',
+      '    float surfZone = smoothstep(1.3, 0.03, th);',
+      '    float shoreWash = surfZone * smoothstep(0.10, 0.60, fB * 0.5 + mesh * 0.5);',
+      '    foam = max(foam, shoreWash * (0.30 + 0.45 * pulse) * 0.90);',
+      '    // 水线处极窄的白边',
+      '    float edge = smoothstep(0.36, 0.02, th) * smoothstep(0.15, 0.58, mesh);',
+      '    foam = max(foam, edge * (0.24 + 0.30 * pulse));',
+      '  }',
+      '  foam = clamp(foam, 0.0, 1.0);',
+      '',
+      '  // ---- 阴影压暗水体 ----',
+      '  // 水面本身很亮，单靠乘法压暗不够；同时降低饱和度并偏青，才显得被遮住',
+      '  float shDark = 1.0 - sh;',
+      '  float lum = dot(col, vec3(0.299, 0.587, 0.114));',
+      '  col = mix(col, vec3(lum) * vec3(0.30, 0.66, 0.82), shDark * 0.95);',
+      '  col *= 1.0 - shDark * 0.48;',
+      '  col = mix(col, vec3(0.96, 0.985, 1.0) * mix(0.60, 1.0, sh), foam * 0.85);',
+      '',
+      '  col = pow(clamp(col, 0.0, 1.7), vec3(0.94));',
+      '  gl_FragColor = vec4(col, 1.0);',
+      '}'
+    ].join('\n')
+  });
+
+  var waterGeo = new THREE.PlaneGeometry(GROUND_W, GROUND_D, 128, 128);
+  waterGeo.rotateX(-Math.PI / 2);
+  waterGeo.translate(0, 0, -25);
+  var water = new THREE.Mesh(waterGeo, waterMat);
+  water.frustumCulled = false;
+  // 比地面先画，利用 early-Z 剔除被水面完全遮住的海床像素
+  water.renderOrder = -1;
+  scene.add(water);
+
+  /* =========================================================
+     折射用的场景渲染目标（只渲染沙滩/海床）
+     ========================================================= */
+  var rtScene = new THREE.WebGLRenderTarget(2, 2, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat,
+    type: THREE.UnsignedByteType,
+    depthBuffer: true,
+    stencilBuffer: false
+  });
+  U.uScene.value = rtScene.texture;
+
+  // 折射贴图只用于「隔着水面看海底」，本身是模糊的，半分辨率完全够用，
+  // 这一项直接省掉折射 pass 75% 的像素填充。
+  var RT_SCALE = 0.66;
+
+  function resize() {
+    var w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    var sz = renderer.getDrawingBufferSize(new THREE.Vector2());
+    rtScene.setSize(Math.max(2, Math.round(sz.x * RT_SCALE)),
+                    Math.max(2, Math.round(sz.y * RT_SCALE)));
+    U.uRes.value.copy(sz);
+  }
+  resize();
+
+  /* =========================================================
+     棕榈树
+     ========================================================= */
+  function makeBarkTexture() {
+    var c = document.createElement('canvas');
+    c.width = 64; c.height = 256;
+    var x = c.getContext('2d');
+    x.fillStyle = '#6d573a';
+    x.fillRect(0, 0, 64, 256);
+    for (var i = 0; i < 320; i++) {
+      var y = Math.random() * 256;
+      var hh = 1.5 + Math.random() * 6;
+      x.fillStyle = 'rgba(' + (52 + Math.random() * 46 | 0) + ',' +
+        (40 + Math.random() * 34 | 0) + ',' + (26 + Math.random() * 22 | 0) + ',' +
+        (0.20 + Math.random() * 0.45).toFixed(2) + ')';
+      x.fillRect(0, y, 64, hh);
+    }
+    var g = x.createLinearGradient(0, 0, 64, 0);
+    g.addColorStop(0, 'rgba(0,0,0,0.34)');
+    g.addColorStop(0.35, 'rgba(255,255,255,0.12)');
+    g.addColorStop(0.7, 'rgba(255,255,255,0.04)');
+    g.addColorStop(1, 'rgba(0,0,0,0.36)');
+    x.fillStyle = g;
+    x.fillRect(0, 0, 64, 256);
+    var t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(1, 4);
+    t.anisotropy = 4;
+    return t;
+  }
+
+  function makeFrondTexture() {
+    var W = 512, H = 168;
+    var c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    var g = c.getContext('2d');
+    g.clearRect(0, 0, W, H);
+    var cy = H / 2;
+
+    // 叶轴
+    g.strokeStyle = '#5d7c31';
+    g.lineWidth = 4.5;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(2, cy);
+    g.quadraticCurveTo(W * 0.55, cy - 4, W - 5, cy + 2);
+    g.stroke();
+
+    // 小羽叶
+    for (var i = 0; i < 130; i++) {
+      var tt = i / 130;
+      var px = 6 + tt * (W - 22);
+      var env = Math.pow(Math.sin(Math.PI * Math.min(1, tt * 1.03 + 0.03)), 0.5);
+      for (var s = -1; s <= 1; s += 2) {
+        var len = H * 0.52 * env * (0.72 + Math.random() * 0.55);
+        if (len < 3) continue;
+        var hue = 74 + Math.random() * 34;
+        var lig = 15 + Math.random() * 17;
+        g.strokeStyle = 'hsl(' + hue.toFixed(0) + ', ' + (34 + Math.random() * 20).toFixed(0) + '%, ' + lig.toFixed(0) + '%)';
+        g.lineWidth = 1.4 + Math.random() * 1.9;
+        g.beginPath();
+        g.moveTo(px, cy);
+        g.quadraticCurveTo(px + 9, cy + s * len * 0.6, px + 16 + len * 0.30, cy + s * len);
+        g.stroke();
+      }
+    }
+    var tex = new THREE.CanvasTexture(c);
+    tex.anisotropy = 8;
+    tex.minFilter = THREE.LinearMipMapLinearFilter;
+    return tex;
+  }
+
+  function makeTaperedTube(curve, segs, radial, r0, r1) {
+    var frames = curve.computeFrenetFrames(segs, false);
+    var pos = [], nrm = [], uvs = [], idx = [];
+    var p = new THREE.Vector3(), dir = new THREE.Vector3();
+    for (var i = 0; i <= segs; i++) {
+      var t = i / segs;
+      curve.getPointAt(t, p);
+      var N = frames.normals[i], B = frames.binormals[i];
+      var rad = r0 + (r1 - r0) * t;
+      for (var j = 0; j <= radial; j++) {
+        var a = j / radial * Math.PI * 2;
+        var cx = Math.cos(a), sy = Math.sin(a);
+        dir.set(0, 0, 0).addScaledVector(N, cx).addScaledVector(B, sy).normalize();
+        pos.push(p.x + dir.x * rad, p.y + dir.y * rad, p.z + dir.z * rad);
+        nrm.push(dir.x, dir.y, dir.z);
+        uvs.push(j / radial, t);
+      }
+    }
+    for (var k = 0; k < segs; k++) {
+      for (var m = 0; m < radial; m++) {
+        var A = k * (radial + 1) + m;
+        var Bq = A + 1;
+        var C = A + (radial + 1);
+        var D = C + 1;
+        idx.push(A, C, Bq, Bq, C, D);
+      }
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    g.setIndex(idx);
+    return g;
+  }
+
+  function makeFrondGeometry(len, width, pitch, droop, segs) {
+    var pos = [], uvs = [], idx = [];
+    for (var i = 0; i <= segs; i++) {
+      var t = i / segs;
+      var x = t * len;
+      var y = len * (Math.sin(pitch) * t - droop * t * t);
+      for (var j = 0; j <= 2; j++) {
+        var s = j / 2;
+        var z = (s - 0.5) * width * (1.0 - 0.42 * t);
+        var fold = Math.abs(s - 0.5) * len * 0.10;
+        pos.push(x, y + fold, z);
+        uvs.push(t, s);
+      }
+    }
+    for (var a = 0; a < segs; a++) {
+      for (var b = 0; b < 2; b++) {
+        var i0 = a * 3 + b, i1 = i0 + 1, i2 = i0 + 3, i3 = i0 + 4;
+        idx.push(i0, i1, i2, i1, i3, i2);
+      }
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    return g;
+  }
+
+  var palmRoot = new THREE.Group();
+  var fronds = [];
+  (function buildPalm() {
+    // 树根落在沙滩上（与 GLSL 的 groundH 保持一致）
+    function sstep(a, b, x) {
+      var t = (x - a) / (b - a);
+      t = t < 0 ? 0 : (t > 1 ? 1 : t);
+      return t * t * (3 - 2 * t);
+    }
+    var dd = Math.hypot(PALM.x - SHORE_CX, PALM.z - SHORE_CZ) - SHORE_R;
+    var dpos = Math.max(dd, 0);
+    var baseY = -(0.098 * dpos + 0.0082 * dpos * dpos)
+      + Math.pow(sstep(-2.0, -50.0, dd), 1.8) * 6.2
+      + Math.exp(-Math.pow((dpos - 11.0) / 5.0, 2)) * 0.55
+      + Math.exp(-Math.pow((dpos - 26.0) / 8.0, 2)) * 1.10 - 0.10;
+    palmRoot.position.set(PALM.x, baseY, PALM.z);
+
+    var curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, -7.0, 0),
+      new THREE.Vector3(0.30, 2.3, 0.26),
+      new THREE.Vector3(1.05, 4.7, 0.92),
+      new THREE.Vector3(2.10, 7.0, 1.85),
+      new THREE.Vector3(PALM_TOP.x, PALM_HEIGHT, PALM_TOP.y)
+    ]);
+    var trunkMat = new THREE.MeshLambertMaterial({ map: makeBarkTexture(), color: 0xb2a08a });
+    var trunk = new THREE.Mesh(makeTaperedTube(curve, 30, 10, 0.72, 0.24), trunkMat);
+    // 树干根部用一段渐粗的底座填平，避免露出圆筒截面
+    var rootGeo = new THREE.SphereGeometry(0.82, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.62);
+    var rootMesh = new THREE.Mesh(rootGeo, trunkMat);
+    rootMesh.scale.set(1.0, 0.55, 1.0);
+    rootMesh.position.set(0, 0.18, 0);
+    palmRoot.add(rootMesh);
+    palmRoot.add(trunk);
+
+
+
+    // 树冠
+    var canopy = new THREE.Group();
+    canopy.position.set(PALM_TOP.x, PALM_HEIGHT, PALM_TOP.y);
+    palmRoot.add(canopy);
+
+    var frondTex = makeFrondTexture();
+    var frondMat = new THREE.MeshLambertMaterial({
+      map: frondTex,
+      transparent: true,
+      alphaTest: 0.42,
+      side: THREE.DoubleSide,
+      color: 0x9aa885
+    });
+    var frondMatDry = new THREE.MeshLambertMaterial({
+      map: frondTex,
+      transparent: true,
+      alphaTest: 0.42,
+      side: THREE.DoubleSide,
+      color: 0xa89270
+    });
+
+    var pitches = [0.72, 0.56, 0.74, 0.48, 0.64, 0.40, 0.60, 0.34, 0.50];
+    for (var i = 0; i < FROND_DEFS.length; i++) {
+      var ang = FROND_DEFS[i][0];
+      var len = FROND_DEFS[i][1];
+      var geo = makeFrondGeometry(len, len * 0.62, pitches[i % pitches.length],
+        0.58 + (i % 3) * 0.16, 16);
+      var m = new THREE.Mesh(geo, i >= 7 ? frondMatDry : frondMat);
+      m.rotation.y = ang;
+      m.rotation.z = (i % 2 ? 1 : -1) * 0.035;
+      // 记录基准角度，主循环里用来做摇摆
+      m.userData.baseZ = m.rotation.z;
+      m.userData.baseX = m.rotation.x;
+      m.userData.phase = i * 0.83;
+      m.userData.amp = 0.055 + (i % 3) * 0.022;
+      fronds.push(m);
+      canopy.add(m);
+    }
+
+    // 椰子
+    var cocoMat = new THREE.MeshLambertMaterial({ color: 0x6b4a24 });
+    var cocoPos = [[0.32, -0.30, 0.22], [-0.30, -0.34, 0.18], [0.02, -0.32, -0.34]];
+    for (var c = 0; c < cocoPos.length; c++) {
+      var sph = new THREE.Mesh(new THREE.SphereGeometry(0.30, 12, 10), cocoMat);
+      sph.position.set(cocoPos[c][0], cocoPos[c][1], cocoPos[c][2]);
+      canopy.add(sph);
+    }
+  })();
+  scene.add(palmRoot);
+
+  /* =========================================================
+     鱼群：几种热带鱼 + 一小群银鱼
+     鱼只在折射 pass 里渲染，于是水面会把它当作水下物体来吸收与折射
+     ========================================================= */
+  var fishRoot = new THREE.Group();
+  scene.add(fishRoot);
+  var fishShadow = null;
+
+  function c01(v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
+  function sstep01(a, b, x) {
+    var t = c01((x - a) / (b - a));
+    return t * t * (3 - 2 * t);
+  }
+
+  // 与 GLSL shoreD 一致的岸线距离（不含 fbm 细节）
+  function shoreDJS(x, z) {
+    var dx = x - SHORE_CX, dz = z - SHORE_CZ;
+    var r = Math.sqrt(dx * dx + dz * dz);
+    var a = Math.atan2(dz, dx);
+    var wob = 2.35 * Math.sin(a * 3 + 0.65) + 1.30 * Math.sin(a * 5 - 1.15)
+            + 0.62 * Math.sin(a * 8 + 2.30) + 0.28 * Math.sin(a * 14 - 0.80);
+    return r - SHORE_R + wob;
+  }
+
+  // 与 GLSL groundH 一致的地形（略去小幅 fbm），用来让鱼待在水层里
+  function seabedY(x, z) {
+    var d = shoreDJS(x, z);
+    var dd = Math.max(d, 0);
+    var h = -(0.098 * dd + 0.0082 * dd * dd);
+    h += Math.pow(sstep01(-2.0, -50.0, d), 1.8) * 6.2;
+    h += Math.exp(-Math.pow((dd - 10.0) / 7.5, 2)) * 0.30;
+    h += Math.exp(-Math.pow((dd - 27.0) / 13.0, 2)) * 0.55;
+    return h;
+  }
+
+  /* =========================================================
+     鱼：程序化建模
+     身体是沿体长逐站生成的椭圆截面（不再是拉伸的球体），
+     轮廓由样条控制，因此能做出圆头、厚身、细尾柄的真实鱼形。
+     鳍全部按"附着在体表"的方式生成：基部贴合背部/腹部曲线，
+     外缘带扇贝状缺刻，读起来像鳍条。
+     ========================================================= */
+
+  // 单调三次插值（Catmull-Rom 的切线用有限差分），用于体形轮廓
+  function splineAt(pts, t) {
+    var n = pts.length;
+    if (t <= pts[0][0]) return pts[0][1];
+    if (t >= pts[n - 1][0]) return pts[n - 1][1];
+    var i = 0;
+    while (i < n - 2 && pts[i + 1][0] < t) i++;
+    var p1 = pts[i], p2 = pts[i + 1];
+    var p0 = pts[Math.max(i - 1, 0)], p3 = pts[Math.min(i + 2, n - 1)];
+    var h = Math.max(p2[0] - p1[0], 1e-4);
+    var m1 = (p2[1] - p0[1]) / Math.max(p2[0] - p0[0], 1e-4);
+    var m2 = (p3[1] - p1[1]) / Math.max(p3[0] - p1[0], 1e-4);
+    var s = (t - p1[0]) / h, s2 = s * s, s3 = s2 * s;
+    return (2 * s3 - 3 * s2 + 1) * p1[1] + (s3 - 2 * s2 + s) * h * m1
+         + (-2 * s3 + 3 * s2) * p2[1] + (s3 - s2) * h * m2;
+  }
+
+  // 体形轮廓：u=0 吻端，u=1 尾柄
+  function fishProfile(cfg) {
+    var snout = cfg.snout === undefined ? 0.12 : cfg.snout;
+    var peak = cfg.peak === undefined ? 0.32 : cfg.peak;
+    var ped = cfg.peduncle === undefined ? 0.20 : cfg.peduncle;
+    var H = [
+      [0.000, snout * 0.30],
+      [0.030, snout * 0.80],
+      [0.070, snout * 1.55],
+      [0.120, 0.68],
+      [0.180, 0.88],
+      [peak, 1.00],
+      [peak + 0.10, 0.995],
+      [0.56, 0.90],
+      [0.68, 0.74],
+      [0.80, 0.52],
+      [0.90, ped + 0.10],
+      [1.000, ped]
+    ];
+    var W = [
+      [0.000, 0.34],
+      [0.060, 0.62],
+      [0.150, 0.88],
+      [peak, 1.00],
+      [0.52, 0.94],
+      [0.70, 0.70],
+      [0.86, 0.38],
+      [1.000, 0.22]
+    ];
+    if (cfg.profH) H = cfg.profH;
+    if (cfg.profW) W = cfg.profW;
+    return {
+      h: function (u) { return splineAt(H, Math.max(0, Math.min(1, u))); },
+      w: function (u) { return splineAt(W, Math.max(0, Math.min(1, u))); }
+    };
+  }
+
+  function bodyAt(cfg, u) {
+    var hh = cfg.hgt * 0.5 * cfg._prof.h(u);
+    var ww = cfg.wid * 0.5 * cfg._prof.w(u);
+    return { hh: hh, ww: ww, x: cfg.len * (0.5 - u) };
+  }
+
+  function geoFrom(pos, col, uv, idx) {
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    if (idx) g.setIndex(idx);
+    g.computeVertexNormals();
+    return g;
+  }
+
+  function prep(geo) {
+    if (!geo.attributes.normal) geo.computeVertexNormals();
+    return geo.index ? geo.toNonIndexed() : geo;
+  }
+
+  function paintGeo(geo, hex) {
+    var g = geo.index ? geo.toNonIndexed() : geo;
+    var n = g.attributes.position.count;
+    var arr = new Float32Array(n * 3);
+    var c = new THREE.Color(hex);
+    for (var i = 0; i < n; i++) {
+      arr[i * 3] = c.r; arr[i * 3 + 1] = c.g; arr[i * 3 + 2] = c.b;
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+    return g;
+  }
+
+  function mergeGeos(list) {
+    var total = 0, i, g;
+    var prepped = [];
+    for (i = 0; i < list.length; i++) {
+      g = prep(list[i]);
+      prepped.push(g);
+      total += g.attributes.position.count;
+    }
+    var pos = new Float32Array(total * 3);
+    var nor = new Float32Array(total * 3);
+    var uv  = new Float32Array(total * 2);
+    var col = new Float32Array(total * 3);
+    var o = 0;
+    for (i = 0; i < prepped.length; i++) {
+      g = prepped[i];
+      var n = g.attributes.position.count;
+      pos.set(g.attributes.position.array, o * 3);
+      if (g.attributes.normal) nor.set(g.attributes.normal.array, o * 3);
+      if (g.attributes.uv) uv.set(g.attributes.uv.array, o * 2);
+      if (g.attributes.color) col.set(g.attributes.color.array, o * 3);
+      o += n;
+    }
+    var out = new THREE.BufferGeometry();
+    out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    out.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    out.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    out.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    return out;
+  }
+
+  // ---- 身体：逐站椭圆截面 + 头尾封口 ----
+  function buildFishBody(cfg) {
+    var NL = 34, NR = 22;
+    var len = cfg.len, hgt = cfg.hgt, wid = cfg.wid;
+    var pos = [], uv = [], col = [], idx = [];
+    var lastRing = 0;
+
+    // 截面：腹部略平，背部略收，形成鱼的横截面感
+    for (var i = 0; i <= NL; i++) {
+      var t = i / NL;
+      var b = bodyAt(cfg, t);
+      for (var j = 0; j <= NR; j++) {
+        var th = 2 * Math.PI * j / NR;
+        var cs = Math.cos(th), sn = Math.sin(th);
+        var y = b.hh * cs * (cs < 0 ? 0.90 : 1.00);
+        // 背部加一道很浅的脊
+        var z = b.ww * sn * (cs > 0.55 ? 0.95 : 1.0);
+        pos.push(b.x, y, z);
+        // v：0=背，0.5=腹，1=背（纹理按对称渐变画）
+        uv.push(t, j / NR);
+        // 尾柄与下颌略暗，增加体积
+        var ao = 1
+          - 0.20 * sstep01(0.72, 1.0, t)
+          - 0.10 * Math.max(0, -cs) * sstep01(0.35, 0.0, t);
+        col.push(ao, ao, ao);
+      }
+      lastRing = i;
+    }
+    for (var i2 = 0; i2 < NL; i2++) {
+      for (var j2 = 0; j2 < NR; j2++) {
+        var a = i2 * (NR + 1) + j2, bb = a + 1, c2 = a + (NR + 1), d = c2 + 1;
+        idx.push(a, c2, bb, bb, c2, d);
+      }
+    }
+
+    // 吻端封口
+    var headIdx = pos.length / 3;
+    pos.push(len * 0.5 + len * 0.012, 0, 0);
+    uv.push(0, 0.25);
+    col.push(0.94, 0.94, 0.94);
+    for (var j3 = 0; j3 < NR; j3++) {
+      var r0 = 0 * (NR + 1) + j3, r1 = r0 + 1;
+      idx.push(headIdx, r0, r1);
+    }
+    // 尾柄封口
+    var tailIdx = pos.length / 3;
+    pos.push(-len * 0.5 - len * 0.006, 0, 0);
+    uv.push(1, 0.25);
+    col.push(0.80, 0.80, 0.80);
+    var base = lastRing * (NR + 1);
+    for (var j4 = 0; j4 < NR; j4++) {
+      var s0 = base + j4, s1 = s0 + 1;
+      idx.push(tailIdx, s1, s0);
+    }
+
+    return geoFrom(pos, col, uv, idx);
+  }
+
+  // ---- 背鳍 / 臀鳍：沿背部中线竖起的薄片，外缘平滑后倾 ----
+  function buildRidgeFin(cfg, u0, u1, height, side, opt) {
+    opt = opt || {};
+    var N = 26, M = 3;
+    var pos = [], uv = [], col = [], idx = [];
+    var finC = new THREE.Color(cfg.fin);
+    var deep = finC.clone().multiplyScalar(0.72);
+    var tipC = finC.clone().multiplyScalar(1.10);
+    var thick = cfg.wid * 0.055;   // 极薄，但有厚度，避免退化成纸片
+
+    for (var i = 0; i <= N; i++) {
+      var s = i / N;
+      var u = u0 + (u1 - u0) * s;
+      var b = bodyAt(cfg, u);
+      var by = side * b.hh * 0.94;
+
+      // 外缘轮廓：中央最高，两端平滑收尖。
+      // 用柔和的 envelope，不再叠正弦——正弦会产生尖刺状锯齿。
+      var env = Math.pow(Math.sin(Math.PI * Math.pow(s, 0.90)), 0.62);
+      var hh = height * env;
+
+      for (var j = 0; j <= M; j++) {
+        var f = j / M;
+        // 鳍向外伸出，同时越往外越向后倾（真实的背鳍是后掠的）
+        var y = by + side * hh * f;
+        var x = b.x - hh * f * f * 0.34;
+        // 厚度：中间略厚，边缘收薄
+        var zp = thick * (1.0 - 0.55 * f * f);
+        for (var kz = 0; kz < 2; kz++) {
+          var z = (kz === 0 ? zp : -zp);
+          pos.push(x, y, z);
+          uv.push(u, f);
+          var cc = deep.clone().lerp(tipC, Math.pow(f, 0.55));
+          col.push(cc.r, cc.g, cc.b);
+        }
+      }
+    }
+    var stride = (M + 1) * 2;
+    for (var i2 = 0; i2 < N; i2++) {
+      for (var j2 = 0; j2 < M; j2++) {
+        for (var kz2 = 0; kz2 < 2; kz2++) {
+          var a = i2 * stride + j2 * 2 + kz2;
+          var bb = a + 2;
+          var c2 = a + 1 - 2 * kz2;
+          var d = bb + 1 - 2 * kz2;
+          if (kz2 === 0) idx.push(a, bb, c2, c2, bb, d);
+          else idx.push(a, c2, bb, c2, d, bb);
+        }
+      }
+    }
+    return geoFrom(pos, col, uv, idx);
+  }
+
+  // ---- 腹鳍 / 臀鳍片：从腹面中线向后下方伸出的两片小叶 ----
+  function buildBellyFin(cfg, u, side, size, spread) {
+    var b = bodyAt(cfg, u);
+    var finC = new THREE.Color(cfg.fin);
+    var deep = finC.clone().multiplyScalar(0.72);
+    var tipC = finC.clone().multiplyScalar(1.14);
+    var pos = [], uv = [], col = [], idx = [];
+    var N = 8;
+    // 根部在腹面稍偏一侧
+    var root = [b.x, side * b.hh * 0.90, spread * b.ww * 0.55];
+    for (var i = 0; i <= N; i++) {
+      var s = i / N;
+      // 叶形：向后下方展开，末端收尖
+      var rr = size * Math.pow(s, 0.78);
+      var x = root[0] - rr * 0.92;
+      var y = root[1] + side * rr * 0.62;
+      // 顺着体侧向外张开一点
+      var z = root[2] + (spread * b.ww * 0.55 - root[2]) * Math.pow(s, 0.9);
+      pos.push(x, y, z);
+      uv.push(s, 1);
+      var cc = deep.clone().lerp(tipC, Math.pow(s, 0.7));
+      col.push(cc.r, cc.g, cc.b);
+    }
+    pos.push(root[0], root[1], root[2]);
+    uv.push(0, 0);
+    col.push(deep.r, deep.g, deep.b);
+    var ci = pos.length / 3 - 1;
+    for (var j = 0; j < N; j++) idx.push(ci, j, j + 1);
+    return geoFrom(pos, col, uv, idx);
+  }
+
+  // ---- 尾鳍：上下两叶 + 缺口，尾缘带缺刻并略向后弯 ----
+  function buildTailFin(cfg) {
+    var lenT = cfg.len * (cfg.tailLen || 0.40);
+    var spread = cfg.hgt * (cfg.tailSpread || 0.42);
+    var notch = cfg.notch === undefined ? 0.28 : cfg.notch;
+    var r0 = cfg.hgt * 0.14;           // 根部高度
+    var finC = new THREE.Color(cfg.fin);
+    var deep = finC.clone().multiplyScalar(0.70);
+    var tipC = finC.clone().multiplyScalar(1.14);
+
+    // 沿轮廓采样，最后以根部中心做扇形三角化（该轮廓是星形，可行）
+    var outline = [], colr = [], uvs = [];
+    var NU = 11, NT = 9;
+
+    function push(x, y, f) {
+      outline.push(x, y);
+      uvs.push(f, 0.5);
+      var cc = deep.clone().lerp(tipC, Math.pow(f, 0.65));
+      colr.push(cc.r, cc.g, cc.b);
+    }
+
+    // 上叶前缘：根部 → 尖端
+    for (var i = 0; i <= NU; i++) {
+      var s = i / NU;
+      var x = -lenT * Math.pow(s, 0.86);
+      var y = r0 + (spread - r0) * Math.pow(s, 0.70);
+      push(x, y, 0.15 + 0.85 * s);
+    }
+    // 上叶尾缘：尖端 → 缺口（带缺刻）
+    for (var i2 = 1; i2 <= NT; i2++) {
+      var s2 = i2 / NT;
+      var x2 = -lenT * (1 - notch * s2) + lenT * 0.035 * Math.sin(s2 * Math.PI * 4.0);
+      var y2 = spread * (1 - s2);
+      push(x2, y2, 1.0);
+    }
+    // 下叶尾缘：缺口 → 尖端
+    for (var i3 = 1; i3 <= NT; i3++) {
+      var s3 = i3 / NT;
+      var x3 = -lenT * (1 - notch * (1 - s3)) + lenT * 0.035 * Math.sin(s3 * Math.PI * 4.0);
+      var y3 = -spread * s3;
+      push(x3, y3, 1.0);
+    }
+    // 下叶前缘：尖端 → 根部
+    for (var i4 = 1; i4 <= NU; i4++) {
+      var s4 = 1 - i4 / NU;
+      var x4 = -lenT * Math.pow(s4, 0.86);
+      var y4 = -(r0 + (spread - r0) * Math.pow(s4, 0.70));
+      push(x4, y4, 0.15 + 0.85 * s4);
+    }
+
+    // 组装：扇形，中心在原点
+    var pos = [], uv = [], col = [], idx = [];
+    pos.push(0, 0, 0); uv.push(0, 0.5);
+    col.push(deep.r, deep.g, deep.b);
+    var n = outline.length / 2;
+    for (var k = 0; k < n; k++) {
+      var ox = outline[k * 2], oy = outline[k * 2 + 1];
+      // 尾叶略向后弯（z 方向），从俯视角度看才有立体感
+      var oz = 0.20 * cfg.wid * Math.pow(Math.abs(ox) / lenT, 2.0);
+      pos.push(ox, oy, oz);
+      uv.push(uvs[k * 2], uvs[k * 2 + 1]);
+      col.push(colr[k * 3], colr[k * 3 + 1], colr[k * 3 + 2]);
+    }
+    for (var k2 = 0; k2 < n; k2++) {
+      idx.push(0, k2 + 1, ((k2 + 1) % n) + 1);
+    }
+    return geoFrom(pos, col, uv, idx);
+  }
+
+  // ---- 胸鳍：一片椭圆小扇，从鳃盖后方的体侧向外张开 ----
+  function buildPecFin(cfg, sign) {
+    var pecLen = cfg.len * (cfg.pecLen || 0.20);
+    var b = bodyAt(cfg, cfg.pecU || 0.17);
+    var finC = new THREE.Color(cfg.fin);
+    var deep = finC.clone().multiplyScalar(0.70);
+    var tipC = finC.clone().multiplyScalar(1.16);
+    var pos = [], uv = [], col = [], idx = [];
+
+    // 用"椭圆扇"描述：沿角度展开，半径按椭圆包络变化
+    var N = 12;
+    // 叶片根部在原点（枢轴），朝 +x 稍后、+z 外张
+    var a0 = -0.55, a1 = 0.55;   // 展开角范围（相对于外张方向）
+    for (var i = 0; i <= N; i++) {
+      var s = i / N;
+      var ang = a0 + (a1 - a0) * s;
+      // 椭圆半径：中间最长，两端收窄
+      var rr = pecLen * Math.pow(Math.sin(Math.PI * Math.min(s * 1.02, 1)), 0.55);
+      rr = Math.max(rr, pecLen * 0.06);
+      // 局部坐标：x 向后、z 向外、y 略下垂
+      var x = -rr * Math.sin(ang) * 0.80;
+      var z = sign * rr * Math.cos(ang);
+      var y = -rr * 0.22 * (1 - Math.cos(ang));
+      pos.push(x, y, z);
+      uv.push(s, 1);
+      var cc = deep.clone().lerp(tipC, Math.pow(Math.sin(Math.PI * s), 0.6));
+      col.push(cc.r, cc.g, cc.b);
+    }
+    // 根部中心
+    pos.push(0, 0, 0);
+    uv.push(0.5, 0);
+    col.push(deep.r, deep.g, deep.b);
+    var ci = pos.length / 3 - 1;
+    for (var j = 0; j < N; j++) idx.push(ci, j, j + 1);
+
+    var g = geoFrom(pos, col, uv, idx);
+    // 枢轴：贴在体侧、鳃盖后方
+    g.userData.pivot = { x: b.x, y: b.hh * 0.05, z: sign * b.ww * 0.82 };
+    return g;
+  }
+
+  // ---- 眼睛：眼白 + 瞳孔 + 高光 ----
+  function buildEyes(cfg) {
+    var b = bodyAt(cfg, cfg.eyeU || 0.135);
+    var er = Math.min(cfg.hgt * 0.115, b.ww * 0.66);
+    var out = [];
+    for (var s = -1; s <= 1; s += 2) {
+      var ex = b.x + cfg.len * 0.005;
+      var ey = b.hh * 0.24;
+      var ez = s * b.ww * 0.80;
+      var g1 = new THREE.SphereGeometry(er, 9, 7);
+      g1.translate(ex, ey, ez);
+      out.push(paintGeo(g1, cfg.eyeWhite || '#efe6d2'));
+
+      var g2 = new THREE.SphereGeometry(er * 0.60, 9, 7);
+      g2.translate(ex + er * 0.10, ey, ez + s * er * 0.52);
+      out.push(paintGeo(g2, cfg.eye || '#12121a'));
+
+      var g3 = new THREE.SphereGeometry(er * 0.24, 7, 5);
+      g3.translate(ex + er * 0.30, ey + er * 0.30, ez + s * er * 0.62);
+      out.push(paintGeo(g3, '#ffffff'));
+    }
+    return out;
+  }
+
+  // ---- 鱼种装配 ----
+  function buildFishParts(cfg) {
+    cfg._prof = fishProfile(cfg);
+
+    var body = buildFishBody(cfg);
+
+    var statics = [];
+    // 背鳍
+    statics.push(buildRidgeFin(cfg, cfg.dorsalU0 === undefined ? 0.20 : cfg.dorsalU0,
+      cfg.dorsalU1 === undefined ? 0.78 : cfg.dorsalU1,
+      cfg.hgt * (cfg.dorsal || 0.34), 1, { lobes: cfg.dorsalLobes || 6 }));
+    // 臀鳍
+    statics.push(buildRidgeFin(cfg, 0.56, 0.86, cfg.hgt * (cfg.anal || 0.24), -1,
+      { lobes: 4, wave: 0.14, bulge: 0.04 }));
+    // 腹鳍（一对）
+    statics.push(buildBellyFin(cfg, 0.34, -1, cfg.hgt * 0.20, 0.50));
+    statics.push(buildBellyFin(cfg, 0.34, -1, cfg.hgt * 0.18, -0.50));
+    // 眼睛
+    var eyes = buildEyes(cfg);
+    for (var i = 0; i < eyes.length; i++) statics.push(eyes[i]);
+
+    var staticGeo = mergeGeos(statics);
+    var tailGeo = buildTailFin(cfg);
+    var pecL = buildPecFin(cfg, 1);
+    var pecR = buildPecFin(cfg, -1);
+
+    return {
+      body: body, static: staticGeo, tail: tailGeo,
+      pecL: pecL, pecR: pecR,
+      tailOff: cfg.len * 0.5
+    };
+  }
+
+  // ---- 鱼皮：u=体长方向（0 吻端 → 1 尾柄），v 绕体一周（0 背 → 0.5 腹 → 1 背）----
+  function makeFishSkin(cfg) {
+    var W = 512, H = 256;
+    var c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    var g = c.getContext('2d');
+
+    // 1) 背深腹浅的对称渐变（v 绕体一周，两端都是背部）
+    var grad = g.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0.00, cfg.back);
+    grad.addColorStop(0.16, cfg.back);
+    grad.addColorStop(0.34, cfg.base);
+    grad.addColorStop(0.50, cfg.belly);
+    grad.addColorStop(0.66, cfg.base);
+    grad.addColorStop(0.84, cfg.back);
+    grad.addColorStop(1.00, cfg.back);
+    g.fillStyle = grad;
+    g.fillRect(0, 0, W, H);
+
+    // 2) 背部再加一层压暗，强化"上深下浅"
+    var dg = g.createLinearGradient(0, 0, 0, H);
+    dg.addColorStop(0.00, 'rgba(0,0,0,0.22)');
+    dg.addColorStop(0.22, 'rgba(0,0,0,0.04)');
+    dg.addColorStop(0.50, 'rgba(255,255,255,0.06)');
+    dg.addColorStop(0.78, 'rgba(0,0,0,0.04)');
+    dg.addColorStop(1.00, 'rgba(0,0,0,0.22)');
+    g.fillStyle = dg;
+    g.fillRect(0, 0, W, H);
+
+    // 3) 竖带（小丑鱼的白带 / 唐王的深色带 / 神仙鱼的条纹）
+    if (cfg.stripes) {
+      for (var i = 0; i < cfg.stripes.length; i++) {
+        var st = cfg.stripes[i];
+        var x0 = st.at * W;
+        var w = st.w * W;
+        var cu = (st.curve === undefined ? 0 : st.curve) * (W / 512);
+        // 黑边
+        if (st.edge) {
+          g.fillStyle = st.edge;
+          band(g, x0, w + 5, cu);
+        }
+        g.fillStyle = st.color;
+        band(g, x0, w, cu);
+      }
+    }
+
+    function band(ctx, x, w, cu) {
+      ctx.beginPath();
+      ctx.moveTo(x - cu, -8);
+      ctx.quadraticCurveTo(x + cu * 0.35, H * 0.5, x - cu, H + 8);
+      ctx.lineTo(x - cu - w, H + 8);
+      ctx.quadraticCurveTo(x - cu - w + cu * 0.35, H * 0.5, x - cu - w, -8);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // 4) 鳃盖：一条弧线 + 后面的浅影
+    var gx = (cfg.gillU === undefined ? 0.115 : cfg.gillU) * W;
+    g.globalAlpha = 0.22;
+    g.strokeStyle = '#000000';
+    g.lineWidth = 2.2;
+    g.beginPath();
+    g.moveTo(gx, H * 0.16);
+    g.quadraticCurveTo(gx + 13, H * 0.5, gx, H * 0.84);
+    g.stroke();
+    g.globalAlpha = 0.10;
+    g.fillStyle = '#000000';
+    g.beginPath();
+    g.moveTo(gx, H * 0.16);
+    g.quadraticCurveTo(gx + 13, H * 0.5, gx, H * 0.84);
+    g.lineTo(gx - H * 0.30, H * 0.90);
+    g.lineTo(gx - H * 0.30, H * 0.10);
+    g.closePath();
+    g.fill();
+    g.globalAlpha = 1;
+
+    // 5) 侧线：两侧各一条断续的细线（v=0.25 / 0.75 即体侧）
+    g.globalAlpha = 0.13;
+    g.strokeStyle = '#000000';
+    g.lineWidth = 1.4;
+    for (var s = 0; s < 2; s++) {
+      var ly = s === 0 ? H * 0.25 : H * 0.75;
+      for (var x = W * 0.10; x < W * 0.92; x += 9) {
+        g.beginPath();
+        g.moveTo(x, ly);
+        g.lineTo(x + 5, ly + 0.6);
+        g.stroke();
+      }
+    }
+    g.globalAlpha = 1;
+
+    // 6) 鳞片：交错的弧形网格，靠近体侧更明显
+    g.globalAlpha = 0.09;
+    g.strokeStyle = '#ffffff';
+    g.lineWidth = 1.1;
+    var rowH = H / 13;
+    for (var r = 0; r < 14; r++) {
+      var y = r * rowH;
+      var off = (r % 2) * (W / 44);
+      for (var x2 = -W / 44; x2 < W + W / 44; x2 += W / 22) {
+        g.beginPath();
+        g.arc(x2 + off, y, W / 44, -0.35, 0.35);
+        g.stroke();
+      }
+    }
+    g.globalAlpha = 0.06;
+    g.strokeStyle = '#000000';
+    for (var r2 = 0; r2 < 14; r2++) {
+      var y2 = r2 * rowH + rowH * 0.5;
+      var off2 = (r2 % 2) * (W / 44);
+      for (var x3 = -W / 44; x3 < W + W / 44; x3 += W / 22) {
+        g.beginPath();
+        g.arc(x3 + off2, y2, W / 44, -0.30, 0.30);
+        g.stroke();
+      }
+    }
+    g.globalAlpha = 1;
+
+    // 7) 头部与吻端：略暗，并画出嘴线
+    var hg = g.createLinearGradient(0, 0, W * 0.10, 0);
+    hg.addColorStop(0, 'rgba(0,0,0,0.26)');
+    hg.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = hg;
+    g.fillRect(0, 0, W * 0.10, H);
+    g.strokeStyle = 'rgba(0,0,0,0.34)';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(W * 0.012, H * 0.40);
+    g.quadraticCurveTo(W * 0.045, H * 0.50, W * 0.012, H * 0.60);
+    g.stroke();
+
+    var t = new THREE.CanvasTexture(c);
+    t.wrapS = THREE.ClampToEdgeWrapping;
+    t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = 4;
+    return t;
+  }
+
+  var skinCache = {};
+  function fishSkin(cfg) {
+    if (!skinCache[cfg.name]) skinCache[cfg.name] = makeFishSkin(cfg);
+    return skinCache[cfg.name];
+  }
+
+  // ---- 水下的鱼影：一个实例化网格承载全部 ----
+  var shadowGeo = new THREE.CircleGeometry(1, 18);
+  shadowGeo.rotateX(-Math.PI / 2);
+  // 鱼影：要淡。深色椭圆在浅色海床上会像一块脏污，而不是影子。
+  var shadowMat = new THREE.MeshBasicMaterial({
+    color: 0x14333d, transparent: true, opacity: 0.085, depthWrite: false
+  });
+
+  // ---- 鱼种 ----
+  //  profile 参数：snout=吻端厚薄 peak=最厚处位置 peduncle=尾柄粗细
+  //  dorsal/anal=背鳍与臀鳍高度（相对体高） tailSpread/notch/tailLen=尾形
+  var FISH_KINDS = [
+    { // 小丑鱼：卵形、钝吻、三条白带带黑边
+      name: 'clown', len: 1.78, hgt: 1.18, wid: 0.70, fin: '#f5842a',
+      base: '#ff6b0a', back: '#c03f00', belly: '#ffc078',
+      snout: 0.13, peak: 0.32, peduncle: 0.22,
+      dorsal: 0.30, anal: 0.22, dorsalU0: 0.22, dorsalU1: 0.80,
+      tailSpread: 0.36, notch: 0.22, tailLen: 0.34,
+      stripes: [
+        { at: 0.165, w: 0.058, color: '#fdf8ee', edge: 'rgba(38,20,10,0.55)', curve: -6 },
+        { at: 0.500, w: 0.080, color: '#fdf8ee', edge: 'rgba(38,20,10,0.55)', curve: 10 },
+        { at: 0.815, w: 0.048, color: '#fdf8ee', edge: 'rgba(38,20,10,0.55)', curve: 4 }
+      ]
+    },
+    { // 蓝唐王鱼：盘状、吻略尖、蓝色体侧一道深色带
+      name: 'tang', len: 2.52, hgt: 1.86, wid: 0.60, fin: '#f2c81e',
+      base: '#1657e0', back: '#0b2461', belly: '#79b8f2',
+      snout: 0.16, peak: 0.34, peduncle: 0.17,
+      dorsal: 0.24, anal: 0.26, dorsalU0: 0.16, dorsalU1: 0.86,
+      tailSpread: 0.30, notch: 0.30, tailLen: 0.30,
+      stripes: [{ at: 0.66, w: 0.15, color: '#0a2050', curve: 16 }]
+    },
+    { // 黄高鳍刺尾鱼：盘状、很高的背鳍
+      name: 'yellow', len: 2.05, hgt: 1.80, wid: 0.52, fin: '#f8dc55',
+      base: '#ffd400', back: '#d09b00', belly: '#fff2ac',
+      snout: 0.15, peak: 0.33, peduncle: 0.18,
+      dorsal: 0.42, anal: 0.40, dorsalU0: 0.18, dorsalU1: 0.84,
+      dorsalLobes: 5,
+      tailSpread: 0.28, notch: 0.26, tailLen: 0.30
+    },
+    { // 神仙鱼：极高的盘状体，背臀鳍拖长
+      name: 'angel', len: 2.85, hgt: 2.05, wid: 0.54, fin: '#e9c53a',
+      base: '#f6f1e4', back: '#c9bfa8', belly: '#fffdf8',
+      snout: 0.18, peak: 0.36, peduncle: 0.14,
+      dorsal: 0.46, anal: 0.44, dorsalU0: 0.14, dorsalU1: 0.88, dorsalLobes: 4,
+      tailSpread: 0.30, notch: 0.34, tailLen: 0.32,
+      stripes: [
+        { at: 0.20, w: 0.070, color: '#2b2b30', curve: -8 },
+        { at: 0.50, w: 0.085, color: '#2b2b30', curve: 10 },
+        { at: 0.78, w: 0.055, color: '#2b2b30', curve: 4 }
+      ]
+    },
+    { // 青梭鱼：细长、吻尖、尾深叉
+      name: 'needle', len: 4.30, hgt: 0.62, wid: 0.40, fin: '#b9cfd6',
+      base: '#9fb9c2', back: '#3d6474', belly: '#e8f2f5',
+      snout: 0.34, peak: 0.26, peduncle: 0.26,
+      dorsal: 0.30, anal: 0.26, dorsalU0: 0.20, dorsalU1: 0.74,
+      tailSpread: 0.34, notch: 0.44, tailLen: 0.30, pecLen: 0.16
+    },
+    { // 银鱼：小、细、成群
+      name: 'silver', len: 1.10, hgt: 0.44, wid: 0.28, fin: '#c9dbe3',
+      base: '#c3d7de', back: '#6b8b9b', belly: '#f0f7f9',
+      snout: 0.22, peak: 0.28, peduncle: 0.22,
+      dorsal: 0.26, anal: 0.22,
+      tailSpread: 0.32, notch: 0.40, tailLen: 0.32
+    },
+    { // 蝴蝶鱼：极高极薄，吻尖，眼后一道黑带
+      name: 'bfly', len: 2.30, hgt: 1.62, wid: 0.52, fin: '#f4e9a8',
+      base: '#ffe14d', back: '#d8a800', belly: '#fffbdc',
+      snout: 0.30, peak: 0.36, peduncle: 0.15,
+      dorsal: 0.40, anal: 0.42, dorsalU0: 0.16, dorsalU1: 0.86, dorsalLobes: 5,
+      tailSpread: 0.26, notch: 0.24, tailLen: 0.28,
+      stripes: [
+        { at: 0.155, w: 0.095, color: '#26262c', curve: 6 },
+        { at: 0.70, w: 0.040, color: '#26262c', curve: 3 }
+      ]
+    }
+  ];
+
+  // 巡游路线：都在较深的海域（离岸 20~40m，水深 4~9m）
+  var FISH_ROUTES = {
+    clown: [{ cx: 2.0, cz: -6.0, rx: 4.6, rz: 3.0, speed: 0.28, phase: 0.4 },
+            { cx: 9.5, cz: -1.5, rx: 4.0, rz: 3.0, speed: 0.33, phase: 2.6 },
+            { cx: -3.5, cz: 2.5, rx: 3.6, rz: 2.8, speed: 0.31, phase: 4.4 }],
+    tang: [{ cx: 5.5, cz: -12.0, rx: 5.0, rz: 3.4, speed: 0.22, phase: 1.2 },
+           { cx: 12.0, cz: 4.0, rx: 4.4, rz: 3.2, speed: 0.27, phase: 3.9 }],
+    yellow: [{ cx: -1.0, cz: -13.0, rx: 4.2, rz: 3.0, speed: 0.28, phase: 0.9 },
+             { cx: 8.0, cz: 7.5, rx: 4.0, rz: 3.0, speed: 0.26, phase: 5.1 }],
+    angel: [{ cx: 14.0, cz: -7.0, rx: 4.6, rz: 3.2, speed: 0.18, phase: 2.0 }],
+    needle: [{ cx: 4.0, cz: 9.0, rx: 6.4, rz: 4.2, speed: 0.21, phase: 4.0 }],
+    bfly: [{ cx: 10.5, cz: -4.0, rx: 3.6, rz: 2.6, speed: 0.24, phase: 1.7 },
+           { cx: 0.5, cz: 4.5, rx: 3.2, rz: 2.4, speed: 0.26, phase: 4.8 }]
+  };
+
+  var fishKinds = [];
+  var fishCount = 0;
+
+  var _mBody = new THREE.Matrix4();
+  var _mPart = new THREE.Matrix4();
+  var _mTmp = new THREE.Matrix4();
+  var _q = new THREE.Quaternion();
+  var _e = new THREE.Euler();
+  var _v = new THREE.Vector3();
+  var _sc = new THREE.Vector3(1, 1, 1);
+
+  (function stockFish() {
+    for (var k = 0; k < FISH_KINDS.length; k++) {
+      var cfg = FISH_KINDS[k];
+      var items = [];
+
+      if (cfg.name === 'silver') {
+        for (var n = 0; n < 14; n++) {
+          items.push({
+            route: {
+              cx: 6.0 + (Math.random() - 0.5) * 10.0,
+              cz: 0.0 + (Math.random() - 0.5) * 8.0,
+              rx: 3.4 + Math.random() * 3.4,
+              rz: 2.4 + Math.random() * 2.4,
+              speed: 0.30 + Math.random() * 0.22,
+              phase: Math.random() * Math.PI * 2
+            },
+            bob: Math.random() * 6.0,
+            small: true
+          });
+        }
+      } else {
+        var rs = FISH_ROUTES[cfg.name] || [];
+        for (var j = 0; j < rs.length; j++) {
+          items.push({ route: rs[j], bob: j * 1.7 + k * 0.6 });
+        }
+      }
+
+      var parts = buildFishParts(cfg);
+      var count = items.length;
+
+      // 身体：贴图 + 顶点色（尾柄/下颌的柔和压暗）
+      var bodyMat = new THREE.MeshBasicMaterial({
+        map: fishSkin(cfg),
+        vertexColors: true,
+        color: new THREE.Color(1.26, 1.05, 1.01)
+      });
+      // 鳍与眼：顶点色（基本色已烘进顶点色）
+      var partMat = new THREE.MeshBasicMaterial({
+        vertexColors: true,
+        side: THREE.DoubleSide,
+        color: new THREE.Color(1.26, 1.05, 1.01)
+      });
+
+      var bodyIM = new THREE.InstancedMesh(parts.body, bodyMat, count);
+      var staticIM = new THREE.InstancedMesh(parts.static, partMat, count);
+      var tailIM = new THREE.InstancedMesh(parts.tail, partMat, count);
+      var pecLIM = new THREE.InstancedMesh(parts.pecL, partMat, count);
+      var pecRIM = new THREE.InstancedMesh(parts.pecR, partMat, count);
+
+      var ims = [bodyIM, staticIM, tailIM, pecLIM, pecRIM];
+      for (var m = 0; m < ims.length; m++) {
+        ims[m].instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        ims[m].frustumCulled = false;
+        fishRoot.add(ims[m]);
+      }
+
+      fishKinds.push({
+        cfg: cfg, bodyIM: bodyIM, staticIM: staticIM, tailIM: tailIM,
+        pecLIM: pecLIM, pecRIM: pecRIM,
+        items: items, tailOff: parts.tailOff,
+        pecPivotL: parts.pecL.userData.pivot,
+        pecPivotR: parts.pecR.userData.pivot
+      });
+      fishCount += count;
+    }
+
+    fishShadow = new THREE.InstancedMesh(shadowGeo, shadowMat, fishCount);
+    fishShadow.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    fishShadow.frustumCulled = false;
+    fishRoot.add(fishShadow);
+  })();
+
+  // 鱼的深度：略低于水面，避免在浅滩上"浮在沙子上"
+  var FISH_BELOW_SURFACE = 1.6;
+
+  function updateFish(t) {
+    var idx = 0;
+    for (var k = 0; k < fishKinds.length; k++) {
+      var K = fishKinds[k];
+      var cfg = K.cfg;
+      for (var i = 0; i < K.items.length; i++) {
+        var it = K.items[i];
+        var rt = it.route;
+        var a = rt.phase + t * rt.speed;
+        var x = rt.cx + rt.rx * Math.cos(a);
+        var z = rt.cz + rt.rz * Math.sin(a);
+
+        // 巡游方向 → 朝向
+        var vx = -rt.rx * Math.sin(a);
+        var vz = rt.rz * Math.cos(a);
+        var yaw = Math.atan2(-vz, vx);
+
+        // 悬停在接近水面的位置；浅处则贴住沙床上方
+        var bed = seabedY(x, z);
+        var y = -FISH_BELOW_SURFACE + Math.sin(t * 0.8 + it.bob) * (it.small ? 0.06 : 0.10);
+        var minY = bed + cfg.hgt * 0.75;
+        if (y < minY) y = minY;
+
+        _v.set(x, y, z);
+        _e.set(Math.sin(t * 0.6 + it.bob) * 0.05, yaw, Math.sin(a * 2.0 + it.bob) * 0.10);
+        _q.setFromEuler(_e);
+        _mBody.compose(_v, _q, _sc);
+
+        K.bodyIM.setMatrixAt(i, _mBody);
+        K.staticIM.setMatrixAt(i, _mBody);
+
+        // 尾鳍：以尾柄为轴左右摆
+        var wag = Math.sin(t * (it.small ? 9.0 : 6.2) + it.bob * 3.0);
+        _mPart.makeRotationY(wag * (it.small ? 0.40 : 0.30));
+        _mPart.setPosition(-K.tailOff, 0, 0);
+        _mTmp.multiplyMatrices(_mBody, _mPart);
+        K.tailIM.setMatrixAt(i, _mTmp);
+
+        // 胸鳍：绕自身根部上下轻扇
+        var flap = Math.sin(t * (it.small ? 7.5 : 5.2) + it.bob * 2.0) * (it.small ? 0.30 : 0.24);
+
+        var pL = K.pecPivotL;
+        _mPart.makeRotationX(flap);
+        _mPart.setPosition(pL.x, pL.y, pL.z);
+        _mTmp.multiplyMatrices(_mBody, _mPart);
+        K.pecLIM.setMatrixAt(i, _mTmp);
+
+        var pR = K.pecPivotR;
+        _mPart.makeRotationX(-flap);
+        _mPart.setPosition(pR.x, pR.y, pR.z);
+        _mTmp.multiplyMatrices(_mBody, _mPart);
+        K.pecRIM.setMatrixAt(i, _mTmp);
+
+        // 鱼影
+        _v.set(x, bed + 0.035, z);
+        _e.set(0, yaw, 0);
+        _q.setFromEuler(_e);
+        _sc.set(cfg.len * 0.42, 1, cfg.hgt * 0.46);
+        _mBody.compose(_v, _q, _sc);
+        fishShadow.setMatrixAt(idx++, _mBody);
+        _sc.set(1, 1, 1);
+      }
+
+      K.bodyIM.instanceMatrix.needsUpdate = true;
+      K.staticIM.instanceMatrix.needsUpdate = true;
+      K.tailIM.instanceMatrix.needsUpdate = true;
+      K.pecLIM.instanceMatrix.needsUpdate = true;
+      K.pecRIM.instanceMatrix.needsUpdate = true;
+    }
+    fishShadow.instanceMatrix.needsUpdate = true;
+  }
+
+  /* =========================================================
+     主循环
+     ========================================================= */
+  var last = performance.now() / 1000;
+  var tAcc = 0;
+  var seeded = false;
+
+  /* =========================================================
+     点击水面：投下涟漪
+     ========================================================= */
+  // 活跃涟漪列表（最多 4 个）。每帧整理成紧凑的 uRip[0..n-1]，
+  // 着色器只需循环 n 次；没有涟漪时 n=0，整段逻辑被 early-out 跳过。
+  var rippleList = [];
+  var RIPPLE_LIFE = 7.0;
+  var tmpRay = new THREE.Ray();
+  var tmpPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  var ndc = new THREE.Vector2();
+  var hitPoint = new THREE.Vector3();
+
+  function addRipple(clientX, clientY) {
+    var rect = renderer.domElement.getBoundingClientRect();
+    ndc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    ndc.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+    // 从相机射向 y=0 平面
+    tmpRay.origin.copy(camera.position);
+    tmpRay.direction.set(ndc.x, ndc.y, 0.5).unproject(camera).sub(camera.position).normalize();
+    if (!tmpRay.intersectPlane(tmpPlane, hitPoint)) return;
+
+    // 只在水面上生效（沙滩上点击不产生涟漪）
+    if (shoreDJS(hitPoint.x, hitPoint.z) < 0.4) return;
+
+    if (rippleList.length >= 4) rippleList.shift();
+    rippleList.push({ x: hitPoint.x, z: hitPoint.z, t0: tAcc, w: 1.6 });
+  }
+
+  function syncRipples(t) {
+    // 丢弃过期项
+    var n = 0;
+    for (var i = 0; i < rippleList.length; i++) {
+      if (t - rippleList[i].t0 < RIPPLE_LIFE) rippleList[n++] = rippleList[i];
+    }
+    rippleList.length = n;
+
+    var arr = U.uRip.value;
+    for (var j = 0; j < n; j++) {
+      var rp = rippleList[j];
+      arr[j].set(rp.x, rp.z, rp.t0, rp.w);
+    }
+    U.uRipN.value = n;
+  }
+
+  function onPointerDown(ev) {
+    // 触摸与鼠标都支持
+    addRipple(ev.clientX, ev.clientY);
+  }
+  window.addEventListener('pointerdown', onPointerDown, { passive: true });
+
+  /* =========================================================
+     自适应分辨率：帧率持续偏低就降一倍率，回升后再慢慢补回来
+     ========================================================= */
+  var quality = {
+    ratio: pixelRatio,
+    min: 0.6,
+    // 上限 1.0：这是 3D 场景而不是文字界面，1x 已经很清晰；
+    // 在 2x DPR 屏上跑 2x 渲染等于 4 倍像素，是之前卡顿的主因。
+    max: 1.0,
+    acc: 0,      // 累计帧时间
+    frames: 0,
+    cooldown: 60 // 调整后等一段时间再做下一次判断，避免抖动
+  };
+
+  function tuneQuality(dtMs) {
+    if (quality.cooldown > 0) { quality.cooldown--; return; }
+    quality.acc += dtMs;
+    quality.frames++;
+    if (quality.frames < 40) return;
+
+    var avg = quality.acc / quality.frames;
+    quality.acc = 0;
+    quality.frames = 0;
+
+    if (avg > 22 && quality.ratio > quality.min) {
+      quality.ratio = Math.max(quality.min, quality.ratio - 0.2);
+      renderer.setPixelRatio(quality.ratio);
+      resize();
+      quality.cooldown = 60;
+    } else if (avg < 12 && quality.ratio < quality.max) {
+      quality.ratio = Math.min(quality.max, quality.ratio + 0.2);
+      renderer.setPixelRatio(quality.ratio);
+      resize();
+      quality.cooldown = 120;
+    }
+  }
+
+  function frame() {
+    requestAnimationFrame(frame);
+
+    var now = performance.now() / 1000;
+    var dt = Math.min(now - last, 0.05);
+    last = now;
+    tAcc += dt;
+    U.uTime.value = tAcc;
+
+    tuneQuality(dt * 1000);
+
+    if (!seeded) {
+      seeded = true;
+      // 初始投几颗扰动，避免水面一开始死板
+      var drops = simMat.uniforms.uDrops.value;
+      for (var i = 0; i < drops.length; i++) {
+        drops[i].set(Math.random(), Math.random(), 0.0016, 0.05 + Math.random() * 0.05);
+      }
+      stepSim();
+      updateDrops(tAcc);
+    }
+
+    updateDrops(tAcc);
+    stepSim();
+    syncRipples(tAcc);
+
+    // ---- 棕榈树摇曳：树干轻摆 + 每片叶子独立起伏，阴影同步偏移 ----
+    var t = tAcc;
+    var leanZ = Math.sin(t * 0.55) * 0.022 + Math.sin(t * 1.23 + 1.4) * 0.009;
+    var leanX = Math.cos(t * 0.42 + 0.6) * 0.020 + Math.sin(t * 0.97) * 0.008;
+    palmRoot.rotation.z = leanZ;
+    palmRoot.rotation.x = leanX;
+    // 树冠顶端的水平位移，用来同步阴影
+    U.uSway.value.set(-leanZ * PALM_HEIGHT, leanX * PALM_HEIGHT);
+
+    for (var f = 0; f < fronds.length; f++) {
+      var fd = fronds[f];
+      var ph = fd.userData.phase;
+      fd.rotation.z = fd.userData.baseZ +
+        Math.sin(t * 1.45 + ph) * fd.userData.amp +
+        Math.sin(t * 2.9 + ph * 1.7) * fd.userData.amp * 0.35;
+      fd.rotation.x = fd.userData.baseX +
+        Math.cos(t * 1.15 + ph * 0.8) * fd.userData.amp * 0.6;
+    }
+
+    // ---- 鱼群游动 ----
+    updateFish(tAcc);
+
+    // 波场与阴影图都要在渲染之前更新（两个 pass 都会用到）
+    bakeWave();
+    bakeShadow();
+
+    // pass 1: 海床 / 沙滩 / 鱼 → 折射贴图
+    water.visible = false;
+    palmRoot.visible = false;
+    fishRoot.visible = true;
+    renderer.setRenderTarget(rtScene);
+    renderer.clear(true, true, false);
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(null);
+
+    // pass 2: 正式画面（鱼由水面的折射与吸收合成，所以这里隐藏）
+    water.visible = true;
+    palmRoot.visible = true;
+    fishRoot.visible = false;
+    renderer.render(scene, camera);
+  }
+
+  window.addEventListener('resize', resize);
+
+  /* =========================================================
+     棕榈阴影图：每帧把 palmShadow 渲进一张小贴图
+     ========================================================= */
+  var SHADOW_R = 22;
+  var SHADOW_N = 384;
+  var shadowRT = new THREE.WebGLRenderTarget(SHADOW_N, SHADOW_N, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat,
+    type: THREE.UnsignedByteType,
+    wrapS: THREE.ClampToEdgeWrapping,
+    wrapT: THREE.ClampToEdgeWrapping,
+    depthBuffer: false,
+    stencilBuffer: false
+  });
+  U.uShadow.value = shadowRT.texture;
+  U.uShadowXf.value.z = 1 / (2 * SHADOW_R);
+
+  var shadowBakeMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: U.uTime,
+      uSunDir: U.uSunDir,
+      uPalmBase: U.uPalmBase,
+      uPalmTop: U.uPalmTop,
+      uPalmHeight: U.uPalmHeight,
+      uSway: U.uSway,
+      uShadowC: { value: new THREE.Vector2() },
+      uR: { value: SHADOW_R }
+    },
+    vertexShader: [
+      'varying vec2 vUv;',
+      'void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }'
+    ].join('\n'),
+    fragmentShader: [
+      GLSL_UNIFORMS,
+      GLSL_NOISE,
+      GLSL_SHADOW,
+      'uniform vec2 uShadowC;',
+      'uniform float uR;',
+      'varying vec2 vUv;',
+      'void main(){',
+      '  vec2 q = uShadowC + (vUv - 0.5) * 2.0 * uR;',
+      '  gl_FragColor = vec4(palmShadow(q), 0.0, 0.0, 1.0);',
+      '}'
+    ].join('\n'),
+    depthTest: false,
+    depthWrite: false
+  });
+
+  var shadowScene = new THREE.Scene();
+  var shadowCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  shadowScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), shadowBakeMat));
+
+  function bakeShadow() {
+    // 阴影中心跟着太阳方向与摇曳走
+    var sx = PALM.x + PALM_TOP.x + U.uSway.value.x
+           - (SUN.x / SUN.y) * PALM_HEIGHT;
+    var sz = PALM.z + PALM_TOP.y + U.uSway.value.y
+           - (SUN.z / SUN.y) * PALM_HEIGHT;
+    U.uShadowXf.value.x = sx;
+    U.uShadowXf.value.y = sz;
+    shadowBakeMat.uniforms.uShadowC.value.set(sx, sz);
+
+    renderer.setRenderTarget(shadowRT);
+    renderer.clear(true, false, false);
+    renderer.render(shadowScene, shadowCam);
+    renderer.setRenderTarget(null);
+  }
+
+  // 先烘焙地形数据（水面与沙滩的着色器都依赖它），再构建并预烘焙波场
+  bakeTerrain();
+  buildWaveBake();
+  bakeShadow();
+  bakeWave();
+
+  // 首帧预热，避免第一帧阴影/噪声有跳变
+  stepSim();
+  frame();
+})();
+</script>
+</body>
+</html>

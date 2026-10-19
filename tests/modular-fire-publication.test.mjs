@@ -26,6 +26,10 @@ const firePreview = 'modular-fire-response/dist/index.html';
 const fireTitle = 'FIRELINK · 分布式智能消防';
 const roadsterPreview = 'roadster-escape-toll/index.html';
 const roadsterTitle = 'Roadster 逃离收费站';
+const oceanPreview = 'ocean-shallows/index.html';
+const oceanTitle = '浅海 · Ocean Shallows';
+// 新项目一律追加到末尾，所以这个列表只会在尾部增长。
+const appendedPreviews = [firePreview, roadsterPreview, oceanPreview];
 
 function* walk(node) {
   yield node;
@@ -37,20 +41,25 @@ const hasClass = (node, name) => (attribute(node, 'class') ?? '').split(/\s+/u).
 const text = node => [...walk(node)].filter(child => child.nodeName === '#text').map(child => child.value).join('').trim();
 const nodes = [...walk(parse(html))];
 
-test('collection appends FIRELINK then Roadster after all fourteen existing previews in their original order', () => {
-  assert.deepEqual(discoverPreviews(html), [...existingPreviews, firePreview, roadsterPreview]);
+/** 按标题取卡片，而不是按位置——位置会随新项目追加而变。 */
+function cardByTitle(title) {
+  const card = nodes.filter(node => hasClass(node, 'card'))
+    .find(node => text([...walk(node)].find(child => child.tagName === 'h2')) === title);
+  assert.ok(card, `首页缺少标题为「${title}」的卡片`);
+  return [...walk(card)];
+}
+
+test('collection appends new previews at the tail after the fourteen originals in their original order', () => {
+  assert.deepEqual(discoverPreviews(html), [...existingPreviews, ...appendedPreviews]);
 });
 
-test('homepage metadata advertises sixteen runnable projects', () => {
+test('homepage metadata advertises seventeen runnable projects', () => {
   const description = nodes.find(node => node.tagName === 'meta' && attribute(node, 'name') === 'description');
-  assert.match(attribute(description, 'content'), /16 个可运行项目/u);
+  assert.match(attribute(description, 'content'), /17 个可运行项目/u);
 });
 
-test('last card presents Roadster as an offline mini-game with preview and prompt links', () => {
-  const cards = nodes.filter(node => hasClass(node, 'card'));
-  const cardNodes = [...walk(cards.at(-1))];
-  const heading = cardNodes.find(node => node.tagName === 'h2');
-  assert.equal(text(heading), roadsterTitle);
+test('Roadster card presents an offline mini-game with preview and prompt links', () => {
+  const cardNodes = cardByTitle(roadsterTitle);
   const preview = cardNodes.find(node => node.tagName === 'a' && hasClass(node, 'badge') && hasClass(node, 'cover'));
   assert.equal(attribute(preview, 'href'), `./${roadsterPreview}`);
   const prompt = cardNodes.find(node => node.tagName === 'a' && hasClass(node, 'prompt-link'));
@@ -63,11 +72,8 @@ test('last card presents Roadster as an offline mini-game with preview and promp
   }
 });
 
-test('second-to-last card still presents FIRELINK with preview and reproduction links', () => {
-  const cards = nodes.filter(node => hasClass(node, 'card'));
-  const cardNodes = [...walk(cards.at(-2))];
-  const heading = cardNodes.find(node => node.tagName === 'h2');
-  assert.equal(text(heading), fireTitle);
+test('FIRELINK card keeps its preview and reproduction prompt links', () => {
+  const cardNodes = cardByTitle(fireTitle);
   const preview = cardNodes.find(node => node.tagName === 'a' && hasClass(node, 'badge') && hasClass(node, 'cover'));
   assert.equal(attribute(preview, 'href'), `./${firePreview}`);
   const prompt = cardNodes.find(node => node.tagName === 'a' && hasClass(node, 'prompt-link'));
@@ -80,18 +86,41 @@ test('second-to-last card still presents FIRELINK with preview and reproduction 
   }
 });
 
-test('README lists Roadster last and gives its final project overview before contribution instructions', () => {
-  const rows = readme.split('\n').filter(line => /^\| [a-z][\w-]+ \|/u.test(line));
-  const expectedProjects = [...existingPreviews, firePreview, roadsterPreview].map(preview => preview.split('/')[0]);
+test('the newest project sits last in the homepage grid', () => {
+  const cards = nodes.filter(node => hasClass(node, 'card'));
+  const heading = [...walk(cards.at(-1))].find(node => node.tagName === 'h2');
+  assert.equal(text(heading), oceanTitle);
+  const preview = [...walk(cards.at(-1))].find(node => node.tagName === 'a' && hasClass(node, 'badge') && hasClass(node, 'cover'));
+  assert.equal(attribute(preview, 'href'), `./${oceanPreview}`);
+});
+
+test('README lists the same projects in the same order, newest last', () => {
+  const rows = readme.split(/\r?\n/u).filter(line => /^\| [a-z][\w-]+ \|/u.test(line));
+  const expectedProjects = [...existingPreviews, ...appendedPreviews].map(preview => preview.split('/')[0]);
   assert.deepEqual(rows.map(row => row.split('|')[1].trim()), expectedProjects);
-  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/roadster-escape-toll/)'));
-  assert.ok(rows.at(-1).includes('[README](./roadster-escape-toll/README.md)'));
+  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/ocean-shallows/)'));
+  assert.ok(rows.at(-1).includes('[README](./ocean-shallows/README.md)'));
+});
+
+test('README puts the newest overview immediately before the contribution instructions', () => {
   const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
   const contributionIndex = headings.indexOf('## 新增项目');
   assert.ok(contributionIndex > 0);
-  assert.ok(headings[contributionIndex - 1].startsWith('## roadster-escape-toll '));
-  const overviewStart = readme.indexOf('## roadster-escape-toll ');
+  assert.ok(headings[contributionIndex - 1].startsWith('## ocean-shallows '));
+  const overviewStart = readme.indexOf('## ocean-shallows ');
   const overview = readme.slice(overviewStart, readme.indexOf('## 新增项目', overviewStart));
+  assert.match(overview, /浅海|潮间带|热带/u);
+  assert.match(overview, /\[在线预览\]\(https:\/\/fanhuayishiy\.github\.io\/ai-demo\/ocean-shallows\/\)/u);
+  assert.ok(overview.includes('[README（含主生成提示原文）](./ocean-shallows/README.md)'));
+});
+
+test('README keeps the Roadster overview directly before the newest overview', () => {
+  const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
+  const roadsterIndex = headings.findIndex(heading => heading.startsWith('## roadster-escape-toll '));
+  assert.ok(roadsterIndex > 0);
+  assert.ok(headings[roadsterIndex + 1].startsWith('## ocean-shallows '));
+  const overviewStart = readme.indexOf('## roadster-escape-toll ');
+  const overview = readme.slice(overviewStart, readme.indexOf('## ocean-shallows ', overviewStart));
   assert.match(overview, /冷气推进器/u);
   assert.match(overview, /烧完不补/u);
   assert.match(overview, /1:1/u);

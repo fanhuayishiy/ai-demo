@@ -33,6 +33,7 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 | warehouse-demo | WareTrack 单仓三维运营中心，叉车搬运闭环、库存任务联动、对象聚焦与镜头巡游 | [在线](https://fanhuayishiy.github.io/ai-demo/warehouse-demo/dist/client/) | [README](./warehouse-demo/README.md) |
 | modular-fire-response | FIRELINK 分布式消防概念演示，三机共用一根水带、移动增压、循环补水与无人机物资投送 | [在线](https://fanhuayishiy.github.io/ai-demo/modular-fire-response/dist/) | [README](./modular-fire-response/README.md) |
 | roadster-escape-toll | Roadster 逃离收费站：SpaceX 冷气推进器小游戏，冷气限量烧完不补，车模按官方渲染图 1:1 对齐 | [在线](https://fanhuayishiy.github.io/ai-demo/roadster-escape-toll/) | [README](./roadster-escape-toll/README.md) |
+| ocean-shallows | 俯视视角的热带浅海：白沙沙滩、随风摇曳的棕榈树、由浅绿松石渐变到深蓝的海水，水下焦散光网与七种热带鱼，点击水面投下涟漪 | [在线](https://fanhuayishiy.github.io/ai-demo/ocean-shallows/) | [README](./ocean-shallows/README.md) |
 
 ---
 
@@ -140,6 +141,12 @@ Three.js 程序化奶油白单翼机、紫色立体云海、橙金天空和翼�
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/roadster-escape-toll/) · [README（含主生成提示原文）](./roadster-escape-toll/README.md) · [官方渲染侧视叠加对比](./roadster-escape-toll/docs/official-render-compare.png)
 
+## ocean-shallows — 浅海 · Ocean Shallows
+
+俯视视角的热带浅海：不规则岸线、白色浪沫、从浅绿松石渐变到深蓝的海水，水下游着七种热带鱼，点击水面可以投下向外扩散的涟漪。全部几何与纹理在运行时程序化生成，没有外部模型和贴图；地形高度、波场梯度、叶片阴影都预烘焙成纹理，因此能把每帧开销压在一次全屏采样上。已在 1920×1080 下实测远超 60fps。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/ocean-shallows/) · [README（含主生成提示原文）](./ocean-shallows/README.md)
+
 ---
 
 ## 新增项目
@@ -149,9 +156,37 @@ Three.js 程序化奶油白单翼机、紫色立体云海、橙金天空和翼�
 1. `## 主生成提示（原文）` —— 逐字收录提示词，不改写、不精简（需要拆解时另起 `###` 小节，原文保持不动）；
 2. 功能亮点 / 技术栈 / 运行方式 / 目录结构 / 验证与边界。
 
-本文件只补两样：「项目列表」表格加一行（预览链接指向可交互页面，不要指向 `.mp4` 等媒体文件），以及上方一段 2-4 句的速览（简介 + 预览/文档链接）。
+### 排序规则：新项目一律排在最后一位
 
-排序约定：「项目列表」中的 `habitat-interactive-home` 固定为第一项，新增项目不得插入它之前。
+首页 `index.html` 的卡片顺序就是发布顺序（`prepare-pages` 按卡片顺序发现预览），因此三处顺序必须完全一致：
+
+1. 首页 `.grid` 里的卡片；
+2. 「项目列表」表格的行；
+3. 下方「项目速览」的 `##` 段落。
+
+**新项目只能追加到这三处的末尾，不得插入任何已有项目之间。** 这条规则由 `tests/add-project.test.mjs` 自动校验：一旦顺序漂移，`npm test` 会直接失败。
+
+### 用脚本追加（推荐）
+
+不要手动改三处，直接用脚本，它会一次把卡片、表格行、速览段落都追加到最后一位：
+
+```bash
+npm run add:project -- \
+  --dir new-project \
+  --title "项目标题" \
+  --tag "THREE.JS / 主题标签" \
+  --summary "一句话简介（进表格与卡片）" \
+  --desc "2-4 句速览（进下方段落）"
+```
+
+- `--dir` 必须是小写 kebab-case，且与根目录文件夹同名；
+- `--preview` 可选，默认 `./<dir>/index.html`；构建过 `dist` 的项目传 `--preview ./<dir>/dist/index.html`；
+- 预览链接必须指向可交互的 HTML 页面，不要指向 `.mp4` 等媒体文件；
+- `--dry-run` 只打印将追加的内容，不写文件；
+- 预览链接必须落在本项目目录内，脚本会拒绝越界路径；
+- 重复的 `--dir` 会被拒绝——追加一次就够，不要重复执行。
+
+脚本本身不做「插到第 N 位」：允许插队就会让三处顺序漂移，而这正是过去需要人工核对的原因。
 
 ## 预览页统一 GitHub 入口与自动发布
 
@@ -164,13 +199,13 @@ Three.js 程序化奶油白单翼机、紫色立体云海、橙金天空和翼�
 **后续新增项目不用手动引入组件**：
 
 1. 提交可运行的静态预览及其资源（Vite 项目先构建并提交 `dist`）。
-2. 在首页 `index.html` 按现有格式新增卡片，预览链接同时保留 `badge cover` 两个 class，例如：
+2. 用 `npm run add:project` 追加索引（见上方「新增项目 · 排序规则」）。脚本生成的卡片已经带上 `badge cover` 两个 class；若手写，必须两个都保留，例如：
 
    ```html
    <a class="badge cover" href="./new-project/dist/index.html">可交互</a>
    ```
 
-3. 更新上方索引并推送到 `main`。发布脚本自动发现新链接、添加组件，不需要登记第二份项目清单。目录地址 `./new-project/dist/` 也支持。
+3. 推送到 `main`。发布脚本自动发现新链接、添加组件，不需要登记第二份项目清单。目录地址 `./new-project/dist/` 也支持。
 
 打包脚本会检查目标存在且为仓库内的 HTML，缺失或不安全的路径会阻止发布；重复打包不会叠加多个入口。分享所需的固定版本库内嵌到发布产物，不从 CDN 加载；统计是独立、可失败的外部请求。严格 CSP 仅在发布副本里精确放行不蒜子脚本来源、同源临时 iframe 与本地 blob 媒体，不移除原有策略。原项目源码和已提交构建文件不被改写，所以直接运行某个子项目开发服务（如 `localhost:5184`）不会显示此发布层入口。
 
