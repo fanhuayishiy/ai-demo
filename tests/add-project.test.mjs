@@ -18,6 +18,57 @@ const sample = {
   desc: '两三句速览。',
 };
 
+const fixtureHome = '<div class="grid"><div class="card"><a class="badge cover" href="./existing/index.html">预览</a></div></div>';
+function fixtureReadme(withScreenshot = false, existing = true) {
+  return [
+    withScreenshot ? '| 截图 | 项目 | 一句话简介 | 预览 | 详细文档 |' : '| 项目 | 一句话简介 | 预览 | 详细文档 |',
+    withScreenshot ? '| --- | --- | --- | --- | --- |' : '| --- | --- | --- | --- |',
+    ...(existing ? [withScreenshot ? '| 待补截图 | existing | 简介 | [在线](https://example.com/) | [README](./existing/README.md) |' : '| existing | 简介 | [在线](https://example.com/) | [README](./existing/README.md) |'] : []),
+    '', '---', '', '## 新增项目',
+  ].join('\n');
+}
+
+for (const withScreenshot of [false, true]) {
+  test(`兼容${withScreenshot ? '五' : '四'}列表格，保持原有项目顺序并追加末尾`, () => {
+    const readmeMd = fixtureReadme(withScreenshot);
+    assert.deepEqual(readReadmeProjects(readmeMd), ['existing']);
+    const result = appendProject({ homeHtml: fixtureHome, readmeMd, project: sample });
+    assert.deepEqual(readReadmeProjects(result.readmeMd), ['existing', sample.dir]);
+    const row = result.readmeMd.split('\n').find((line) => line.includes('| sample-project |'));
+    assert.equal(row.split('|').length - 2, withScreenshot ? 5 : 4);
+    if (withScreenshot) assert.ok(row.startsWith('| 待补截图 |'));
+    assert.doesNotMatch(result.homeHtml, /class="project-shot"/u);
+  });
+}
+
+test('截图表格为空时，第一条项目紧跟分隔行', () => {
+  const result = appendProject({ homeHtml: '<div class="grid"></div>', readmeMd: fixtureReadme(true, false), project: sample });
+  assert.match(result.readmeMd, /\| --- \| --- \| --- \| --- \| --- \|\n\| 待补截图 \| sample-project/u);
+});
+
+test('可选截图生成卡片图片和160px表格预览，并转义标题', () => {
+  const title = 'Sample "A" & <B> \'C\'';
+  const screenshot = './assets/project-thumbnails/sample-project.webp';
+  const result = appendProject({ homeHtml: fixtureHome, readmeMd: fixtureReadme(true), project: { ...sample, title, screenshot } });
+  const alt = 'Sample &quot;A&quot; &amp; &lt;B&gt; &#39;C&#39;';
+  assert.ok(result.homeHtml.includes(`<img class="project-shot" src="${screenshot}" width="640" height="360" loading="lazy" decoding="async" alt="${alt}">`));
+  assert.ok(result.readmeMd.includes(`<a href="https://fanhuayishiy.github.io/ai-demo/sample-project/"><img src="${screenshot}" width="160" height="90" alt="${alt}"></a>`));
+  assert.deepEqual(readHomeProjects(result.homeHtml), ['existing', sample.dir]);
+  assert.deepEqual(readReadmeProjects(result.readmeMd), ['existing', sample.dir]);
+});
+
+test('旧表格仍可为卡片提供截图，且保留四列格式', () => {
+  const result = appendProject({ homeHtml: fixtureHome, readmeMd: fixtureReadme(), project: { ...sample, screenshot: 'assets/project-thumbnails/sample.png' } });
+  assert.match(result.homeHtml, /src="assets\/project-thumbnails\/sample\.png"/u);
+  assert.match(result.readmeMd, /\| sample-project \| 一句话简介 \| \[在线\]/u);
+});
+
+test('拒绝远程、绝对、穿越目录和非图片截图路径', () => {
+  for (const screenshot of ['https://example.com/a.png', '//example.com/a.png', '/assets/a.png', 'C:/a.png', '../a.png', './assets/../a.png', './assets/%2e%2e/a.png', './assets/a%2fb.png', './assets\\a.png', './assets/a.html', './assets/a.png?x=1', './assets/a.png#x', './assets/a.png" onerror="alert(1)', './assets/a\n.png']) {
+    assert.throws(() => appendProject({ homeHtml: fixtureHome, readmeMd: fixtureReadme(), project: { ...sample, screenshot } }), /截图路径/u, screenshot);
+  }
+});
+
 test('首页卡片顺序与 README 索引顺序完全一致', () => {
   const home = readHomeProjects(homeHtml);
   const readme = readReadmeProjects(readmeMd);

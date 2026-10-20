@@ -15,25 +15,27 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 
 ## 项目列表
 
-| 项目 | 一句话简介 | 预览 | 详细文档 |
-| --- | --- | --- | --- |
-| habitat-interactive-home | 栖居 HABITAT 可探索家庭 3D 模型，多灯独立控制、家电交互与智能隐墙 | [在线](https://fanhuayishiy.github.io/ai-demo/habitat-interactive-home/dist/) | [README](./habitat-interactive-home/README.md) |
-| orbit-heatpump-washer-dryer | ORBIT 热泵洗烘一体机，3D 爆炸拆解、热循环与进排水结构交互 | [在线](https://fanhuayishiy.github.io/ai-demo/orbit-heatpump-washer-dryer/dist/) | [README](./orbit-heatpump-washer-dryer/README.md) |
-| boeing-787-digital-twin | AEROSTRUCT 波音 787-9 结构数字孪生大屏，3D 爆炸拆解、客舱剖视与模拟监测图表 | [在线](https://fanhuayishiy.github.io/ai-demo/boeing-787-digital-twin/dist/) | [README](./boeing-787-digital-twin/README.md) |
-| sunny-side-kindergarten | 小小晴天实时 3D 幼儿园，22 名儿童与 3 名老师、六区聚焦、人物跟随及自动漫游 | [在线](https://fanhuayishiy.github.io/ai-demo/sunny-side-kindergarten/dist/) | [README](./sunny-side-kindergarten/README.md) |
-| hydrogen-energy-system | H₂ NEXUS 含氢综合能源数字孪生，五类能流动态可视化与守恒仿真 | [在线](https://fanhuayishiy.github.io/ai-demo/hydrogen-energy-system/) | [README](./hydrogen-energy-system/README.md) |
-| campus-3d-dashboard | 智慧校园 3D 数据大屏（单 HTML 文件） | [在线](https://fanhuayishiy.github.io/ai-demo/campus-3d-dashboard/) | [README](./campus-3d-dashboard/README.md) |
-| mcb-2p-c16-blender-animation | 双极空气开关 Blender 精细建模与 22 秒 8 章节工程动画 | [在线](https://fanhuayishiy.github.io/ai-demo/mcb-2p-c16-blender-animation/) | [README](./mcb-2p-c16-blender-animation/README.md) |
-| voxel-construction-site | 体素微缩建筑工地沙盘「方寸之间」（Three.js r160 完全离线单 HTML） | [在线](https://fanhuayishiy.github.io/ai-demo/voxel-construction-site/preview.html) | [README](./voxel-construction-site/README.md) |
-| voxel-ramen-stall | 体素微缩深夜拉面摊沙盘（Three.js r160 完全离线单 HTML） | [在线](https://fanhuayishiy.github.io/ai-demo/voxel-ramen-stall/preview.html) | [README](./voxel-ramen-stall/README.md) |
-| sakura-station-corner | 樱花街角 · 电车与便利店微缩三维沙盘（102 个独立资产模块，五档天气，画面无文字浮层） | [在线](https://fanhuayishiy.github.io/ai-demo/sakura-station-corner/dist/) | [README](./sakura-station-corner/README.md) |
-| sanfang-qixiang-atlas | 三坊七巷 · 坊巷漫游：基于真实地图的 3D 古城导览，支持搜索、缩放与点击飞行 | [在线](https://fanhuayishiy.github.io/ai-demo/sanfang-qixiang-atlas/dist/) | [README](./sanfang-qixiang-atlas/README.md) |
-| terra-728-tractor-blender-animation | 现代四驱拖拉机 Blender 精细建模与 15 秒机械动画 | [在线](https://fanhuayishiy.github.io/ai-demo/terra-728-tractor-blender-animation/) | [README](./terra-728-tractor-blender-animation/README.md) |
-| sunset-flight-study | 夕空飞行 · 奶油白单翼机穿越紫金云海，近距离按键驾驶与官方原曲配乐 | [在线](https://fanhuayishiy.github.io/ai-demo/sunset-flight-study/dist/) | [README](./sunset-flight-study/README.md) |
-| warehouse-demo | WareTrack 单仓三维运营中心，叉车搬运闭环、库存任务联动、对象聚焦与镜头巡游 | [在线](https://fanhuayishiy.github.io/ai-demo/warehouse-demo/dist/client/) | [README](./warehouse-demo/README.md) |
-| modular-fire-response | FIRELINK 分布式消防概念演示，三机共用一根水带、移动增压、循环补水与无人机物资投送 | [在线](https://fanhuayishiy.github.io/ai-demo/modular-fire-response/dist/) | [README](./modular-fire-response/README.md) |
-| roadster-escape-toll | Roadster 逃离收费站：SpaceX 冷气推进器小游戏，冷气限量烧完不补，车模按官方渲染图 1:1 对齐 | [在线](https://fanhuayishiy.github.io/ai-demo/roadster-escape-toll/) | [README](./roadster-escape-toll/README.md) |
-| ocean-shallows | 俯视视角的热带浅海：白沙沙滩、随风摇曳的棕榈树、由浅绿松石渐变到深蓝的海水，水下焦散光网与七种热带鱼，点击水面投下涟漪 | [在线](https://fanhuayishiy.github.io/ai-demo/ocean-shallows/) | [README](./ocean-shallows/README.md) |
+点击截图可直接打开项目；所有缩略图均来自项目实际运行画面或项目内渲染资源，统一为 16:9 静态 WebP。
+
+| 截图 | 项目 | 一句话简介 | 预览 | 详细文档 |
+| --- | --- | --- | --- | --- |
+| <a href="https://fanhuayishiy.github.io/ai-demo/habitat-interactive-home/dist/"><img src="./assets/project-thumbnails/habitat-interactive-home.webp" width="160" height="90" alt="栖居 HABITAT · 家庭 3D 空间"></a> | habitat-interactive-home | 栖居 HABITAT 可探索家庭 3D 模型，多灯独立控制、家电交互与智能隐墙 | [在线](https://fanhuayishiy.github.io/ai-demo/habitat-interactive-home/dist/) | [README](./habitat-interactive-home/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/orbit-heatpump-washer-dryer/dist/"><img src="./assets/project-thumbnails/orbit-heatpump-washer-dryer.webp" width="160" height="90" alt="ORBIT · 热泵洗烘结构实验室"></a> | orbit-heatpump-washer-dryer | ORBIT 热泵洗烘一体机，3D 爆炸拆解、热循环与进排水结构交互 | [在线](https://fanhuayishiy.github.io/ai-demo/orbit-heatpump-washer-dryer/dist/) | [README](./orbit-heatpump-washer-dryer/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/boeing-787-digital-twin/dist/"><img src="./assets/project-thumbnails/boeing-787-digital-twin.webp" width="160" height="90" alt="AEROSTRUCT · 波音 787-9"></a> | boeing-787-digital-twin | AEROSTRUCT 波音 787-9 结构数字孪生大屏，3D 爆炸拆解、客舱剖视与模拟监测图表 | [在线](https://fanhuayishiy.github.io/ai-demo/boeing-787-digital-twin/dist/) | [README](./boeing-787-digital-twin/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/sunny-side-kindergarten/dist/"><img src="./assets/project-thumbnails/sunny-side-kindergarten.webp" width="160" height="90" alt="小小晴天 · 童趣幼儿园"></a> | sunny-side-kindergarten | 小小晴天实时 3D 幼儿园，22 名儿童与 3 名老师、六区聚焦、人物跟随及自动漫游 | [在线](https://fanhuayishiy.github.io/ai-demo/sunny-side-kindergarten/dist/) | [README](./sunny-side-kindergarten/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/hydrogen-energy-system/"><img src="./assets/project-thumbnails/hydrogen-energy-system.webp" width="160" height="90" alt="H₂ NEXUS · 综合能源数字孪生"></a> | hydrogen-energy-system | H₂ NEXUS 含氢综合能源数字孪生，五类能流动态可视化与守恒仿真 | [在线](https://fanhuayishiy.github.io/ai-demo/hydrogen-energy-system/) | [README](./hydrogen-energy-system/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/campus-3d-dashboard/"><img src="./assets/project-thumbnails/campus-3d-dashboard.webp" width="160" height="90" alt="智慧校园 3D 数据大屏"></a> | campus-3d-dashboard | 智慧校园 3D 数据大屏（单 HTML 文件） | [在线](https://fanhuayishiy.github.io/ai-demo/campus-3d-dashboard/) | [README](./campus-3d-dashboard/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/mcb-2p-c16-blender-animation/"><img src="./assets/project-thumbnails/mcb-2p-c16-blender-animation.webp" width="160" height="90" alt="双极空气开关精细建模"></a> | mcb-2p-c16-blender-animation | 双极空气开关 Blender 精细建模与 22 秒 8 章节工程动画 | [在线](https://fanhuayishiy.github.io/ai-demo/mcb-2p-c16-blender-animation/) | [README](./mcb-2p-c16-blender-animation/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/voxel-construction-site/preview.html"><img src="./assets/project-thumbnails/voxel-construction-site.webp" width="160" height="90" alt="方寸之间 · 体素工地沙盘"></a> | voxel-construction-site | 体素微缩建筑工地沙盘「方寸之间」（Three.js r160 完全离线单 HTML） | [在线](https://fanhuayishiy.github.io/ai-demo/voxel-construction-site/preview.html) | [README](./voxel-construction-site/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/voxel-ramen-stall/preview.html"><img src="./assets/project-thumbnails/voxel-ramen-stall.webp" width="160" height="90" alt="深夜拉面摊 · 体素沙盘"></a> | voxel-ramen-stall | 体素微缩深夜拉面摊沙盘（Three.js r160 完全离线单 HTML） | [在线](https://fanhuayishiy.github.io/ai-demo/voxel-ramen-stall/preview.html) | [README](./voxel-ramen-stall/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/sakura-station-corner/dist/"><img src="./assets/project-thumbnails/sakura-station-corner.webp" width="160" height="90" alt="樱花街角 · 电车与便利店"></a> | sakura-station-corner | 樱花街角 · 电车与便利店微缩三维沙盘（102 个独立资产模块，五档天气，画面无文字浮层） | [在线](https://fanhuayishiy.github.io/ai-demo/sakura-station-corner/dist/) | [README](./sakura-station-corner/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/sanfang-qixiang-atlas/dist/"><img src="./assets/project-thumbnails/sanfang-qixiang-atlas.webp" width="160" height="90" alt="三坊七巷 · 坊巷漫游"></a> | sanfang-qixiang-atlas | 三坊七巷 · 坊巷漫游：基于真实地图的 3D 古城导览，支持搜索、缩放与点击飞行 | [在线](https://fanhuayishiy.github.io/ai-demo/sanfang-qixiang-atlas/dist/) | [README](./sanfang-qixiang-atlas/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/terra-728-tractor-blender-animation/"><img src="./assets/project-thumbnails/terra-728-tractor-blender-animation.webp" width="160" height="90" alt="TERRA 728 · 现代四驱拖拉机"></a> | terra-728-tractor-blender-animation | 现代四驱拖拉机 Blender 精细建模与 15 秒机械动画 | [在线](https://fanhuayishiy.github.io/ai-demo/terra-728-tractor-blender-animation/) | [README](./terra-728-tractor-blender-animation/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/sunset-flight-study/dist/"><img src="./assets/project-thumbnails/sunset-flight-study.webp" width="160" height="90" alt="夕空飞行 · Just breathe"></a> | sunset-flight-study | 夕空飞行 · 奶油白单翼机穿越紫金云海，近距离按键驾驶与官方原曲配乐 | [在线](https://fanhuayishiy.github.io/ai-demo/sunset-flight-study/dist/) | [README](./sunset-flight-study/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/warehouse-demo/dist/client/"><img src="./assets/project-thumbnails/warehouse-demo.webp" width="160" height="90" alt="WareTrack · 仓储运营中心"></a> | warehouse-demo | WareTrack 单仓三维运营中心，叉车搬运闭环、库存任务联动、对象聚焦与镜头巡游 | [在线](https://fanhuayishiy.github.io/ai-demo/warehouse-demo/dist/client/) | [README](./warehouse-demo/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/modular-fire-response/dist/"><img src="./assets/project-thumbnails/modular-fire-response.webp" width="160" height="90" alt="FIRELINK · 分布式智能消防"></a> | modular-fire-response | FIRELINK 分布式消防概念演示，三机共用一根水带、移动增压、循环补水与无人机物资投送 | [在线](https://fanhuayishiy.github.io/ai-demo/modular-fire-response/dist/) | [README](./modular-fire-response/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/roadster-escape-toll/"><img src="./assets/project-thumbnails/roadster-escape-toll.webp" width="160" height="90" alt="Roadster 逃离收费站"></a> | roadster-escape-toll | Roadster 逃离收费站：三车道切换、空中翻滚、飞越车辆补气与缓慢提速，保留原有玩家车模 | [在线](https://fanhuayishiy.github.io/ai-demo/roadster-escape-toll/) | [README](./roadster-escape-toll/README.md) |
+| <a href="https://fanhuayishiy.github.io/ai-demo/ocean-shallows/"><img src="./assets/project-thumbnails/ocean-shallows.webp" width="160" height="90" alt="浅海 · Ocean Shallows"></a> | ocean-shallows | 俯视视角的热带浅海：白沙沙滩、随风摇曳的棕榈树、由浅绿松石渐变到深蓝的海水，水下焦散光网与七种热带鱼，点击水面投下涟漪 | [在线](https://fanhuayishiy.github.io/ai-demo/ocean-shallows/) | [README](./ocean-shallows/README.md) |
 
 ---
 
@@ -137,7 +139,7 @@ Three.js 程序化奶油白单翼机、紫色立体云海、橙金天空和翼�
 
 ## roadster-escape-toll — Roadster 逃离收费站
 
-特斯拉第二代 Roadster 搭载 SpaceX 冷气推进器可空中悬浮，网友玩梗「开特斯拉的人谁还过收费站，直接飞过去」。本 Demo 据此做成 Three.js 网页小游戏：长按点火在收费站前起飞，点火太晚撞站、推力过猛飞过头冲出马路。一罐氮气只有 5 秒总点火时间、烧完不补，罐空后推进器点不着；10 个喷嘴按真实冷气推进器布局（车底 4 向下喷、车尾 4 向后推、两侧成对做姿态控制），羽流是水汽凝结的白雾而非火焰。车模按 tesla.cn 官方渲染图 1:1 对齐（长 4.721 / 宽 2.051 / 高 1.130 m，逐列实测反推型面），折面几何还原「隐形战机」式大平面折板，另有本地排行榜。three.js r149 UMD 完全离线，双击即玩。
+特斯拉第二代 Roadster 搭载 SpaceX 冷气推进器可空中悬浮，网友玩梗「开特斯拉的人谁还过收费站，直接飞过去」。本 Demo 据此做成 Three.js 网页小游戏：长按点火在收费站前起飞，点火太晚撞站、推力过猛飞过头冲出马路。满罐冷气可点火 5 秒，支持三车道平滑换道和空中翻滚；完整飞越车辆按高度返还冷气，侧面绕过不计奖。速度缓慢提升，搭配逐车碰撞、失败建议与手机操作；10 个喷嘴按真实冷气推进器布局（车底 4 向下喷、车尾 4 向后推、两侧成对做姿态控制），羽流是水汽凝结的白雾而非火焰。车模按 tesla.cn 官方渲染图 1:1 对齐（长 4.721 / 宽 2.051 / 高 1.130 m，逐列实测反推型面），折面几何还原「隐形战机」式大平面折板，另有本地排行榜。three.js r149 UMD 完全离线，双击即玩。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/roadster-escape-toll/) · [README（含主生成提示原文）](./roadster-escape-toll/README.md) · [官方渲染侧视叠加对比](./roadster-escape-toll/docs/official-render-compare.png)
 
@@ -176,11 +178,13 @@ npm run add:project -- \
   --title "项目标题" \
   --tag "THREE.JS / 主题标签" \
   --summary "一句话简介（进表格与卡片）" \
+  --screenshot ./assets/project-thumbnails/new-project.webp \
   --desc "2-4 句速览（进下方段落）"
 ```
 
 - `--dir` 必须是小写 kebab-case，且与根目录文件夹同名；
 - `--preview` 可选，默认 `./<dir>/index.html`；构建过 `dist` 的项目传 `--preview ./<dir>/dist/index.html`；
+- `--screenshot`：先准备实际运行截图，压缩成 640×360 WebP，放入 `assets/project-thumbnails/`，脚本会同时生成首页图片和 README 的 160×90 可点击预览；草稿可以省略并显示“待补截图”，正式发布前需补全截图；
 - 预览链接必须指向可交互的 HTML 页面，不要指向 `.mp4` 等媒体文件；
 - `--dry-run` 只打印将追加的内容，不写文件；
 - 预览链接必须落在本项目目录内，脚本会拒绝越界路径；

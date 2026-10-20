@@ -67,7 +67,7 @@ test('Roadster card presents an offline mini-game with preview and prompt links'
   assert.equal(attribute(prompt, 'target'), '_blank');
   for (const rel of ['noopener', 'noreferrer']) assert.ok(attribute(prompt, 'rel').split(/\s+/u).includes(rel));
   const description = text(cardNodes.find(node => node.tagName === 'p'));
-  for (const concept of ['冷气推进器', '1:1', '本地排行榜', '离线']) {
+  for (const concept of ['冷气推进器', '车道', '翻滚', '补气', '本地排行榜', '离线']) {
     assert.ok(description.includes(concept), `Roadster description must mention ${concept}`);
   }
 });
@@ -95,9 +95,9 @@ test('the newest project sits last in the homepage grid', () => {
 });
 
 test('README lists the same projects in the same order, newest last', () => {
-  const rows = readme.split(/\r?\n/u).filter(line => /^\| [a-z][\w-]+ \|/u.test(line));
+  const rows = readme.split(/\r?\n/u).filter(line => line.startsWith('|') && /\| [a-z][\w-]+ \|/u.test(line));
   const expectedProjects = [...existingPreviews, ...appendedPreviews].map(preview => preview.split('/')[0]);
-  assert.deepEqual(rows.map(row => row.split('|')[1].trim()), expectedProjects);
+  assert.deepEqual(rows.map(row => /\| ([a-z][\w-]+) \|/u.exec(row)[1]), expectedProjects);
   assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/ocean-shallows/)'));
   assert.ok(rows.at(-1).includes('[README](./ocean-shallows/README.md)'));
 });
@@ -122,7 +122,9 @@ test('README keeps the Roadster overview directly before the newest overview', (
   const overviewStart = readme.indexOf('## roadster-escape-toll ');
   const overview = readme.slice(overviewStart, readme.indexOf('## ocean-shallows ', overviewStart));
   assert.match(overview, /冷气推进器/u);
-  assert.match(overview, /烧完不补/u);
+  assert.match(overview, /按高度返还冷气/u);
+  assert.match(overview, /空中翻滚/u);
+  assert.doesNotMatch(overview, /烧完不补/u);
   assert.match(overview, /1:1/u);
   assert.ok(overview.includes('(./roadster-escape-toll/docs/official-render-compare.png)'));
 });

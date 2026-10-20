@@ -16,9 +16,11 @@ import { parse } from 'parse5';
 
 const GRID_CLASS = 'grid';
 const TABLE_HEADER = '| 项目 | 一句话简介 | 预览 | 详细文档 |';
+const SCREENSHOT_TABLE_HEADER = '| 截图 | 项目 | 一句话简介 | 预览 | 详细文档 |';
 const NEW_PROJECT_HEADING = '## 新增项目';
 
 const eolOf = (text) => (text.includes('\r\n') ? '\r\n' : '\n');
+const isProjectTableHeader = (line) => [TABLE_HEADER, SCREENSHOT_TABLE_HEADER].includes(line.trim());
 
 function* walk(node) {
   yield node;
@@ -48,7 +50,7 @@ export function readHomeProjects(html) {
 /** 读取 README「项目列表」表格的项目目录顺序。 */
 export function readReadmeProjects(markdown) {
   const lines = markdown.split(/\r?\n/u);
-  const start = lines.findIndex((line) => line.trim() === TABLE_HEADER);
+  const start = lines.findIndex(isProjectTableHeader);
   if (start < 0) throw new Error('README 缺少「项目列表」表头');
   const dirs = [];
   for (let i = start + 2; i < lines.length; i++) {
@@ -61,7 +63,7 @@ export function readReadmeProjects(markdown) {
 }
 
 function escapeHtml(value) {
-  return String(value).replace(/&/gu, '&amp;').replace(/</gu, '&lt;').replace(/>/gu, '&gt;');
+  return String(value).replace(/&/gu, '&amp;').replace(/</gu, '&lt;').replace(/>/gu, '&gt;').replace(/"/gu, '&quot;').replace(/'/gu, '&#39;');
 }
 
 /** 预览页的 GitHub Pages 目录地址，例如 ./dir/index.html → .../dir/ */
@@ -82,9 +84,18 @@ function normalizeProject(project) {
   for (const field of ['title', 'tag', 'summary', 'desc']) {
     if (!String(project[field] ?? '').trim()) throw new Error(`缺少字段 ${field}`);
   }
+  const screenshot = project.screenshot == null ? '' : String(project.screenshot).trim();
+  if (screenshot) {
+    const relative = screenshot.replace(/^\.\//u, '');
+    if (!/^[a-z0-9][a-z0-9._/-]*\.(?:png|jpe?g|webp|gif|avif)$/iu.test(relative)
+      || relative.split('/').some((segment) => !segment || segment === '.' || segment === '..')) {
+      throw new Error(`截图路径必须是安全的本地相对图片路径：${JSON.stringify(screenshot)}`);
+    }
+  }
   return {
     dir,
     preview,
+    screenshot,
     title: String(project.title).trim(),
     tag: String(project.tag).trim(),
     summary: String(project.summary).trim(),
@@ -96,6 +107,7 @@ function normalizeProject(project) {
 function cardHtml(p, eol) {
   return [
     '<div class="card">',
+    ...(p.screenshot ? [`<img class="project-shot" src="${escapeHtml(p.screenshot)}" width="640" height="360" loading="lazy" decoding="async" alt="${escapeHtml(p.title)}">`] : []),
     `<div class="tag">${escapeHtml(p.tag)}</div>`,
     `<h2>${escapeHtml(p.title)}</h2>`,
     `<p>${escapeHtml(p.summary)}</p>`,
@@ -107,8 +119,11 @@ function cardHtml(p, eol) {
   ].join(eol);
 }
 
-function tableRow(p) {
-  return `| ${p.dir} | ${p.summary} | [在线](${p.pages}) | [README](./${p.dir}/README.md) |`;
+function tableRow(p, withScreenshot) {
+  const shot = p.screenshot
+    ? `<a href="${escapeHtml(p.pages)}"><img src="${escapeHtml(p.screenshot)}" width="160" height="90" alt="${escapeHtml(p.title)}"></a>`
+    : '待补截图';
+  return `| ${withScreenshot ? `${shot} | ` : ''}${p.dir} | ${p.summary} | [在线](${p.pages}) | [README](./${p.dir}/README.md) |`;
 }
 
 function detailSection(p, eol) {
@@ -137,14 +152,14 @@ function appendCard(html, card, eol) {
 }
 
 /** 把表格行追加到「项目列表」最后一行之后。 */
-function appendTableRow(markdown, row) {
+function appendTableRow(markdown, project) {
   const eol = eolOf(markdown);
   const lines = markdown.split(eol);
-  const start = lines.findIndex((line) => line.trim() === TABLE_HEADER);
+  const start = lines.findIndex(isProjectTableHeader);
   if (start < 0) throw new Error('README 缺少「项目列表」表头');
-  let last = start + 2;
+  let last = start + 1;
   while (last + 1 < lines.length && lines[last + 1].startsWith('|')) last++;
-  lines.splice(last + 1, 0, row);
+  lines.splice(last + 1, 0, tableRow(project, lines[start].trim() === SCREENSHOT_TABLE_HEADER));
   return lines.join(eol);
 }
 
@@ -166,7 +181,7 @@ export function appendProject({ homeHtml, readmeMd, project }) {
     throw new Error(`项目 ${p.dir} 已存在；新项目只能追加，不能重复`);
   }
   const home = appendCard(homeHtml, cardHtml(p, eolOf(homeHtml)), eolOf(homeHtml));
-  const readme = appendDetail(appendTableRow(readmeMd, tableRow(p)), detailSection(p, eolOf(readmeMd)));
+  const readme = appendDetail(appendTableRow(readmeMd, p), detailSection(p, eolOf(readmeMd)));
   return { homeHtml: home, readmeMd: readme, project: p };
 }
 
@@ -189,7 +204,7 @@ async function main() {
   const readmePath = path.join(root, 'README.md');
 
   if (!args.dir) {
-    console.error('用法：npm run add:project -- --dir <目录名> --title <标题> --tag <标签> --summary <一句话简介> --desc <2-4 句速览> [--preview ./dir/index.html] [--dry-run]');
+    console.error('用法：npm run add:project -- --dir <目录名> --title <标题> --tag <标签> --summary <一句话简介> --desc <2-4 句速览> [--preview ./dir/index.html] [--screenshot ./assets/project-thumbnails/dir.webp] [--dry-run]');
     process.exitCode = 2;
     return;
   }

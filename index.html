@@ -57,6 +57,10 @@ h1{font-size:27px;letter-spacing:3px}
 .card{padding:22px}
 .row{flex-wrap:wrap}
 }
+
+.project-shot{display:block;width:calc(100% + 52px);max-width:none;height:auto;aspect-ratio:16/9;object-fit:cover;margin:-26px -26px 22px;border-radius:11px 11px 0 0;border-bottom:1px solid #94a3a62b;background:#101519}
+@media(max-width:560px){.project-shot{width:calc(100% + 44px);margin:-22px -22px 20px}}
+@media(prefers-reduced-motion:reduce){.card,.badge,.prompt-link{transition:none}.card:hover{transform:none}}
 </style>
 </head>
 <body>
@@ -73,6 +77,7 @@ h1{font-size:27px;letter-spacing:3px}
 </header>
 <div class="grid">
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/habitat-interactive-home.webp" width="640" height="360" loading="lazy" decoding="async" alt="栖居 HABITAT · 家庭 3D 空间 实际项目截图">
 <div class="tag">REACT / THREE.JS / 3D HOME</div>
 <h2>栖居 HABITAT · 家庭 3D 空间</h2>
 <p>可环绕探索的 108㎡ 家庭模型，支持自动隐墙、多灯独立控制、家电菜单、日夜光影与生活场景联动。</p>
@@ -82,6 +87,7 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/orbit-heatpump-washer-dryer.webp" width="640" height="360" loading="lazy" decoding="async" alt="ORBIT · 热泵洗烘结构实验室 实际项目截图">
 <div class="tag">THREE.JS / 热泵结构 / 爆炸拆解</div>
 <h2>ORBIT · 热泵洗烘结构实验室</h2>
 <p>19 个装配组的精密洗烘概念模型：连续爆炸、同轴直驱电机、热泵双回路与背面进排水接口，支持部件聚焦、3K 图像及动画 GLB 导出。</p>
@@ -91,6 +97,7 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/boeing-787-digital-twin.webp" width="640" height="360" loading="lazy" decoding="async" alt="AEROSTRUCT · 波音 787-9 实际项目截图">
 <div class="tag">REACT / THREE.JS / 航空结构大屏</div>
 <h2>AEROSTRUCT · 波音 787-9</h2>
 <p>九大飞机总成的连续爆炸拆解与客舱剖视，搭配结构健康度、机翼应变、材料与动力监测图表，支持镜头切换、部件点选和视图导出。</p>
@@ -100,6 +107,7 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/sunny-side-kindergarten.webp" width="640" height="360" loading="lazy" decoding="async" alt="小小晴天 · 童趣幼儿园 实际项目截图">
 <div class="tag">THREE.JS / WEBGL / 微缩幼儿园</div>
 <h2>小小晴天 · 童趣幼儿园</h2>
 <p>阳光下的实时微缩园区，22 名儿童与 3 名老师持续开展课堂和户外游戏；支持六区聚焦、人物跟随、自动漫游与手机适配。</p>
@@ -109,6 +117,7 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/hydrogen-energy-system.webp" width="640" height="360" loading="lazy" decoding="async" alt="H₂ NEXUS · 综合能源数字孪生 实际项目截图">
 <div class="tag">THREE.JS / 多能流守恒仿真</div>
 <h2>H₂ NEXUS · 综合能源数字孪生</h2>
 <p>电、热、冷、氢与天然气协同的 3D 工业园区，支持设备参数查看、能流粒子、气象与负荷实时调节。</p>
@@ -118,6 +127,7 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/campus-3d-dashboard.webp" width="640" height="360" loading="lazy" decoding="async" alt="智慧校园 3D 数据大屏 实际项目截图">
 <div class="tag">THREE.JS / CHART.JS</div>
 <h2>智慧校园 3D 数据大屏</h2>
 <p>等距视角校园场景 + 数据看板，支持昼夜切换、双相机、悬停提示与循环车流。</p>
@@ -127,6 +137,7 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/mcb-2p-c16-blender-animation.webp" width="640" height="360" loading="lazy" decoding="async" alt="双极空气开关精细建模 实际项目截图">
 <div class="tag">BLENDER / 工程动画</div>
 <h2>双极空气开关精细建模</h2>
 <p>MCB 断路器程序化建模与 22 秒 8 章节工程动画，Three.js 直接加载 .glb 交互查看。</p>
@@ -136,6 +147,7 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/voxel-construction-site.webp" width="640" height="360" loading="lazy" decoding="async" alt="方寸之间 · 体素工地沙盘 实际项目截图">
 <div class="tag">THREE.JS R160 / 完全离线</div>
 <h2>方寸之间 · 体素工地沙盘</h2>
 <p>桌面上的微缩建筑工地：挖掘机、渣土车、塔吊昼夜运转，支持暴雨天气与实体旋钮交互。</p>
@@ -145,6 +157,7 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/voxel-ramen-stall.webp" width="640" height="360" loading="lazy" decoding="async" alt="深夜拉面摊 · 体素沙盘 实际项目截图">
 <div class="tag">THREE.JS R160 / 完全离线</div>
 <h2>深夜拉面摊 · 体素沙盘</h2>
 <p>巷口的深夜拉面摊：摩托穿巷送外卖、师傅抻面下锅、竹竿吊运灯笼，雨夜里水洼映着灯火。</p>
@@ -154,6 +167,7 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/sakura-station-corner.webp" width="640" height="360" loading="lazy" decoding="async" alt="樱花街角 · 电车与便利店 实际项目截图">
 <div class="tag">THREE.JS R186 / 模块化微缩沙盘</div>
 <h2>樱花街角 · 电车与便利店</h2>
 <p>晴暖春日的日式乡村车站街角：单线电车与站台、落地玻璃里逐件可见的便利店、带玻璃门的贩卖机，三株樱花与持续落樱。拖拽环视、无极缩放，画面零 UI。</p>
@@ -163,6 +177,7 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/sanfang-qixiang-atlas.webp" width="640" height="360" loading="lazy" decoding="async" alt="三坊七巷 · 坊巷漫游 实际项目截图">
 <div class="tag">THREE.JS / OPENSTREETMAP / 3D ATLAS</div>
 <h2>三坊七巷 · 坊巷漫游</h2>
 <p>基于真实地图的白墙黛瓦古城沙盘：拖拽旋转、滚轮缩放、点击景点飞行，支持搜索、俯瞰、夜景与精选空中漫游。</p>
@@ -172,6 +187,7 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/terra-728-tractor-blender-animation.webp" width="640" height="360" loading="lazy" decoding="async" alt="TERRA 728 · 现代四驱拖拉机 实际项目截图">
 <div class="tag">BLENDER / THREE.JS / 机械动画</div>
 <h2>TERRA 728 · 现代四驱拖拉机</h2>
 <p>1482 个对象的程序化精细建模：差速滚动与 Ackermann 转向、可开机罩与发动机舱、驾驶室门与内饰、后三点悬挂、雨刷与操作台，15 秒六章节机械演示。</p>
@@ -181,6 +197,7 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/sunset-flight-study.webp" width="640" height="360" loading="lazy" decoding="async" alt="夕空飞行 · Just breathe 实际项目截图">
 <div class="tag">THREE.JS / 动画风飞行 / 键盘驾驶</div>
 <h2>夕空飞行 · Just breathe</h2>
 <p>奶油白单翼机穿越紫金云海：24 秒电影运镜、近距离 WASD 驾驶、翼尖气流与官方原曲配乐，并保留日间双机空战。</p>
@@ -190,6 +207,7 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/warehouse-demo.webp" width="640" height="360" loading="lazy" decoding="async" alt="WareTrack · 仓储运营中心 实际项目截图">
 <div class="tag">REACT / THREE.JS / 仓储运营</div>
 <h2>WareTrack · 仓储运营中心</h2>
 <p>蓝白单仓三维园区：叉车完成取货、运输与卸货闭环，库存、任务和月台同步；支持搜索选择、镜头聚焦与主动巡游。</p>
@@ -199,6 +217,7 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/modular-fire-response.webp" width="640" height="360" loading="lazy" decoding="async" alt="FIRELINK · 分布式智能消防 实际项目截图">
 <div class="tag">REACT / THREE.JS / 消防概念演示</div>
 <h2>FIRELINK · 分布式智能消防</h2>
 <p>模块化消防概念沙盘：分布式调度下，两架承托无人机与一架末端喷射机共用一根水带，配合移动增压、循环补水与重载无人机物资投送。</p>
@@ -208,9 +227,10 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/roadster-escape-toll.webp" width="640" height="360" loading="lazy" decoding="async" alt="Roadster 逃离收费站 实际项目截图">
 <div class="tag">THREE.JS R149 / 冷气推进器小游戏</div>
 <h2>Roadster 逃离收费站</h2>
-<p>SpaceX 冷气推进器小游戏：长按点火飞越高速公路收费站，一罐氮气只有 5 秒点火时间烧完不补，车模按特斯拉官网渲染图 1:1 对齐，折面车身配本地排行榜。完全离线，双击即玩。</p>
+<p>冷气推进器小游戏：三车道换道、空中翻滚、完整飞越车辆补气，速度缓慢提升。保留原有玩家车模和本地排行榜，支持离线运行与手机操作。</p>
 <div class="row">
 <a class="badge cover" href="./roadster-escape-toll/index.html">可交互</a>
 <a class="prompt-link" href="https://github.com/fanhuayishiy/ai-demo/blob/main/roadster-escape-toll/README.md" target="_blank" rel="noopener noreferrer">主生成提示 ↗</a>
@@ -218,6 +238,7 @@ h1{font-size:27px;letter-spacing:3px}
 </div>
 </div>
 <div class="card">
+<img class="project-shot" src="./assets/project-thumbnails/ocean-shallows.webp" width="640" height="360" loading="lazy" decoding="async" alt="浅海 · Ocean Shallows 实际项目截图">
 <div class="tag">THREE.JS / WEBGL / 潮间带</div>
 <h2>浅海 · Ocean Shallows</h2>
 <p>俯视视角的热带浅海：白沙沙滩、随风摇曳的棕榈树、由浅绿松石渐变到深蓝的海水，水下焦散光网与七种热带鱼，点击水面投下涟漪</p>
