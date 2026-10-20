@@ -4,12 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>Roadster 逃离收费站</title>
-<meta name="description" content="长按点火，用 SpaceX 冷气推进器把 Roadster 顶起来，飞越高速公路收费站。一罐冷气只有 5 秒，烧完不补。" />
+<meta name="description" content="左右移动躲避车流，长按点火飞越高速公路收费站。飞越车辆可补充冷气，贴近车顶奖励更多。" />
 <meta name="theme-color" content="#0d1c30" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Roadster 逃离收费站" />
 <meta property="og:title" content="Roadster 逃离收费站" />
-<meta property="og:description" content="长按点火，用 SpaceX 冷气推进器把 Roadster 顶起来，飞越高速公路收费站。一罐冷气只有 5 秒，烧完不补。" />
+<meta property="og:description" content="左右移动躲避车流，长按点火飞越高速公路收费站。飞越车辆可补充冷气，贴近车顶奖励更多。" />
 <meta property="og:url" content="https://r.fhysy.com/" />
 <meta property="og:image" content="https://r.fhysy.com/og-cover.jpg" />
 <meta property="og:image:width" content="1200" />
@@ -17,10 +17,11 @@
 <meta property="og:image:alt" content="Roadster 悬空飞越高速公路收费站" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Roadster 逃离收费站" />
-<meta name="twitter:description" content="长按点火，用 SpaceX 冷气推进器把 Roadster 顶起来，飞越高速公路收费站。一罐冷气只有 5 秒，烧完不补。" />
+<meta name="twitter:description" content="左右移动躲避车流，长按点火飞越高速公路收费站。飞越车辆可补充冷气，贴近车顶奖励更多。" />
 <meta name="twitter:image" content="https://r.fhysy.com/og-cover.jpg" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230d1c30'/%3E%3Cpath d='M4 19h24l-2.5-6H6.5z' fill='%23e0202f'/%3E%3Ccircle cx='10' cy='21' r='3.2' fill='%23191c22'/%3E%3Ccircle cx='22' cy='21' r='3.2' fill='%23191c22'/%3E%3C/svg%3E" />
 <link rel="stylesheet" href="./style.css" />
+<link rel="stylesheet" href="./visual.css" />
 </head>
 <body>
 <canvas id="scene"></canvas>
@@ -29,10 +30,12 @@
 <div id="hud" class="hidden">
   <div class="hud-top">
     <div class="panel score-panel">
+      <div class="instrument-label">本次得分 <span>RUN SCORE</span></div>
       <div class="score-main"><span id="score">0</span></div>
       <div class="score-sub">飞越收费站 <b id="cleared">0</b> 座 &nbsp;·&nbsp; 最高 <b id="best">0</b></div>
     </div>
     <div class="panel speed-panel">
+      <div class="instrument-label">时速</div>
       <div class="speed-num" id="speed">0</div>
       <div class="speed-unit">km/h</div>
     </div>
@@ -40,18 +43,20 @@
 
   <div class="gauges" id="gauges">
     <div class="gauge">
+      <div class="gauge-head"><span class="gauge-caption" id="gasCaption">冷气</span><strong id="gasValue">100%</strong></div>
       <div class="gauge-track gas-track" id="gasTrack">
         <div class="gas-fill" id="gasFill"></div>
       </div>
-      <div class="gauge-caption" id="gasCaption">冷气 100%</div>
+      <div class="gauge-note">飞越车辆补充</div>
     </div>
     <div class="gauge">
+      <div class="gauge-head"><span class="gauge-caption">高度</span><strong id="altValue">0.0 m</strong></div>
       <div class="gauge-track">
         <div class="gauge-danger" id="gaugeDanger"></div>
         <div class="gauge-safe" id="gaugeSafe"></div>
         <div class="gauge-marker" id="gaugeMarker"></div>
       </div>
-      <div class="gauge-caption">高度</div>
+      <div class="gauge-note gauge-range"><span>地面</span><span>上限 34 m</span></div>
     </div>
   </div>
 
@@ -61,9 +66,16 @@
       <span class="dist-val"><b id="dist">---</b> m</span>
     </div>
     <div class="prompt" id="prompt">长按 <kbd>空格</kbd> / 点击屏幕 点火起飞</div>
+    <div class="run-notes"><span id="pace">热身路段</span><span id="riskHint">完整飞越才补气 · 绕行更省气</span></div>
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <div class="steering-controls" role="group" aria-label="左右移动">
+    <button id="btnLeft" class="steer-btn" type="button" aria-label="切换左侧车道" title="左移一条车道（← / A）">←</button>
+    <button id="btnRight" class="steer-btn" type="button" aria-label="切换右侧车道" title="右移一条车道（→ / D）">→</button>
+    <span>← → / A D 切换车道</span>
+  </div>
 
   <!-- 空中翻转（A71 姿态控制） -->
   <button id="btnFlip" class="flip-btn" type="button" aria-label="空中翻转" title="空中翻转（F / Shift / 鼠标右键）">
@@ -86,27 +98,44 @@
 </div>
 
 <!-- ================= START ================= -->
-<div id="start" class="overlay">
-  <div class="card">
-    <div class="tag">TESLA ROADSTER · SPACEX 冷气推进器 A71</div>
-    <h1>Roadster<br /><span>逃离收费站</span></h1>
-    <p class="lead">开特斯拉的人，谁还过收费站？直接飞过去。</p>
-    <ul class="rules">
-      <li><b>长按</b> 空格键 / 鼠标左键 / 手指按住屏幕 &nbsp;—&nbsp; 车底 4 个冷气推进器向下喷，把车顶起来</li>
-      <li>不燃烧、无尾焰：高压气体喷出后骤冷，水汽凝结成白雾</li>
-      <li><b class="warn">冷气是定量的</b>：一趟只装一罐，<b>烧完不补充</b>；满罐只有 5 秒总点火时间，约够点 7 次火 —— 按住不放最费气</li>
-      <li>在收费站<b>前方</b>点火，飞越整座收费站即得 100 分</li>
-      <li>腾空后按 <b>F</b> / <b>Shift</b> / <b>鼠标右键</b> / 点右下角「翻转」—— 车身左右横滚一整圈，喷嘴自动配平、落地自己回正；每翻一次 <b>+80</b> 分，同一次腾空连翻还能加成（每次耗 5% 冷气）</li>
-      <li>点火太晚 &rarr; <span class="bad">撞上收费站</span>；推力过猛 &rarr; <span class="bad">飞过头冲出马路</span></li>
-    </ul>
-    <button id="btnStart" class="btn">开始起飞</button>
-    <div class="hint">提示：路面上的 <b class="cyan">蓝色光带</b> 就是最佳点火位置</div>
+<div id="start" class="overlay start-screen">
+  <div class="start-shell">
+    <figure class="cover-art">
+      <picture>
+        <source media="(max-width: 800px) and (min-height: 501px)" srcset="./assets/escape-cover.webp" />
+        <img src="./assets/escape-cover-tall.webp" width="1122" height="1402" fetchpriority="high" alt="逃离收费站：银色跑车跃过夕阳下的收费站" />
+      </picture>
+      <figcaption><span>ROADSTER</span><span>公路之上，自由起飞。</span></figcaption>
+    </figure>
+    <div class="start-panel">
+      <div class="tag"><i></i> 冷气推进器已就绪</div>
+      <h1>下一站，<br /><em>直接飞越。</em></h1>
+      <p class="lead">三条车道，一罐冷气。<br />越过车流，飞过下一座收费站。</p>
+      <div class="control-guide">
+        <div><span class="control-key"><kbd>←</kbd><kbd>→</kbd></span><p><b>切换车道</b><small>A / D 或屏幕方向键</small></p></div>
+        <div><span class="control-key"><kbd>空格</kbd></span><p><b>长按起飞 · 松开下降</b><small>也可按住鼠标或屏幕空白处</small></p></div>
+        <div><span class="control-key"><kbd>F</kbd></span><p><b>空中横滚</b><small>腾空后按下，每次消耗 5% 冷气</small></p></div>
+      </div>
+      <button id="btnStart" class="btn">开始起飞 <span aria-hidden="true">↗</span></button>
+      <div class="hint"><span class="ignition-mark"></span> 看准路面的蓝色光带，提前点火</div>
+      <details class="advanced-rules">
+        <summary>飞越奖励与进阶操作 <span aria-hidden="true">＋</span></summary>
+        <ul class="rules">
+          <li>完整飞越车辆才补气：贴顶 <b>+10%</b>、普通 +7%、高空 +4%、横排 +12%。绕行更省气，满罐可持续点火 5 秒。</li>
+          <li>飞过收费站基础 +100 分；贴顶飞越车辆 +60 分，普通 +40，高空 +25，横排 +150。</li>
+          <li>横滚基础 +80 分，连续横滚有加成；也可用 Shift、鼠标右键或屏幕「翻转」按钮。</li>
+          <li>过站后及时松手，高度超过 34 m 会失控。按 M 静音。</li>
+        </ul>
+      </details>
+      <div class="start-footer"><span>ROADSTER · A71</span><span>准备好，就出发。</span></div>
+    </div>
   </div>
 </div>
 
 <!-- ================= GAME OVER ================= -->
 <div id="over" class="overlay hidden">
   <div class="card over-card">
+    <div class="result-eyebrow"><span>行程结束</span><span>RUN COMPLETE</span></div>
     <div class="over-reason" id="overReason">撞上收费站</div>
     <div class="over-desc" id="overDesc"></div>
     <div class="over-score">

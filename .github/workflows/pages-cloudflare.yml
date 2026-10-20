@@ -63,7 +63,7 @@ jobs:
           const p = "_site/roadster-escape-toll/index.html";
           const v = process.env.SHA.slice(0, 8);
           let s = fs.readFileSync(p, "utf8");
-          for (const f of ["game.js", "roadster-model.js", "style.css"]) {
+          for (const f of ["game.js", "roadster-model.js", "style.css", "visual.css", "assets/escape-cover.webp", "assets/escape-cover-tall.webp"]) {
             s = s.split("\"./" + f + "\"").join("\"./" + f + "?v=" + v + "\"");
           }
           fs.writeFileSync(p, s);
