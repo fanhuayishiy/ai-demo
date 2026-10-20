@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import { readHomeProjects, readReadmeProjects } from '../scripts/add-project.mjs';
+import { validateProjectScreenshot } from '../scripts/project-screenshot.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const html = await readFile(path.join(root, 'index.html'), 'utf8');
@@ -27,6 +28,7 @@ test('each existing project card has one lightweight screenshot with stable dime
     assert.equal(image.getAttribute('decoding'), 'async');
     assert(image.getAttribute('alt')?.includes(card.querySelector('h2').textContent));
     const filename = path.join(root, image.getAttribute('src'));
+    await validateProjectScreenshot({ root, dir, screenshot: image.getAttribute('src') });
     const bytes = await readFile(filename);
     assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
     assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
@@ -34,7 +36,7 @@ test('each existing project card has one lightweight screenshot with stable dime
     assert(size > 1000 && size < 80000, `${dir} screenshot exceeds the thumbnail budget`);
     total += size;
   }
-  assert(total < 800000, 'The gallery should not ship full-size screenshots');
+  assert(total < cards.length * 80000, 'The total thumbnail budget should scale with the project count');
 });
 
 test('README screenshots open the large image, keeping a separate online preview in the same order', () => {

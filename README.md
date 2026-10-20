@@ -184,13 +184,15 @@ npm run add:project -- \
 
 - `--dir` 必须是小写 kebab-case，且与根目录文件夹同名；
 - `--preview` 可选，默认 `./<dir>/index.html`；构建过 `dist` 的项目传 `--preview ./<dir>/dist/index.html`；
-- `--screenshot`：先准备实际运行截图，压缩成 640×360 WebP，放入 `assets/project-thumbnails/`，脚本会同时生成首页图片和 README 的 160×90 可点击预览；草稿可以省略并显示“待补截图”，正式发布前需补全截图；
+- `--screenshot` **必填**：先准备实际运行截图，压缩成 640×360 静态 WebP，放入 `assets/project-thumbnails/<项目目录名>.webp`，文件大于 1 KB、小于 80 KB。脚本检查真实格式、尺寸和文件是否存在，通过后才写入首页与 README；小图点击看大图，独立“在线”链接试玩。不能只改 HTML 宽高来伪装图片尺寸；
 - 预览链接必须指向可交互的 HTML 页面，不要指向 `.mp4` 等媒体文件；
 - `--dry-run` 只打印将追加的内容，不写文件；
 - 预览链接必须落在本项目目录内，脚本会拒绝越界路径；
 - 重复的 `--dir` 会被拒绝——追加一次就够，不要重复执行。
 
 脚本本身不做「插到第 N 位」：允许插队就会让三处顺序漂移，而这正是过去需要人工核对的原因。
+
+首页统一保留 `img.project-shot` 和 `assets/gallery-preview.js`，新增卡片自动获得悬停放大及手机放大按钮。缺图、格式/尺寸不合格、截图链接或项目顺序不一致都会让 `npm test` 失败。GitHub Actions 对推送及 PR 执行检查，PR 只验证不部署；正式 GitHub Pages 和 Cloudflare 部署都先通过检查。这会阻止不合格的部署，不会阻止 Git 本身创建提交。
 
 ## 预览页统一 GitHub 入口与自动发布
 

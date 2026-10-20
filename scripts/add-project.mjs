@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'parse5';
+import { validateProjectScreenshot } from './project-screenshot.mjs';
 
 /**
  * 新项目一律追加到「最后一位」。
@@ -204,15 +205,17 @@ async function main() {
   const readmePath = path.join(root, 'README.md');
 
   if (!args.dir) {
-    console.error('用法：npm run add:project -- --dir <目录名> --title <标题> --tag <标签> --summary <一句话简介> --desc <2-4 句速览> [--preview ./dir/index.html] [--screenshot ./assets/project-thumbnails/dir.webp] [--dry-run]');
+    console.error('用法：npm run add:project -- --dir <目录名> --title <标题> --tag <标签> --summary <一句话简介> --desc <2-4 句速览> --screenshot ./assets/project-thumbnails/dir.webp [--preview ./dir/index.html] [--dry-run]');
     process.exitCode = 2;
     return;
   }
 
+  const project = normalizeProject(args);
+  const screenshot = await validateProjectScreenshot({ root, dir: project.dir, screenshot: project.screenshot });
   const result = appendProject({
     homeHtml: await readFile(homePath, 'utf8'),
     readmeMd: await readFile(readmePath, 'utf8'),
-    project: args,
+    project: { ...project, screenshot: screenshot.screenshot },
   });
 
   if (args.dryRun) {

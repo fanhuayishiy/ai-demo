@@ -47,6 +47,10 @@ jobs:
         if: steps.creds.outputs.ready == 'true'
         run: npm ci
 
+      - name: Validate project index and screenshots
+        if: steps.creds.outputs.ready == 'true'
+        run: npm test
+
       - name: Build shared GitHub entry
         if: steps.creds.outputs.ready == 'true'
         run: npm run build:pages
