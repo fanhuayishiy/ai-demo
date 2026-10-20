@@ -121,7 +121,7 @@ function cardHtml(p, eol) {
 
 function tableRow(p, withScreenshot) {
   const shot = p.screenshot
-    ? `<a href="${escapeHtml(p.pages)}"><img src="${escapeHtml(p.screenshot)}" width="160" height="90" alt="${escapeHtml(p.title)}"></a>`
+    ? `<a href="${escapeHtml(p.screenshot)}"><img src="${escapeHtml(p.screenshot)}" width="160" height="90" alt="${escapeHtml(p.title)}"></a>`
     : '待补截图';
   return `| ${withScreenshot ? `${shot} | ` : ''}${p.dir} | ${p.summary} | [在线](${p.pages}) | [README](./${p.dir}/README.md) |`;
 }

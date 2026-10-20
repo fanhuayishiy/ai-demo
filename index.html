@@ -61,7 +61,19 @@ h1{font-size:27px;letter-spacing:3px}
 .project-shot{display:block;width:calc(100% + 52px);max-width:none;height:auto;aspect-ratio:16/9;object-fit:cover;margin:-26px -26px 22px;border-radius:11px 11px 0 0;border-bottom:1px solid #94a3a62b;background:#101519}
 @media(max-width:560px){.project-shot{width:calc(100% + 44px);margin:-22px -22px 20px}}
 @media(prefers-reduced-motion:reduce){.card,.badge,.prompt-link{transition:none}.card:hover{transform:none}}
+.shot-zoom{position:absolute;z-index:2;top:10px;right:10px;min-height:36px;padding:6px 11px;border:1px solid #ffffff60;border-radius:6px;background:#10232ee8;color:#fff;font-family:inherit;font-size:12px;cursor:zoom-in}
+.shot-zoom:hover{background:#263d49}.shot-zoom:focus-visible,.shot-close:focus-visible{outline:2px solid #e6a74f;outline-offset:3px}
+.shot-hover{position:fixed;z-index:50;pointer-events:none;border:1px solid #c7d6df80;border-radius:10px;background:#15232d;box-shadow:0 18px 60px #0009;overflow:hidden}
+.shot-hover[hidden]{display:none}.shot-hover img{display:block;width:100%;aspect-ratio:16/9;object-fit:contain}
+.shot-hover-title{padding:13px 16px;color:#edf1f2;font-size:13px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shot-dialog{width:min(820px,calc(100vw - 32px));max-width:none;max-height:calc(100dvh - 32px);padding:0;border:1px solid #718797;border-radius:12px;background:#14212b;color:#edf1f2;box-shadow:0 20px 80px #000a;overflow:auto}
+.shot-dialog::backdrop{background:#071018dc}.shot-dialog-image{display:block;width:100%;max-height:calc(100dvh - 120px);object-fit:contain;background:#0d1720}
+.shot-close{position:absolute;z-index:1;top:10px;right:10px;width:44px;height:44px;border:1px solid #ffffff80;border-radius:50%;background:#0c1b28e8;color:#fff;font:26px/1 sans-serif;cursor:pointer}
+.shot-dialog-footer{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:17px 20px}.shot-dialog-footer h2{margin:0;font-size:15px;line-height:1.5;font-weight:500}.shot-project-link{flex-shrink:0;color:#f0bf74;font-size:12px;text-decoration:none}
+.shot-preview-open{overflow:hidden}
+@media(max-width:560px){.shot-zoom{min-height:44px;padding:8px 12px}.shot-dialog-footer{flex-wrap:wrap;gap:10px;padding:14px 16px}.shot-dialog-footer h2{font-size:14px}}
 </style>
+<script src="./assets/gallery-preview.js" defer></script>
 </head>
 <body>
 <header class="hero">

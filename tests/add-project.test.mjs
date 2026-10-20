@@ -52,7 +52,8 @@ test('可选截图生成卡片图片和160px表格预览，并转义标题', () 
   const result = appendProject({ homeHtml: fixtureHome, readmeMd: fixtureReadme(true), project: { ...sample, title, screenshot } });
   const alt = 'Sample &quot;A&quot; &amp; &lt;B&gt; &#39;C&#39;';
   assert.ok(result.homeHtml.includes(`<img class="project-shot" src="${screenshot}" width="640" height="360" loading="lazy" decoding="async" alt="${alt}">`));
-  assert.ok(result.readmeMd.includes(`<a href="https://fanhuayishiy.github.io/ai-demo/sample-project/"><img src="${screenshot}" width="160" height="90" alt="${alt}"></a>`));
+  assert.ok(result.readmeMd.includes(`<a href="${screenshot}"><img src="${screenshot}" width="160" height="90" alt="${alt}"></a>`));
+  assert.ok(result.readmeMd.includes('[在线](https://fanhuayishiy.github.io/ai-demo/sample-project/)'));
   assert.deepEqual(readHomeProjects(result.homeHtml), ['existing', sample.dir]);
   assert.deepEqual(readReadmeProjects(result.readmeMd), ['existing', sample.dir]);
 });

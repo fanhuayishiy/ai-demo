@@ -37,7 +37,7 @@ test('each existing project card has one lightweight screenshot with stable dime
   assert(total < 800000, 'The gallery should not ship full-size screenshots');
 });
 
-test('README screenshots link to the same previews as the home cards, in the same order', () => {
+test('README screenshots open the large image, keeping a separate online preview in the same order', () => {
   assert(readme.includes('| 截图 | 项目 | 一句话简介 | 预览 | 详细文档 |'));
   assert.deepEqual(readReadmeProjects(readme), readHomeProjects(html));
   for (const card of document.querySelectorAll('.grid > .card')) {
@@ -52,8 +52,15 @@ test('README screenshots link to the same previews as the home cards, in the sam
     assert.equal(image.getAttribute('width'), '160');
     assert.equal(image.getAttribute('height'), '90');
     assert.equal(image.parentElement.tagName, 'A');
-    assert.equal(image.parentElement.getAttribute('href'), `https://fanhuayishiy.github.io/ai-demo/${preview.replace(/^\.\//u, '').replace(/index\.html$/u, '')}`);
+    assert.equal(image.parentElement.getAttribute('href'), image.getAttribute('src'));
+    assert(line.includes(`[在线](https://fanhuayishiy.github.io/ai-demo/${preview.replace(/^\.\//u, '').replace(/index\.html$/u, '')})`));
   }
+});
+
+test('home includes the lightweight image-preview enhancement', async () => {
+  assert(document.querySelector('script[src="./assets/gallery-preview.js"][defer]'));
+  const script = await readFile(path.join(root, 'assets/gallery-preview.js'), 'utf8');
+  assert(script.length < 10000, 'Preview should not need a large dependency');
 });
 
 test('Roadster summary describes the currently published gameplay', () => {
