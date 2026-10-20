@@ -125,7 +125,8 @@ test('README keeps the Roadster overview directly before the newest overview', (
   assert.match(overview, /按高度返还冷气/u);
   assert.match(overview, /空中翻滚/u);
   assert.doesNotMatch(overview, /烧完不补/u);
-  assert.match(overview, /1:1/u);
+  assert.match(overview, /车模参考官方渲染图制作/u);
+  assert.doesNotMatch(overview, /1:1/u);
   assert.ok(overview.includes('(./roadster-escape-toll/docs/official-render-compare.png)'));
 });
 

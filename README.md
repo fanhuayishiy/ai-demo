@@ -1,17 +1,12 @@
 # AI Demo Collection
 
-AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运行的完整作品，各自放在根目录一个独立文件夹里，细节写在该文件夹自己的 `README.md` 中；本文件只做索引。
+AI 辅助生成的交互式前端作品合集，包含三维场景、数字孪生、机械展示和网页小游戏。每个项目独立运行，并提供源码、运行说明与生成提示词。
 
 [![Open Source](https://img.shields.io/badge/open%20source-MIT-8fc79b?style=flat-square)](./LICENSE)
 
-本仓库以 MIT License 开源，欢迎复用、改进和提交新的交互式 Demo。
+[在线浏览全部项目](https://fanhuayishiy.github.io/ai-demo/) · [本地运行](#本地运行) · [新增项目](#新增项目) · [维护文档](./docs/maintaining.md)
 
-- 许可证：[MIT License](./LICENSE)
-- 项目首页：<https://fanhuayishiy.github.io/ai-demo>
-
-每个项目的 `README.md` 都固定含一节 **`## 主生成提示（原文）`**，逐字收录当初的生成提示，不做改写；本索引不复制提示词。
-
-若早期完整原文无法核验，项目文档会明确注明，仅保留可核验的请求；根据最终成品新整理的「复现提示词」另行标注，不冒充历史原文。
+各项目 README 的 **主生成提示（原文）** 保留可核验的原始请求；无法核验的历史原文会明确说明，整理后的复现提示词另行标注。
 
 ## 项目列表
 
@@ -37,115 +32,119 @@ AI 辅助生成的交互式前端 Demo 合集。每个项目都是独立可运�
 | <a href="./assets/project-thumbnails/roadster-escape-toll.webp"><img src="./assets/project-thumbnails/roadster-escape-toll.webp" width="160" height="90" alt="Roadster 逃离收费站"></a> | roadster-escape-toll | Roadster 逃离收费站：三车道切换、空中翻滚、飞越车辆补气与缓慢提速，保留原有玩家车模 | [在线](https://fanhuayishiy.github.io/ai-demo/roadster-escape-toll/) | [README](./roadster-escape-toll/README.md) |
 | <a href="./assets/project-thumbnails/ocean-shallows.webp"><img src="./assets/project-thumbnails/ocean-shallows.webp" width="160" height="90" alt="浅海 · Ocean Shallows"></a> | ocean-shallows | 俯视视角的热带浅海：白沙沙滩、随风摇曳的棕榈树、由浅绿松石渐变到深蓝的海水，水下焦散光网与七种热带鱼，点击水面投下涟漪 | [在线](https://fanhuayishiy.github.io/ai-demo/ocean-shallows/) | [README](./ocean-shallows/README.md) |
 
----
+## 本地运行
 
-## orbit-heatpump-washer-dryer — ORBIT 热泵洗烘结构实验室
+优先使用上方“在线”链接体验。需要本地运行时，在目标项目 README 中查看对应命令：
 
-程序化生成的热泵式洗烘一体机概念模型：19 个装配组、13 类中文部件说明，支持整机、分层爆炸、内部拆解与热泵循环四种视图。侧板平行移出，直驱电机保持筒体同轴，进排水接口与连接软管可从背面查看；附五张 3K 渲染图及 13 秒拆装动画 GLB。结构与管路为概念示意，不是制造 CAD 或维修指导。
+- **静态项目**：在仓库根目录运行 `python -m http.server 8000`，再打开 `http://localhost:8000/` 选择项目。
+- **已有构建产物**：同样通过静态服务打开该项目的 `dist/`（部分项目为 `dist/client/`）。
+- **修改并开发项目**：进入项目目录，按其 README 安装依赖并启动；各项目的技术栈和启动命令并不相同。
 
-[在线预览](https://fanhuayishiy.github.io/ai-demo/orbit-heatpump-washer-dryer/dist/) · [README（含主生成提示原文）](./orbit-heatpump-washer-dryer/README.md)
+完整发布副本的构建与检查见[维护文档](./docs/maintaining.md#预览页统一-github-入口与自动发布)。
+
+## 项目速览
+
+以下为简短介绍，完整功能、操作、资源与验证边界见各项目 README。
 
 ## habitat-interactive-home — 栖居 HABITAT 家庭 3D 空间
 
-以原创 108㎡ 示例户型为基础的家庭 3D 交互前端：环绕观察客厅、主卧、书房、餐厨、卫浴与阳台，点选 22 件设备逐一控制；灯光、色温和环境时段实时影响三维空间的光影，遮挡视线的墙体自动淡出。React 19 + Three.js 0.180 + Vite。
+探索客厅、卧室、书房、餐厨与卫浴，点选设备控制灯光和家电，遮挡墙体自动淡出。基于原创示例户型，使用 React、Three.js 与 Vite。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/habitat-interactive-home/dist/) · [README（含主生成提示原文）](./habitat-interactive-home/README.md)
 
+## orbit-heatpump-washer-dryer — ORBIT 热泵洗烘结构实验室
+
+通过整机、分层爆炸、内部拆解和热泵循环四种视图，探索洗烘一体机的结构与管路。附渲染图及拆装动画，模型为概念示意。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/orbit-heatpump-washer-dryer/dist/) · [README（含主生成提示原文）](./orbit-heatpump-washer-dryer/README.md)
+
 ## boeing-787-digital-twin — AEROSTRUCT 波音 787-9 结构数字孪生大屏
 
-以波音 787-9 为外形参考的程序化三维飞机，支持整机、连续爆炸和客舱剖视，九大总成点选联动、四种镜头、拆装演示与 PNG / JSON 导出。配套结构健康度、机翼应变、材料构成和动力监测面板；几何与数据均为概念示意，不是官方 CAD、实时遥测或维修指导。
+以波音 787-9 为外形参考，支持爆炸拆解、客舱剖视、部件联动和数据导出。监测面板使用模拟数据，非官方 CAD 或实时遥测。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/boeing-787-digital-twin/dist/) · [README（含主生成提示原文）](./boeing-787-digital-twin/README.md)
 
 ## sunny-side-kindergarten — 小小晴天实时 3D 幼儿园
 
-阳光清新的低多边形微缩幼儿园：双层通透教室、环形跑道、足球场和彩虹校门，22 名虚拟儿童与 3 名老师持续开展课堂、绘画阅读和户外游戏。支持六区平滑聚焦、人物点击跟随、五站自动漫游与移动端适配；使用预设安全路径和程序动画，非预渲染视频或完整物理仿真。
+低多边形微缩幼儿园，虚拟儿童与老师按预设路径开展课堂、阅读和户外活动。支持区域聚焦、人物跟随、自动漫游与移动端操作。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/sunny-side-kindergarten/dist/) · [README（含主生成提示原文）](./sunny-side-kindergarten/README.md)
 
 ## hydrogen-energy-system — H₂ NEXUS 综合能源数字孪生
 
-程序化三维能源园区 + 五色动态管线 + 本地守恒仿真：光伏、风电、PEM 电解槽、储氢罐、燃料电池、燃气热电联产、热泵与制冷机组按稳态功率分配联动，储氢罐有界积分。所有数值为本地仿真，不是现场遥测；依赖与字体全部随静态产物提供，无运行时 CDN。
+探索光伏、风电、制氢、储氢及燃料电池联动的三维能源园区。五色能流由本地守恒仿真驱动，运行资源随静态产物提供。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/hydrogen-energy-system/) · [README（含主生成提示原文）](./hydrogen-energy-system/README.md)
 
 ## campus-3d-dashboard — 智慧校园 3D 数据大屏
 
-单 HTML 文件的 3D 交互大屏：等距视角校园 + Chart.js 看板叠加，12 辆车在四条道路循环、三层喷泉粒子，支持昼夜切换、透视/正交双相机与建筑悬停提示。零构建工具、零外部图片，双击即可运行（依赖走 CDN）。
+等距视角校园与数据看板，包含车辆循环、喷泉粒子、昼夜切换和双相机模式。单 HTML 项目，运行时依赖 CDN。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/campus-3d-dashboard/) · [README（含主生成提示原文）](./campus-3d-dashboard/README.md)
 
 ## mcb-2p-c16-blender-animation — 双极空气开关建模与工程动画
 
-无品牌表达的热磁式微型断路器（MCB）：Blender 5.2.1 程序化建模 441 个对象，交付 22 秒 8 章节工程动画、可编辑 `.blend`、通用 `.glb`、1080P 成片与三张 2560×1440 渲染图。在线打开的是 Three.js 交互查看器页面，可直接旋转、跳转章节与拖拽进度。内部机构为原理性示意，不是原厂 CAD 或电气性能仿真。
+Blender 程序化建模的双极空气开关，提供工程动画、可编辑模型与渲染图。在线查看器支持旋转、章节跳转及进度拖动，内部机构为原理示意。
 
 [在线交互展示](https://fanhuayishiy.github.io/ai-demo/mcb-2p-c16-blender-animation/) · [README（含主生成提示原文）](./mcb-2p-c16-blender-animation/README.md)
 
 ## voxel-construction-site — 体素微缩建筑工地沙盘「方寸之间」
 
-挖掘机挖土、渣土车接运卸料、塔吊分区吊运、搅拌车与装载机协同、工人各司其职，配完整四段昼夜循环与空格键模拟暴雨；桌面前方是三颗实体控制旋钮。Three.js r160 已内嵌，双击即可离线运行；运动体互撞与越界由 1201 点采样审计为 0。
+挖掘机、渣土车、塔吊与工人在微缩工地协同作业，配有昼夜循环和模拟暴雨。Three.js 已内嵌，可离线运行；采样审计范围见项目文档。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/voxel-construction-site/preview.html) · [README（含主生成提示原文）](./voxel-construction-site/README.md)
 
 ## voxel-ramen-stall — 体素微缩深夜拉面摊沙盘
 
-摊主抻面下锅、煮面篓起落、竹竿吊臂逐盏挂灯笼、外卖摩托循环取餐折返、食客与流浪猫往来，配四套天色与模拟夜雨（湿地面反光、水洼涟漪、灯光长倒影）。全部运动为纯 f(t) 确定性动画，与真实帧率解耦；480 秒 1921 点 OBB + SAT 审计为 0 穿模、0 越界。
+摊主、食客、外卖摩托与流浪猫组成微缩夜市，支持天色切换与模拟夜雨。使用确定性程序动画，碰撞与越界的采样验证见项目文档。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/voxel-ramen-stall/preview.html) · [README（含主生成提示原文）](./voxel-ramen-stall/README.md)
 
 ## sakura-station-corner — 樱花街角 · 电车与便利店微缩三维沙盘
 
-单线电车与站台、整面落地玻璃的 24 小时便利店（店内货架与商品逐件可读）、带玻璃门的贩卖机、电线杆与档间电线、三株樱花与持续落樱。102 个资产模块 + 14 个地图层 + 13 个引擎模块，纹理由 Canvas2D 程序化生成，无任何外部图片与 CDN；默认低多边形平涂，`?style=toon` 切三渲二，天气五档。
+电车、便利店、贩卖机与落樱组成微缩街角，支持五档天气及三渲二风格切换。几何与纹理在项目内生成，无运行时外部图片与 CDN。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/sakura-station-corner/dist/) · [README（含主生成提示原文）](./sakura-station-corner/README.md)
 
 ## sanfang-qixiang-atlas — 三坊七巷 · 坊巷漫游
 
-以 OpenStreetMap 真实街巷与建筑平面轮廓为骨架的风格化古城导览：901 个建筑、107 段道路、294 个庭院内孔、19 个导览地点，白墙黛瓦与马鞍墙，支持景点搜索、点击飞行、3D/俯瞰切换与五站空中漫游。建筑高度与装饰为风格化复原，不是摄影全景或测绘模型。
+基于 OpenStreetMap 街巷与建筑轮廓的三维古城导览，支持搜索、点击飞行、俯瞰和自动漫游。建筑高度与装饰为风格化复原。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/sanfang-qixiang-atlas/dist/) · [README（含主生成提示原文）](./sanfang-qixiang-atlas/README.md)
 
 ## terra-728-tractor-blender-animation — 现代四驱拖拉机建模与机械动画
 
-虚构命名的 TERRA 728 大型四驱 CVT 拖拉机概念模型：Blender 5.2.1 程序化建模 1482 个对象，1–360 帧六章节 15 秒机械演示动画（差速行驶、Ackermann 转向、机罩气弹簧开启、车门与副座、后三点抬升、雨刷与警示灯），交付 `.blend`、`.glb`、四张 Cycles 渲染图与本地依赖的交互查看器。轴距、角度与时序均为艺术调整，不得用于选型、制造或安全认证。
+虚构型号 TERRA 728 拖拉机的 Blender 模型与机械演示，展示转向、机罩、车门及悬挂等机构。提供可编辑模型、渲染图与交互查看器，参数为艺术调整。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/terra-728-tractor-blender-animation/) · [README（含主生成提示原文）](./terra-728-tractor-blender-animation/README.md)
 
----
-
 ## sunset-flight-study — 夕空飞行 · Just breathe
 
-Three.js 程序化奶油白单翼机、紫色立体云海、橙金天空和翼尖气流，24 秒四段连续运镜；WASD/方向键接管近距离稳定尾随，G 回到电影航线。配有播放时间轴、自由视角和 BAANDIT!《rumination》官方流播，并保留日间双机空战版本；提供原始生成请求与根据最终实现整理的完整复现提示词。音乐权利不包含在代码的 MIT 许可中。
+奶油白单翼机穿越紫金云海，支持电影航线、近距离驾驶与自由观察，配有官方流播音乐。提供原始请求及复现提示词；音乐权利不包含在代码的 MIT 许可中。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/sunset-flight-study/dist/) · [README（含主生成提示原文）](./sunset-flight-study/README.md) · [当前版本完整复现提示词](./sunset-flight-study/docs/RECREATE_PROMPT.zh-CN.md)
 
----
-
 ## warehouse-demo — WareTrack 仓储运营中心
 
-蓝白低多边形单仓园区：四个月台、三辆卡车、一台叉车与三组可选托盘，32 秒搬运闭环和中文库存、任务、月台面板共享状态。支持三维点击、搜索筛选、暂停继续、对象聚焦、主动镜头巡游与窄屏适配；全部业务数据为本地模拟，不连接真实仓储后台。
+三维仓储园区中，卡车、叉车与托盘完成循环搬运，库存、任务和月台面板共享状态。支持搜索、聚焦、暂停与镜头巡游，业务数据均为本地模拟。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/warehouse-demo/dist/client/) · [README](./warehouse-demo/README.md) · [当前项目完整复现提示词](./warehouse-demo/docs/RECREATE_PROMPT.zh-CN.md)
 
----
-
 ## modular-fire-response — FIRELINK 分布式智能消防
 
-分布式调度下的模块化 3D 消防概念演示：两架承托无人机与一架末端喷射机共用一根水带，配合移动增压、循环补水与重载无人机物资投送。调度、供水和运动均为前端概念示意，不代表经真实物理验证的消防系统，也不用于实际救援决策。
+三机共用水带的分布式消防概念演示，包含移动增压、循环补水与重载无人机物资投送。运动与供水为前端概念示意，不用于实际救援决策。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/modular-fire-response/dist/) · [README](./modular-fire-response/README.md) · [当前项目完整复现提示词](./modular-fire-response/docs/RECREATE_PROMPT.zh-CN.md)
 
----
-
 ## roadster-escape-toll — Roadster 逃离收费站
 
-特斯拉第二代 Roadster 搭载 SpaceX 冷气推进器可空中悬浮，网友玩梗「开特斯拉的人谁还过收费站，直接飞过去」。本 Demo 据此做成 Three.js 网页小游戏：长按点火在收费站前起飞，点火太晚撞站、推力过猛飞过头冲出马路。满罐冷气可点火 5 秒，支持三车道平滑换道和空中翻滚；完整飞越车辆按高度返还冷气，侧面绕过不计奖。速度缓慢提升，搭配逐车碰撞、失败建议与手机操作；10 个喷嘴按真实冷气推进器布局（车底 4 向下喷、车尾 4 向后推、两侧成对做姿态控制），羽流是水汽凝结的白雾而非火焰。车模按 tesla.cn 官方渲染图 1:1 对齐（长 4.721 / 宽 2.051 / 高 1.130 m，逐列实测反推型面），折面几何还原「隐形战机」式大平面折板，另有本地排行榜。three.js r149 UMD 完全离线，双击即玩。
+驾驶搭载冷气推进器的 Roadster，在三条车道间平滑切换，长按点火飞越收费站，空中翻滚，完整飞越车辆按高度返还冷气。车速缓慢提升，提供失败建议、手机操作与本地排行榜；车模参考官方渲染图制作，项目可离线运行。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/roadster-escape-toll/) · [README（含主生成提示原文）](./roadster-escape-toll/README.md) · [官方渲染侧视叠加对比](./roadster-escape-toll/docs/official-render-compare.png)
 
 ## ocean-shallows — 浅海 · Ocean Shallows
 
-俯视视角的热带浅海：不规则岸线、白色浪沫、从浅绿松石渐变到深蓝的海水，水下游着七种热带鱼，点击水面可以投下向外扩散的涟漪。全部几何与纹理在运行时程序化生成，没有外部模型和贴图；地形高度、波场梯度、叶片阴影都预烘焙成纹理，因此能把每帧开销压在一次全屏采样上。已在 1920×1080 下实测远超 60fps。
+俯视热带浅海，探索白沙、棕榈树、渐变海水、焦散与七种热带鱼，点击水面生成涟漪。几何与纹理程序化生成，并通过预烘焙减少每帧计算。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/ocean-shallows/) · [README（含主生成提示原文）](./ocean-shallows/README.md)
 
@@ -153,102 +152,12 @@ Three.js 程序化奶油白单翼机、紫色立体云海、橙金天空和翼�
 
 ## 新增项目
 
-新项目直接在根目录建独立文件夹，并写一份项目自己的 `README.md`，固定包含：
+先阅读 [AGENTS.md](./AGENTS.md)，准备独立项目目录、项目 README 和实际运行截图，再使用 `npm run add:project` 追加到末尾。截图必须是 640×360 的静态 WebP，大于 1000 且小于 80000 字节。
 
-1. `## 主生成提示（原文）` —— 逐字收录提示词，不改写、不精简（需要拆解时另起 `###` 小节，原文保持不动）；
-2. 功能亮点 / 技术栈 / 运行方式 / 目录结构 / 验证与边界。
+[追加命令与参数](./docs/maintaining.md#用脚本追加推荐) · [部署与本地验证](./docs/maintaining.md#预览页统一-github-入口与自动发布) · [截图分享](./docs/maintaining.md#截图分享) · [访问量与隐私](./docs/maintaining.md#本页访问量与隐私)
 
-### 排序规则：新项目一律排在最后一位
-
-首页 `index.html` 的卡片顺序就是发布顺序（`prepare-pages` 按卡片顺序发现预览），因此三处顺序必须完全一致：
-
-1. 首页 `.grid` 里的卡片；
-2. 「项目列表」表格的行；
-3. 下方「项目速览」的 `##` 段落。
-
-**新项目只能追加到这三处的末尾，不得插入任何已有项目之间。** 这条规则由 `tests/add-project.test.mjs` 自动校验：一旦顺序漂移，`npm test` 会直接失败。
-
-### 用脚本追加（推荐）
-
-不要手动改三处，直接用脚本，它会一次把卡片、表格行、速览段落都追加到最后一位：
-
-```bash
-npm run add:project -- \
-  --dir new-project \
-  --title "项目标题" \
-  --tag "THREE.JS / 主题标签" \
-  --summary "一句话简介（进表格与卡片）" \
-  --screenshot ./assets/project-thumbnails/new-project.webp \
-  --desc "2-4 句速览（进下方段落）"
-```
-
-- `--dir` 必须是小写 kebab-case，且与根目录文件夹同名；
-- `--preview` 可选，默认 `./<dir>/index.html`；构建过 `dist` 的项目传 `--preview ./<dir>/dist/index.html`；
-- `--screenshot` **必填**：先准备实际运行截图，压缩成 640×360 静态 WebP，放入 `assets/project-thumbnails/<项目目录名>.webp`，文件大于 1 KB、小于 80 KB。脚本检查真实格式、尺寸和文件是否存在，通过后才写入首页与 README；小图点击看大图，独立“在线”链接试玩。不能只改 HTML 宽高来伪装图片尺寸；
-- 预览链接必须指向可交互的 HTML 页面，不要指向 `.mp4` 等媒体文件；
-- `--dry-run` 只打印将追加的内容，不写文件；
-- 预览链接必须落在本项目目录内，脚本会拒绝越界路径；
-- 重复的 `--dir` 会被拒绝——追加一次就够，不要重复执行。
-
-脚本本身不做「插到第 N 位」：允许插队就会让三处顺序漂移，而这正是过去需要人工核对的原因。
-
-首页统一保留 `img.project-shot` 和 `assets/gallery-preview.js`，新增卡片自动获得悬停放大及手机放大按钮。缺图、格式/尺寸不合格、截图链接或项目顺序不一致都会让 `npm test` 失败。GitHub Actions 对推送及 PR 执行检查，PR 只验证不部署；正式 GitHub Pages 和 Cloudflare 部署都先通过检查。这会阻止不合格的部署，不会阻止 Git 本身创建提交。
-
-## 预览页统一 GitHub 入口与自动发布
-
-线上预览由 `.github/workflows/pages.yml` 发布：每次推送到 `main`，自动测试、打包并部署到 GitHub Pages。现有预览网址保持不变。
-
-所有首页项目卡片指向的预览 HTML 会自动加入统一的「GitHub · 源码 / 提示词」入口，链接到本仓库。组件外观只维护一份：[`shared/github-entry.html`](./shared/github-entry.html)，分享与统计逻辑放在同目录的独立模块中，发布时编译内嵌。手机显示图标，可以关闭当前页入口；不统计点击、不自动跳转。它是发布页面的导航，不属于三维场景模型。
-
-入口在加载及窗口尺寸变化时选择较少遮挡控件的边缘位置，尊重设备安全区，不在动画循环中扫描页面。它不保证避开将来所有动态弹窗；如局部遮挡，可关闭本页入口。每个新项目仍应做正常的桌面与手机验收。
-
-**后续新增项目不用手动引入组件**：
-
-1. 提交可运行的静态预览及其资源（Vite 项目先构建并提交 `dist`）。
-2. 用 `npm run add:project` 追加索引（见上方「新增项目 · 排序规则」）。脚本生成的卡片已经带上 `badge cover` 两个 class；若手写，必须两个都保留，例如：
-
-   ```html
-   <a class="badge cover" href="./new-project/dist/index.html">可交互</a>
-   ```
-
-3. 推送到 `main`。发布脚本自动发现新链接、添加组件，不需要登记第二份项目清单。目录地址 `./new-project/dist/` 也支持。
-
-打包脚本会检查目标存在且为仓库内的 HTML，缺失或不安全的路径会阻止发布；重复打包不会叠加多个入口。分享所需的固定版本库内嵌到发布产物，不从 CDN 加载；统计是独立、可失败的外部请求。严格 CSP 仅在发布副本里精确放行不蒜子脚本来源、同源临时 iframe 与本地 blob 媒体，不移除原有策略。原项目源码和已提交构建文件不被改写，所以直接运行某个子项目开发服务（如 `localhost:5184`）不会显示此发布层入口。
-
-### 截图分享
-
-点击分享图标后，先尝试在本机截取当前可见预览，再在画面下方添加白色页脚：页面标题与**当前完整网址**的二维码（保留查询参数和片段，不替换为仓库地址）。图片与二维码不会上传；二维码可能包含敏感参数，分享前请检查网址。
-
-成功写入剪贴板后才提示「已复制分享图片」。权限被拒绝或浏览器不支持图片剪贴板时，保留图片预览，提供「再次复制图片」和「保存 PNG 图片」。截图不包含此入口；不会自动下载、改变相机、暂停动画或设置 `preserveDrawingBuffer`。
-
-部分 WebGL 缓冲区、视频、嵌入页面、自定义 Shadow DOM 或超大画布不能可靠读取，此时明确提示，并由访客另行点击「选择当前标签页截图」。浏览器权限窗口不能跳过；需要选择当前标签页，窗口、屏幕或无法确认类型的来源会被拒绝。只截取一帧、不采集音频，成功、失败和取消都会停止轨道。没有该能力的浏览器会提示改用桌面 Chrome / Edge。输出尺寸与像素数有上限，超长网址会被拒绝而非截断二维码内容。
-
-自动截图基于 DOM 重绘，不保证还原所有浏览器特效。未验证的自定义元素（包括封闭 Shadow DOM）会保守转入标签页截图；普通原生元素上的封闭 Shadow DOM 无法统一预检，新增项目仍需核对实际生成图片。图片合成或网址编码失败不会再次索取截图权限；取消后可重新分享，从浏览器后退缓存返回页面后也会保留分享能力。
-
-### 本页访问量与隐私
-
-访问量由[不蒜子](https://busuanzi.ibruce.info/)提供，显示**当前页面的 PV**，不是独立人数，也不是仓库总访问量；不承诺防刷、精确真人计数、历史数据补录或服务可用性。有效结果到达前不显示数字，失败、拦截或超时会隐藏计数，不显示虚假的 0。
-
-- 仅正式 HTTPS 地址 `https://fanhuayishiy.github.io/ai-demo/` 下的子项目会请求统计；主页、localhost、测试域名和带查询参数的页面不统计。
-- 尊重浏览器 Do Not Track 和 Global Privacy Control；不添加 cookies、localStorage、持久访客标识，不追踪分享或 GitHub 点击。
-- 服务方会接收网络请求所带的 IP 与来源页面地址。不蒜子按来源地址识别页面，因此跳过含查询参数的链接；浏览器不会把 URL 片段发送为 Referer。
-- 第三方 JSONP 在 `sandbox="allow-scripts"` 的独立、不透明来源 iframe 中运行，不获得同源应用 DOM 权限。父页只接收来源、随机令牌和整数计数验证通过的消息；同一文档不轮询、不重复请求。
-
-浏览器可能进一步限制隔离 iframe 的 Referer；发布前必须用真实浏览器验证页面归属，不能只凭单元测试认为计数正确。若不可用，应保持计数隐藏，不应放宽 iframe 的同源权限。当前实现及尚未完成的实机验收见[验证记录](./docs/superpowers/sharing-pageviews-verification.md)。
-
-在完整合集目录中可本地检查发布版本（Node.js 22）：
-
-```sh
-npm ci
-npm test
-npm run build:pages
-python -m http.server 5185 --directory _site
-```
-
-`_site` 是临时发布目录，不提交。脚本拒绝覆盖已有非空目录；重新打包时先将上一次 `_site` 移出仓库保存或明确清理它，再执行构建。GitHub Actions 每次使用干净检出，无需这一步。组件修改随下一次成功发布同步到全部已列出的项目。
-
-若运行环境禁止 Node 测试子进程，可改用 `node --test --experimental-test-isolation=none tests/*.test.mjs`。依赖版本及许可证见 [`shared/THIRD_PARTY.md`](./shared/THIRD_PARTY.md)。
+发布前运行 `npm test` 和 `npm run build:pages`。CI 检查失败会停止部署；项目顺序、截图规范与统一预览入口必须保留。
 
 ---
 
-友链：[LINUX DO 社区](https://linux.do/)。
+代码采用 [MIT License](./LICENSE)；项目中的第三方素材与依赖以各自许可为准。友链：[LINUX DO 社区](https://linux.do/)。

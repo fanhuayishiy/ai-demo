@@ -26,6 +26,8 @@ npm run add:project -- \
 
 可选参数：`--preview ./<dir>/dist/index.html`、`--dry-run`。
 
+根 README 面向访客：项目速览保持 2–3 句，详细功能与验证边界写在各项目 README。收录参数、发布、分享和访问统计的维护说明集中在 `docs/maintaining.md`，不要将这些长篇细节重新复制回根 README。
+
 同时记得把 `index.html` 顶部 `<meta name="description">` 里的「N 个可运行项目」改成新的总数。
 
 ## 截图与卡片写法：所有新项目必须沿用

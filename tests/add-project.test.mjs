@@ -74,6 +74,8 @@ test('首页卡片顺序与 README 索引顺序完全一致', () => {
   const home = readHomeProjects(homeHtml);
   const readme = readReadmeProjects(readmeMd);
   assert.deepEqual(home, readme, '首页卡片与「项目列表」必须同序，新项目只能追加到末尾');
+  const overviews = [...readmeMd.matchAll(/^## ([a-z0-9-]+) — /gmu)].map(match => match[1]);
+  assert.deepEqual(overviews, home, '项目速览也必须与卡片和表格同序');
 });
 
 test('每个首页卡片都有对应的项目目录与 README', () => {
