@@ -31,6 +31,7 @@ AI 辅助生成的交互式前端作品合集，包含三维场景、数字孪�
 | <a href="./assets/project-thumbnails/modular-fire-response.webp"><img src="./assets/project-thumbnails/modular-fire-response.webp" width="160" height="90" alt="FIRELINK · 分布式智能消防"></a> | modular-fire-response | FIRELINK 分布式消防概念演示，三机共用一根水带、移动增压、循环补水与无人机物资投送 | [在线](https://fanhuayishiy.github.io/ai-demo/modular-fire-response/dist/) | [README](./modular-fire-response/README.md) |
 | <a href="./assets/project-thumbnails/roadster-escape-toll.webp"><img src="./assets/project-thumbnails/roadster-escape-toll.webp" width="160" height="90" alt="Roadster 逃离收费站"></a> | roadster-escape-toll | Roadster 逃离收费站：三车道切换、空中翻滚、飞越车辆补气与缓慢提速，保留原有玩家车模 | [在线](https://fanhuayishiy.github.io/ai-demo/roadster-escape-toll/) | [README](./roadster-escape-toll/README.md) |
 | <a href="./assets/project-thumbnails/ocean-shallows.webp"><img src="./assets/project-thumbnails/ocean-shallows.webp" width="160" height="90" alt="浅海 · Ocean Shallows"></a> | ocean-shallows | 俯视视角的热带浅海：白沙沙滩、随风摇曳的棕榈树、由浅绿松石渐变到深蓝的海水，水下焦散光网与七种热带鱼，点击水面投下涟漪 | [在线](https://fanhuayishiy.github.io/ai-demo/ocean-shallows/) | [README](./ocean-shallows/README.md) |
+| <a href="./assets/project-thumbnails/ship-in-a-bottle.webp"><img src="./assets/project-thumbnails/ship-in-a-bottle.webp" width="160" height="90" alt="瓶中沧海 · 前进·梅利号"></a> | ship-in-a-bottle | 玻璃瓶里的体素海洋，前进·梅利号四点浪高采样浮沉绕岛，四档天气、时刻滑杆与 Space 风暴，全部封闭在瓶内（Three.js r160 单 HTML） | [在线](https://fanhuayishiy.github.io/ai-demo/ship-in-a-bottle/) | [README](./ship-in-a-bottle/README.md) |
 
 ## 本地运行
 
@@ -147,6 +148,12 @@ Blender 程序化建模的双极空气开关，提供工程动画、可编辑模
 俯视热带浅海，探索白沙、棕榈树、渐变海水、焦散与七种热带鱼，点击水面生成涟漪。几何与纹理程序化生成，并通过预烘焙减少每帧计算。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/ocean-shallows/) · [README（含主生成提示原文）](./ocean-shallows/README.md)
+
+## ship-in-a-bottle — 瓶中沧海 · 前进·梅利号
+
+横卧玻璃瓶里装着一整片体素海洋：前进·梅利号按四点浪高采样浮沉绕岛，灯塔光束扫过浪尖、鲸鱼周期性跃身出水、水底沉着宝箱与沉船遗物。晴/多云/雨/雾四档天气平滑过渡，时刻滑杆与黎明-正午-黄昏-子夜跳转驱动昼夜流转，按住 Space 掀起风暴——瓶体摇晃而水面保持水平。所有元素由瓶体 SDF 裁剪严格封闭在瓶内，任何视角不越轮廓。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/ship-in-a-bottle/) · [README（含主生成提示原文）](./ship-in-a-bottle/README.md)
 
 ---
 

@@ -28,8 +28,10 @@ const roadsterPreview = 'roadster-escape-toll/index.html';
 const roadsterTitle = 'Roadster 逃离收费站';
 const oceanPreview = 'ocean-shallows/index.html';
 const oceanTitle = '浅海 · Ocean Shallows';
+const shipPreview = 'ship-in-a-bottle/index.html';
+const shipTitle = '瓶中沧海 · 前进·梅利号';
 // 新项目一律追加到末尾，所以这个列表只会在尾部增长。
-const appendedPreviews = [firePreview, roadsterPreview, oceanPreview];
+const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview];
 
 function* walk(node) {
   yield node;
@@ -53,9 +55,9 @@ test('collection appends new previews at the tail after the fourteen originals i
   assert.deepEqual(discoverPreviews(html), [...existingPreviews, ...appendedPreviews]);
 });
 
-test('homepage metadata advertises seventeen runnable projects', () => {
+test('homepage metadata advertises eighteen runnable projects', () => {
   const description = nodes.find(node => node.tagName === 'meta' && attribute(node, 'name') === 'description');
-  assert.match(attribute(description, 'content'), /17 个可运行项目/u);
+  assert.match(attribute(description, 'content'), /18 个可运行项目/u);
 });
 
 test('Roadster card presents an offline mini-game with preview and prompt links', () => {
@@ -89,29 +91,29 @@ test('FIRELINK card keeps its preview and reproduction prompt links', () => {
 test('the newest project sits last in the homepage grid', () => {
   const cards = nodes.filter(node => hasClass(node, 'card'));
   const heading = [...walk(cards.at(-1))].find(node => node.tagName === 'h2');
-  assert.equal(text(heading), oceanTitle);
+  assert.equal(text(heading), shipTitle);
   const preview = [...walk(cards.at(-1))].find(node => node.tagName === 'a' && hasClass(node, 'badge') && hasClass(node, 'cover'));
-  assert.equal(attribute(preview, 'href'), `./${oceanPreview}`);
+  assert.equal(attribute(preview, 'href'), `./${shipPreview}`);
 });
 
 test('README lists the same projects in the same order, newest last', () => {
   const rows = readme.split(/\r?\n/u).filter(line => line.startsWith('|') && /\| [a-z][\w-]+ \|/u.test(line));
   const expectedProjects = [...existingPreviews, ...appendedPreviews].map(preview => preview.split('/')[0]);
   assert.deepEqual(rows.map(row => /\| ([a-z][\w-]+) \|/u.exec(row)[1]), expectedProjects);
-  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/ocean-shallows/)'));
-  assert.ok(rows.at(-1).includes('[README](./ocean-shallows/README.md)'));
+  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/ship-in-a-bottle/)'));
+  assert.ok(rows.at(-1).includes('[README](./ship-in-a-bottle/README.md)'));
 });
 
 test('README puts the newest overview immediately before the contribution instructions', () => {
   const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
   const contributionIndex = headings.indexOf('## 新增项目');
   assert.ok(contributionIndex > 0);
-  assert.ok(headings[contributionIndex - 1].startsWith('## ocean-shallows '));
-  const overviewStart = readme.indexOf('## ocean-shallows ');
+  assert.ok(headings[contributionIndex - 1].startsWith('## ship-in-a-bottle '));
+  const overviewStart = readme.indexOf('## ship-in-a-bottle ');
   const overview = readme.slice(overviewStart, readme.indexOf('## 新增项目', overviewStart));
-  assert.match(overview, /浅海|潮间带|热带/u);
-  assert.match(overview, /\[在线预览\]\(https:\/\/fanhuayishiy\.github\.io\/ai-demo\/ocean-shallows\/\)/u);
-  assert.ok(overview.includes('[README（含主生成提示原文）](./ocean-shallows/README.md)'));
+  assert.match(overview, /瓶中沧海|玻璃瓶|体素/u);
+  assert.match(overview, /\[在线预览\]\(https:\/\/fanhuayishiy\.github\.io\/ai-demo\/ship-in-a-bottle\/\)/u);
+  assert.ok(overview.includes('[README（含主生成提示原文）](./ship-in-a-bottle/README.md)'));
 });
 
 test('README keeps the Roadster overview directly before the newest overview', () => {
