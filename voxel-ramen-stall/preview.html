@@ -391,18 +391,44 @@ const room = {
         geo.mesh_box(scene, 0, -10.7, 0, 180, 0.4, 180, 0x241a17);
         geo.box(scene, 0, -10.48, 0.5, 47, 0.06, 36, 0x3a2430);
         geo.box(scene, 0, -10.44, 0.5, 44.5, 0.04, 33.5, 0x452b37);
-        geo.box(scene, 0, 8, -31, 105, 38, 0.7, 0x2d201a);
-        geo.box(scene, 0, -8.7, -30.55, 105, 0.45, 0.3, 0x1c130f);
-        geo.box(scene, 34, 8, 0, 0.7, 38, 62, 0x2b1f19);
-        this.window_material = new THREE.MeshBasicMaterial({ color: 0x0e1826 });
-        geo.mesh_box(scene, -9, 11.5, -30.5, 30, 20, 0.18, this.window_material, { shadow: false });
-        for (let i = 0; i < 6; i++) geo.box(scene, -24 + i * 6, 11.5, -30.2, 0.3, 20.6, 0.5, 0x1a1210);
-        for (const height of [1.3, 11.5, 21.7]) geo.box(scene, -9, height, -30.2, 30.6, 0.3, 0.6, 0x1a1210);
-        geo.box(scene, -9, 1, -29.8, 31, 0.5, 1.7, 0x3b2c22);
+        // 环境墙：相机绕到墙外侧时自动淡出，避免遮挡沙盘主体（issue #2）
+        this.fade_walls = this.fade_walls || [];
+        const add_room_fade_wall = (normal_x, normal_z, anchor_x, anchor_z) => {
+            const group = new THREE.Group();
+            scene.add(group);
+            const wall = { group, into_room: new THREE.Vector3(normal_x, 0, normal_z), anchor: new THREE.Vector3(anchor_x, 0, anchor_z), top: 27, materials: [], opacity: 1 };
+            this.fade_walls.push(wall);
+            return wall;
+        };
+        const room_fade_cache = new Map();
+        const room_fade_material = (wall, options) => {
+            const key = wall.into_room.x + ':' + options.color;
+            if (!room_fade_cache.has(key)) {
+                room_fade_cache.set(key, new THREE.MeshStandardMaterial(Object.assign({ roughness: 0.93, metalness: 0.02, transparent: true, opacity: 1 }, options)));
+                wall.materials.push(room_fade_cache.get(key));
+            }
+            return room_fade_cache.get(key);
+        };
+        const back_wall = add_room_fade_wall(0, 1, 0, -31);
+        geo.mesh_box(back_wall.group, 0, 8, -31, 105, 38, 0.7, room_fade_material(back_wall, { color: 0x2d201a }));
+        this.window_material = new THREE.MeshBasicMaterial({ color: 0x0e1826, transparent: true, opacity: 1 });
+        back_wall.materials.push(this.window_material);
+        geo.mesh_box(back_wall.group, -9, 11.5, -30.5, 30, 20, 0.18, this.window_material, { shadow: false });
+        for (let i = 0; i < 6; i++) geo.mesh_box(back_wall.group, -24 + i * 6, 11.5, -30.2, 0.3, 20.6, 0.5, room_fade_material(back_wall, { color: 0x1a1210 }));
+        for (const height of [1.3, 11.5, 21.7]) geo.mesh_box(back_wall.group, -9, height, -30.2, 30.6, 0.3, 0.6, room_fade_material(back_wall, { color: 0x1a1210 }));
+        geo.mesh_box(back_wall.group, -9, 1, -29.8, 31, 0.5, 1.7, room_fade_material(back_wall, { color: 0x3b2c22 }));
+        const picture_materials = [0x4a3826, 0x3a3040, 0x54402a, 0x2c3444].map(color => {
+            const material = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 1 });
+            back_wall.materials.push(material);
+            return material;
+        });
         for (let i = 0; i < 11; i++) {
             const height = 1 + rng.next() * 4;
-            geo.mesh_box(scene, -22 + i * 2.6, 1.5 + height / 2, -30.34, 1.8, height, 0.03, new THREE.MeshBasicMaterial({ color: [0x4a3826, 0x3a3040, 0x54402a, 0x2c3444][i % 4] }), { shadow: false });
+            geo.mesh_box(back_wall.group, -22 + i * 2.6, 1.5 + height / 2, -30.34, 1.8, height, 0.03, picture_materials[i % 4], { shadow: false });
         }
+        const right_wall = add_room_fade_wall(-1, 0, 34, 0);
+        geo.mesh_box(right_wall.group, 34, 8, 0, 0.7, 38, 62, room_fade_material(right_wall, { color: 0x2b1f19 }));
+        geo.box(scene, 0, -8.7, -30.55, 105, 0.45, 0.3, 0x1c130f);
         this.shade_material = new THREE.MeshStandardMaterial({ color: 0x8a5a34, roughness: 0.6, emissive: 0xff9a40, emissiveIntensity: 0.25, side: THREE.DoubleSide });
         geo.beam(scene, [0, 13.4, 1], [0, 10.9, 1], 0.07, 0x241a14);
         geo.cylinder(scene, 0, 10.72, 1, 2.0, 0.8, this.shade_material, 20);
@@ -410,9 +436,9 @@ const room = {
         const bulb_material = new THREE.MeshBasicMaterial({ color: 0xffe2ae });
         geo.cylinder(scene, 0, 10.05, 1, 0.2, 0.34, bulb_material, 8);
         for (const shelf_y of [-0.2, 7]) {
-            geo.box(scene, 24.5, shelf_y, -27, 14, 0.5, 2.8, 0x453228);
+            geo.mesh_box(back_wall.group, 24.5, shelf_y, -27, 14, 0.5, 2.8, room_fade_material(back_wall, { color: 0x453228 }));
             for (let i = 0; i < 9; i++) {
-                geo.box(scene, 18.5 + i * 1.4, shelf_y + 1.8, -27, 0.8, 3.1 + rng.next(), 1.7, [0x5d4a3a, 0x7d6a4c, 0x46403a, 0x6a4438][i % 4]);
+                geo.mesh_box(back_wall.group, 18.5 + i * 1.4, shelf_y + 1.8, -27, 0.8, 3.1 + rng.next(), 1.7, room_fade_material(back_wall, { color: [0x5d4a3a, 0x7d6a4c, 0x46403a, 0x6a4438][i % 4] }));
             }
         }
         const scroll_canvas = document.createElement('canvas');
@@ -431,11 +457,12 @@ const room = {
         scroll_paint.fillText('一碗入魂', 110, 430);
         const scroll_texture = new THREE.CanvasTexture(scroll_canvas);
         scroll_texture.colorSpace = THREE.SRGBColorSpace;
-        const scroll = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 8.6), new THREE.MeshStandardMaterial({ map: scroll_texture, roughness: 0.95 }));
+        const scroll = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 8.6), new THREE.MeshStandardMaterial({ map: scroll_texture, roughness: 0.95, transparent: true, opacity: 1 }));
+        back_wall.materials.push(scroll.material);
         scroll.position.set(12, 8.5, -30.55);
-        scene.add(scroll);
-        geo.box(scene, 12, 13, -30.5, 4, 0.3, 0.2, 0x4a3628);
-        geo.box(scene, 12, 4, -30.5, 4, 0.3, 0.2, 0x4a3628);
+        back_wall.group.add(scroll);
+        geo.mesh_box(back_wall.group, 12, 13, -30.5, 4, 0.3, 0.2, room_fade_material(back_wall, { color: 0x4a3628 }));
+        geo.mesh_box(back_wall.group, 12, 4, -30.5, 4, 0.3, 0.2, room_fade_material(back_wall, { color: 0x4a3628 }));
         this.build_tabletop_props();
         this.build_controls();
     },
@@ -499,9 +526,36 @@ const room = {
         });
         geo.label(scene, '深夜拉面摊  /  微缩食摊 002', -6.8, -0.99, 10.59, 5.7, 0.58, { background: '#33241c', color: '#e8c89a', border: '#6d5c4d' });
     },
+    update_walls(dt) {
+        if (!this.fade_walls) return;
+        for (const wall of this.fade_walls) {
+            // 相机绕到墙外侧、且视线在墙平面处的高度低于墙顶时，墙面让出视野（issue #2）
+            const cam_along = wall.into_room.dot(camera.position);
+            const anchor_along = wall.into_room.dot(wall.anchor);
+            const target_along = wall.into_room.dot(orbit.target);
+            const outside = cam_along - anchor_along < -1.5;
+            const along_span = target_along - cam_along;
+            const sight_y = Math.abs(along_span) < 0.001 ? orbit.target.y
+                : camera.position.y + (orbit.target.y - camera.position.y) * (anchor_along - cam_along) / along_span;
+            const target_opacity = (outside && sight_y < wall.top) ? 0 : 1;
+            if (Math.abs(target_opacity - wall.opacity) > 0.001) {
+                wall.opacity += (target_opacity - wall.opacity) * Math.min(1, dt * 5.5);
+            } else {
+                wall.opacity = target_opacity;
+            }
+            const visible = wall.opacity > 0.02;
+            wall.group.visible = visible;
+            if (visible) {
+                for (const material of wall.materials) material.opacity = wall.opacity;
+                const cast = wall.opacity > 0.4;
+                for (const mesh of wall.group.children) mesh.castShadow = cast;
+            }
+        }
+    },
 };
 
 const street = {
+    building_fades: [],
     build(ctx) {
         const { THREE, scene, geo, add_lamp, add_point } = ctx;
         const group = geo.group(scene);
@@ -754,71 +808,101 @@ const street = {
             geo.cylinder(group, -12.3 + rng.next() * 3.4, 0.062, -3.85 - rng.next() * 0.3, 0.025, 0.09, 0xd8cdb4, 6, { rx: Math.PI / 2, rz: rng.next() * 3, ...nc });
         }
 
-        // —— 后巷居民楼 ——
-        geo.box(group, 0, 3.4, -7.5, 30.2, 6.8, 5.8, C.brick);
-        geo.box(group, 0, 0.35, -4.42, 30.2, 0.7, 0.34, C.brick_dark);
-        geo.box(group, 0, 7.6, -7.5, 30.2, 0.2, 5.8, 0x4a4038);
-        for (let i = 0; i < 10; i++) geo.box(group, -14.5 + i * 3.1, 6.2, -4.4, 0.3, 0.9, 0.12, C.brick_dark);
+        // —— 后巷居民楼 ——（相机绕到楼后时整栋淡出，避免遮挡摊位主体，issue #2）
+        const north = { into_room: new THREE.Vector3(0, 0, 1), anchor: new THREE.Vector3(0, 0, -10.4), top: 7.7, materials: [], meshes: [], opacity: 1 };
+        this.building_fades.push(north);
+        const north_mat_cache = new Map();
+        const north_mat = (color) => {
+            if (!north_mat_cache.has(color)) {
+                north_mat_cache.set(color, new THREE.MeshStandardMaterial({ color, roughness: 0.93, metalness: 0.02, transparent: true, opacity: 1 }));
+                north.materials.push(north_mat_cache.get(color));
+            }
+            return north_mat_cache.get(color);
+        };
+        this.north_window_lit = this.window_lit_material.clone();
+        this.north_window_dark = this.window_dark_material.clone();
+        for (const material of [this.north_window_lit, this.north_window_dark]) { material.transparent = true; north.materials.push(material); }
+        geo.box(group, 0, 3.4, -7.5, 30.2, 6.8, 5.8, north_mat(C.brick));
+        geo.box(group, 0, 0.35, -4.42, 30.2, 0.7, 0.34, north_mat(C.brick_dark));
+        geo.box(group, 0, 7.6, -7.5, 30.2, 0.2, 5.8, north_mat(0x4a4038));
+        for (let i = 0; i < 10; i++) geo.box(group, -14.5 + i * 3.1, 6.2, -4.4, 0.3, 0.9, 0.12, north_mat(C.brick_dark));
         const win_x = [-12.6, -9.4, -6.2, -1.4, 1.8, 5.0, 8.2, 11.4];
         for (let i = 0; i < win_x.length; i++) {
             for (const wy of [2.6, 4.9]) {
                 const lit = (i * 2 + (wy > 3.7 ? 1 : 0)) % 3 !== 0;
-                geo.box(group, win_x[i], wy, -4.33, 1.7, 1.3, 0.06, lit ? this.window_lit_material : this.window_dark_material, { shadow: false });
-                geo.box(group, win_x[i], wy, -4.3, 1.86, 1.46, 0.05, C.brick_dark, { shadow: false });
-                geo.box(group, win_x[i], wy, -4.3, 1.74, 1.34, 0.02, lit ? this.window_lit_material : this.window_dark_material, { shadow: false });
-                for (const bar of [-0.42, 0.42]) geo.box(group, win_x[i] + bar, wy, -4.29, 0.06, 1.36, 0.03, 0x3a322c, { shadow: false });
+                geo.box(group, win_x[i], wy, -4.33, 1.7, 1.3, 0.06, lit ? this.north_window_lit : this.north_window_dark, { shadow: false });
+                geo.box(group, win_x[i], wy, -4.3, 1.86, 1.46, 0.05, north_mat(C.brick_dark), { shadow: false });
+                geo.box(group, win_x[i], wy, -4.3, 1.74, 1.34, 0.02, lit ? this.north_window_lit : this.north_window_dark, { shadow: false });
+                for (const bar of [-0.42, 0.42]) geo.box(group, win_x[i] + bar, wy, -4.29, 0.06, 1.36, 0.03, north_mat(0x3a322c), { shadow: false });
                 if ((i + Math.round(wy)) % 3 === 0) {
-                    geo.box(group, win_x[i] + 0.3, wy - 0.95, -4.22, 0.85, 0.5, 0.3, 0x8d958f);
-                    geo.box(group, win_x[i] + 0.3, wy - 0.95, -4.06, 0.72, 0.4, 0.04, 0x5d6560);
+                    geo.box(group, win_x[i] + 0.3, wy - 0.95, -4.22, 0.85, 0.5, 0.3, north_mat(0x8d958f));
+                    geo.box(group, win_x[i] + 0.3, wy - 0.95, -4.06, 0.72, 0.4, 0.04, north_mat(0x5d6560));
                 }
             }
         }
-        geo.box(group, 4.5, 1.0, -4.35, 1.0, 2.0, 0.1, 0x3d3028);
-        geo.box(group, 4.5, 2.1, -4.28, 1.2, 0.16, 0.3, 0x4a3c30);
-        geo.box(group, 4.5, 1.2, -4.24, 0.7, 1.3, 0.04, 0x2a2018);
-        geo.box(group, 4.28, 2.5, -4.24, 0.16, 0.24, 0.14, 0x3d4448);
-        add_lamp(4.3, 2.42, -4.15, 0xffd9a0, 0.55);
-        geo.beam(group, [-9.5, 0.1, -4.25], [-9.5, 5.6, -4.25], 0.14, 0x6d655c);
-        for (const py of [1.6, 3.4]) geo.box(group, -9.5, py, -4.18, 0.3, 0.08, 0.2, 0x6d655c);
+        geo.box(group, 4.5, 1.0, -4.35, 1.0, 2.0, 0.1, north_mat(0x3d3028));
+        geo.box(group, 4.5, 2.1, -4.28, 1.2, 0.16, 0.3, north_mat(0x4a3c30));
+        geo.box(group, 4.5, 1.2, -4.24, 0.7, 1.3, 0.04, north_mat(0x2a2018));
+        geo.box(group, 4.28, 2.5, -4.24, 0.16, 0.24, 0.14, north_mat(0x3d4448));
+        north.meshes.push(add_lamp(4.3, 2.42, -4.15, 0xffd9a0, 0.55));
+        geo.beam(group, [-9.5, 0.1, -4.25], [-9.5, 5.6, -4.25], 0.14, north_mat(0x6d655c));
+        for (const py of [1.6, 3.4]) geo.box(group, -9.5, py, -4.18, 0.3, 0.08, 0.2, north_mat(0x6d655c));
         // 楼顶
-        geo.box(group, -8, 8.6, -7.5, 2.0, 1.5, 2.0, 0x6d655c);
-        geo.cylinder(group, -8, 9.6, -7.5, 0.9, 0.6, 0x5d6560, 12);
+        geo.box(group, -8, 8.6, -7.5, 2.0, 1.5, 2.0, north_mat(0x6d655c));
+        geo.cylinder(group, -8, 9.6, -7.5, 0.9, 0.6, north_mat(0x5d6560), 12);
         for (const ax of [-2.5, 5.5, 10.5]) {
-            geo.box(group, ax, 7.85, -6.3, 1.4, 0.6, 0.9, 0x8d958f);
-            geo.box(group, ax, 7.85, -5.82, 1.2, 0.5, 0.05, 0x5d6560);
+            geo.box(group, ax, 7.85, -6.3, 1.4, 0.6, 0.9, north_mat(0x8d958f));
+            geo.box(group, ax, 7.85, -5.82, 1.2, 0.5, 0.05, north_mat(0x5d6560));
         }
-        geo.box(group, 3.0, 7.75, -8.8, 0.1, 0.7, 0.1, 0x3d4448);
-        geo.beam(group, [3.0, 8.1, -8.8], [3.9, 8.1, -8.8], 0.03, 0x3d4448);
-        geo.beam(group, [-11.5, 7.62, -7.5], [12.5, 7.62, -7.5], 0.08, 0x6d655c);
+        geo.box(group, 3.0, 7.75, -8.8, 0.1, 0.7, 0.1, north_mat(0x3d4448));
+        geo.beam(group, [3.0, 8.1, -8.8], [3.9, 8.1, -8.8], 0.03, north_mat(0x3d4448));
+        geo.beam(group, [-11.5, 7.62, -7.5], [12.5, 7.62, -7.5], 0.08, north_mat(0x6d655c));
 
-        // —— 东侧楼与转角小店 ——（进深收至人行道以北，南脸朝向近人行道）
-        geo.box(group, 11.2, 2.35, 2.8, 7.8, 4.5, 5.0, 0x6a5648);
-        geo.box(group, 11.2, 4.7, 2.8, 7.9, 0.2, 5.1, 0x4a4038);
-        geo.box(group, 7.28, 2.2, 2.8, 0.16, 4.2, 4.6, 0x5d4a3e);
+        // —— 东侧楼与转角小店 ——（进深收至人行道以北，南脸朝向近人行道；相机绕到东侧时整栋淡出）
+        const east = { into_room: new THREE.Vector3(-1, 0, 0), anchor: new THREE.Vector3(15.15, 0, 2.8), top: 4.9, materials: [], meshes: [], opacity: 1 };
+        this.building_fades.push(east);
+        const east_mat_cache = new Map();
+        const east_mat = (color) => {
+            if (!east_mat_cache.has(color)) {
+                east_mat_cache.set(color, new THREE.MeshStandardMaterial({ color, roughness: 0.93, metalness: 0.02, transparent: true, opacity: 1 }));
+                east.materials.push(east_mat_cache.get(color));
+            }
+            return east_mat_cache.get(color);
+        };
+        this.east_window_lit = this.window_lit_material.clone();
+        this.east_window_dark = this.window_dark_material.clone();
+        for (const material of [this.east_window_lit, this.east_window_dark]) { material.transparent = true; east.materials.push(material); }
+        geo.box(group, 11.2, 2.35, 2.8, 7.8, 4.5, 5.0, east_mat(0x6a5648));
+        geo.box(group, 11.2, 4.7, 2.8, 7.9, 0.2, 5.1, east_mat(0x4a4038));
+        geo.box(group, 7.28, 2.2, 2.8, 0.16, 4.2, 4.6, east_mat(0x5d4a3e));
         for (const wz of [1.2, 2.6, 4.0]) {
-            geo.box(group, 7.26, 2.6, wz, 0.06, 1.1, 0.9, (wz * 7) % 3 < 2 ? this.window_lit_material : this.window_dark_material, { shadow: false });
-            geo.box(group, 7.22, 2.6, wz, 0.04, 1.2, 1.0, 0x4a3c30, { shadow: false });
+            geo.box(group, 7.26, 2.6, wz, 0.06, 1.1, 0.9, (wz * 7) % 3 < 2 ? this.east_window_lit : this.east_window_dark, { shadow: false });
+            geo.box(group, 7.22, 2.6, wz, 0.04, 1.2, 1.0, east_mat(0x4a3c30), { shadow: false });
         }
-        geo.box(group, 8.8, 1.5, 5.33, 2.2, 1.6, 0.1, this.window_lit_material, { shadow: false });
-        geo.box(group, 8.8, 1.5, 5.35, 2.4, 1.8, 0.06, 0x4a3c30, { shadow: false });
-        geo.box(group, 8.8, 2.5, 5.36, 2.6, 0.14, 0.6, 0x8a3a2e);
-        geo.box(group, 12.2, 0.95, 5.28, 1.0, 1.9, 0.08, 0x2a2018);
-        geo.box(group, 12.2, 2.0, 5.22, 1.3, 0.18, 0.4, 0x4a3c30);
-        geo.label(group, '夜 市 杂 货', 8.8, 2.72, 5.38, 2.3, 0.26, { background: '#8a3a2e', color: '#ffe2b0', border: '#5d2a20' });
-        for (const ax of [9.5, 12.5]) geo.box(group, ax, 5.0, 1.6, 1.3, 0.55, 0.9, 0x8d958f);
-        geo.cylinder(group, 10.8, 5.3, 3.5, 0.8, 1.0, 0x6d655c, 12);
-        geo.box(group, 14.0, 5.3, 1.0, 0.1, 0.9, 0.1, 0x3d4448);
-        geo.beam(group, [14.0, 5.75, 1.0], [14.0, 5.75, 2.2], 0.03, 0x3d4448);
+        geo.box(group, 8.8, 1.5, 5.33, 2.2, 1.6, 0.1, this.east_window_lit, { shadow: false });
+        geo.box(group, 8.8, 1.5, 5.35, 2.4, 1.8, 0.06, east_mat(0x4a3c30), { shadow: false });
+        geo.box(group, 8.8, 2.5, 5.36, 2.6, 0.14, 0.6, east_mat(0x8a3a2e));
+        geo.box(group, 12.2, 0.95, 5.28, 1.0, 1.9, 0.08, east_mat(0x2a2018));
+        geo.box(group, 12.2, 2.0, 5.22, 1.3, 0.18, 0.4, east_mat(0x4a3c30));
+        const shop_label = geo.label(group, '夜 市 杂 货', 8.8, 2.72, 5.38, 2.3, 0.26, { background: '#8a3a2e', color: '#ffe2b0', border: '#5d2a20' });
+        shop_label.material.transparent = true;
+        east.materials.push(shop_label.material);
+        east.meshes.push(shop_label);
+        for (const ax of [9.5, 12.5]) geo.box(group, ax, 5.0, 1.6, 1.3, 0.55, 0.9, east_mat(0x8d958f));
+        geo.cylinder(group, 10.8, 5.3, 3.5, 0.8, 1.0, east_mat(0x6d655c), 12);
+        geo.box(group, 14.0, 5.3, 1.0, 0.1, 0.9, 0.1, east_mat(0x3d4448));
+        geo.beam(group, [14.0, 5.75, 1.0], [14.0, 5.75, 2.2], 0.03, east_mat(0x3d4448));
         // 自动贩卖机（近人行道东段，靠楼南墙）
         const vend = geo.group(group, 14.0, 0, 5.72);
         vend.rotation.y = 0;
-        geo.box(vend, 0, 1.05, 0, 1.1, 2.1, 0.75, 0x8d3226);
-        geo.box(vend, 0, 1.3, 0.39, 0.9, 1.3, 0.05, 0x1c2a38);
+        geo.box(vend, 0, 1.05, 0, 1.1, 2.1, 0.75, east_mat(0x8d3226));
+        geo.box(vend, 0, 1.3, 0.39, 0.9, 1.3, 0.05, east_mat(0x1c2a38));
         for (let i = 0; i < 8; i++) geo.box(vend, -0.3 + (i % 4) * 0.2, 0.95 + Math.floor(i / 4) * 0.4, 0.42, 0.14, 0.26, 0.02, [0xc0562e, 0x4a7a5d, 0xd8c690, 0x8a5a2e][i % 4], { shadow: false });
-        geo.box(vend, 0, 0.4, 0.4, 0.9, 0.3, 0.06, 0x2a3440);
-        this.vend_material = new THREE.MeshBasicMaterial({ color: 0x9adfe8 });
+        geo.box(vend, 0, 0.4, 0.4, 0.9, 0.3, 0.06, east_mat(0x2a3440));
+        this.vend_material = new THREE.MeshBasicMaterial({ color: 0x9adfe8, transparent: true, opacity: 1 });
+        east.materials.push(this.vend_material);
         geo.box(vend, 0.35, 1.95, 0.41, 0.3, 0.12, 0.03, this.vend_material, { shadow: false });
-        add_lamp(14.0, 1.7, 5.5, 0x9adfe8, 0.5);
+        east.meshes.push(add_lamp(14.0, 1.7, 5.5, 0x9adfe8, 0.5));
 
         // —— 街口：信号灯、消防栓、电线杆与架空线 ——
         geo.cylinder(group, 11.9, 2.2, 9.7, 0.09, 4.4, 0x4a5250, 8);
@@ -879,6 +963,30 @@ const street = {
         for (let i = 0; i < 4; i++) geo.box(group, -7.8 + (i % 2) * 0.6, 0.72 + Math.floor(i / 2) * 0.22, 4.8 + Math.floor(i / 2) * 0.2, 0.44, 0.2, 0.44, C.red);
 
         return group;
+    },
+    update_walls(dt) {
+        for (const wall of this.building_fades) {
+            // 相机绕到楼外侧、且视线在楼体平面处的高度低于楼顶时，整栋让出视野（issue #2）
+            const cam_along = wall.into_room.dot(camera.position);
+            const anchor_along = wall.into_room.dot(wall.anchor);
+            const target_along = wall.into_room.dot(orbit.target);
+            const outside = cam_along - anchor_along < -1.5;
+            const along_span = target_along - cam_along;
+            const sight_y = Math.abs(along_span) < 0.001 ? orbit.target.y
+                : camera.position.y + (orbit.target.y - camera.position.y) * (anchor_along - cam_along) / along_span;
+            const target_opacity = (outside && sight_y < wall.top) ? 0 : 1;
+            if (Math.abs(target_opacity - wall.opacity) > 0.001) {
+                wall.opacity += (target_opacity - wall.opacity) * Math.min(1, dt * 5.5);
+            } else {
+                wall.opacity = target_opacity;
+            }
+            const visible = wall.opacity > 0.02;
+            for (const material of wall.materials) material.opacity = wall.opacity;
+            for (const mesh of wall.meshes) {
+                mesh.visible = visible;
+                if (visible) mesh.castShadow = wall.opacity > 0.4 && mesh.userData.base_shadow;
+            }
+        }
     },
 };
 
@@ -2186,6 +2294,19 @@ const app = {
         machines.build(ctx);
         effects.build();
         geo.flush();
+        // 按材质把淡出楼体的网格归组：批渲染 InstancedMesh 由 flush 挂到 scene，横梁/招牌是独立网格
+        const fade_lookup = new Map();
+        for (const wall of street.building_fades) {
+            for (const material of wall.materials) fade_lookup.set(material, wall);
+            for (const mesh of wall.meshes) mesh.userData.base_shadow = mesh.castShadow;
+        }
+        scene.traverse(child => {
+            const wall = child.material && fade_lookup.get(child.material);
+            if (wall && !wall.meshes.includes(child)) {
+                child.userData.base_shadow = child.castShadow;
+                wall.meshes.push(child);
+            }
+        });
         for (const knob of room.knobs) {
             knob.hit.userData.no_batch = true;
             geo.dynamic_batch(knob.group);
@@ -2275,6 +2396,8 @@ const app = {
         if (state.day_cycle) state.day = (state.day + dt / 180) % 1;
         state.rain = THREE.MathUtils.lerp(state.rain, state.rain_target, 1 - Math.exp(-dt * (state.rain_target ? 0.6 : 0.23)));
         orbit.update(dt);
+        room.update_walls(dt);
+        street.update_walls(dt);
         machines.update(state.time, state.real_time, state);
         lighting.update();
         effects.update();
