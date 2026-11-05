@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CUBE / LAB · 三阶魔方实验室</title>
+<style>
+/* ══════════════════════ 基础与布局 ══════════════════════ */
+:root{
+  --bg:#0a0d12; --card:#121722; --line:rgba(148,163,184,.13);
+  --txt:#e7edf5; --dim:#8b98a9; --accent:#22d3ee; --ok:#34d399; --warn:#fbbf24;
+  --mono:ui-monospace,SFMono-Regular,Consolas,"Cascadia Mono",Menlo,monospace;
+  --u:64px; /* 单块边长, JS 依舞台尺寸调整 */
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:ui-sans-serif,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--txt);overflow:hidden;user-select:none;-webkit-user-select:none;
+  background:
+    radial-gradient(1100px 640px at 26% 16%,rgba(56,189,248,.05),transparent 62%),
+    radial-gradient(900px 560px at 82% 92%,rgba(52,211,153,.04),transparent 60%),
+    var(--bg);
+}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+#app{display:flex;height:100%}
+
+/* ══════════════════════ 左:3D 舞台 (65%) ══════════════════════ */
+#stage{
+  flex:0 0 65%;position:relative;overflow:hidden;touch-action:none;cursor:grab;
+  background:
+    linear-gradient(rgba(148,163,184,.04) 1px,transparent 1px) 0 0/44px 44px,
+    linear-gradient(90deg,rgba(148,163,184,.04) 1px,transparent 1px) 0 0/44px 44px;
+}
+#stage.dragging{cursor:grabbing}
+#stage::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(closest-side at 50% 46%,rgba(34,211,238,.07),transparent 72%)}
+#viewport{position:absolute;inset:0;perspective:calc(var(--u)*15);perspective-origin:50% 46%}
+#scene{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d}
+
+/* 地面软阴影: 地池光斑上叠暗核, 随光源(左上)向右下偏移, 深色背景上清晰可读 */
+#ground{position:absolute;width:calc(var(--u)*6.2);height:calc(var(--u)*6.2);
+  left:calc(var(--u)*-3.1);top:calc(var(--u)*-3.1);border-radius:50%;
+  transform:translate3d(calc(var(--u)*.42),calc(var(--u)*2.42),0) rotateX(90deg);
+  background:
+    radial-gradient(closest-side,rgba(0,0,0,.68),rgba(0,0,0,.42) 25%,rgba(0,0,0,.17) 40%,transparent 55%),
+    radial-gradient(closest-side,rgba(125,165,255,.12),rgba(125,165,255,.05) 44%,rgba(125,165,255,.016) 62%,transparent 82%)}
+
+/* ── 立方块体 ── */
+.cubie{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d}
+.cface{
+  position:absolute;left:calc(var(--u)*-.5);top:calc(var(--u)*-.5);
+  width:var(--u);height:var(--u);border-radius:16%;
+  background:linear-gradient(145deg,#1a2029,#0b0e13 62%);         /* 内部黑底块体 */
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.10),               /* 倒角高光 */
+             inset 0 -1px 2px rgba(0,0,0,.62),
+             inset 0 0 0 1px rgba(0,0,0,.38);
+  backface-visibility:hidden;
+}
+/* 六向盒面(局部法线定位) */
+.f-F{transform:translateZ(calc(var(--u)*.5))}
+.f-B{transform:rotateY(180deg) translateZ(calc(var(--u)*.5))}
+.f-R{transform:rotateY(90deg)  translateZ(calc(var(--u)*.5))}
+.f-L{transform:rotateY(-90deg) translateZ(calc(var(--u)*.5))}
+.f-U{transform:rotateX(90deg)  translateZ(calc(var(--u)*.5))}   /* CSS -y 朝上 */
+.f-D{transform:rotateX(-90deg) translateZ(calc(var(--u)*.5))}
+/* 动态明暗_overlay: JS 逐帧写 --hi(受光) / --sh(背光), 覆盖块体与贴纸 */
+.cface::before,.cface::after{content:"";position:absolute;inset:0;border-radius:inherit;
+  pointer-events:none;z-index:2}
+.cface::before{background:#fff;opacity:var(--hi,0)}
+.cface::after{background:#04060a;opacity:var(--sh,0)}
+
+/* ── 圆角彩色贴纸 (54 张外部) ── */
+.sticker{position:absolute;inset:6.5%;border-radius:19%;z-index:1;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.42),                      /* 贴纸斜边高光 */
+             inset 0 -2px 3px rgba(0,0,0,.32),
+             inset 0 0 0 1px rgba(0,0,0,.22)}
+.sticker::before{content:"";position:absolute;inset:0;border-radius:inherit;
+  background:linear-gradient(172deg,rgba(255,255,255,.32),rgba(255,255,255,.06) 36%,transparent 56%)}
+.s-U{background:linear-gradient(160deg,#ffffff,#e2e8ee 55%,#c7d3dc)}
+.s-D{background:linear-gradient(160deg,#ffdf6b,#ffc400 55%,#dfa800)}
+.s-F{background:linear-gradient(160deg,#2fd07c,#00a344 55%,#008537)}
+.s-B{background:linear-gradient(160deg,#3f86f7,#0046ad 55%,#00378c)}
+.s-L{background:linear-gradient(160deg,#ff9040,#ff5800 55%,#e04a00)}
+.s-R{background:linear-gradient(160deg,#fa4b64,#c8102e 55%,#9e0c24)}
+
+/* ── 舞台底部键位提示 ── */
+#hints{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);
+  display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:94%;pointer-events:none}
+#hints span{font-size:11.5px;color:var(--dim);white-space:nowrap;
+  background:rgba(10,13,18,.72);border:1px solid var(--line);border-radius:999px;
+  padding:4px 11px;backdrop-filter:blur(6px)}
+#hints b{color:var(--txt);font-weight:600}
+
+/* ══════════════════════ 右:控制台 (35%) ══════════════════════ */
+#panel{flex:0 0 35%;display:flex;flex-direction:column;gap:13px;padding:20px 22px;
+  background:linear-gradient(180deg,#0e1219,#0b0f15);border-left:1px solid var(--line);overflow-y:auto}
+#panel header{display:flex;align-items:center;gap:14px}
+.mark{width:46px;height:46px;flex:none;border-radius:12px;background:#151b26;
+  border:1px solid var(--line);display:grid;place-items:center}
+.mark i{width:5px;height:5px;border-radius:1.5px;background:#e8eef3;margin:-8px 0 0 -8px;
+  box-shadow:8px 0 0 #ffc400,16px 0 0 #00a344,
+             0 8px 0 #ff5800,8px 8px 0 #22d3ee,16px 8px 0 #c8102e,
+             0 16px 0 #64748b,8px 16px 0 #334155,16px 16px 0 #1e293b}
+.ttl h1{font-size:20px;font-weight:800;letter-spacing:2.5px}
+.ttl h1 span{color:var(--accent)}
+.ttl p{font-size:11px;color:var(--dim);letter-spacing:1px;margin-top:3px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.card h2{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--dim);
+  text-transform:uppercase;margin-bottom:11px}
+.card h2 small{float:right;letter-spacing:0;text-transform:none;font-weight:500}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+.badge{display:inline-flex;align-items:center;gap:8px;padding:8px 15px;border-radius:999px;
+  background:#161c27;border:1px solid var(--line);font-weight:700;font-size:13px}
+.badge i{width:9px;height:9px;border-radius:50%;background:var(--dim)}
+.badge.ok i{background:var(--ok);box-shadow:0 0 9px var(--ok)}
+.badge.no i{background:var(--warn);box-shadow:0 0 9px rgba(251,191,36,.55)}
+.badge.busy i{background:var(--accent);box-shadow:0 0 9px var(--accent);animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.3}}
+.moves{text-align:right}
+.moves b{display:block;font-family:var(--mono);font-size:27px;line-height:1;color:var(--accent)}
+.moves span{font-size:10.5px;color:var(--dim);letter-spacing:1.5px}
+
+.acts{display:flex;gap:10px}
+.acts button{flex:1;padding:12px 8px;border-radius:12px;font-weight:700;font-size:13.5px;
+  display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .06s,filter .15s}
+.acts button:active{transform:scale(.97)}
+.acts .primary{background:linear-gradient(135deg,#0ea5e9,#22d3ee);color:#04121a}
+.acts .primary:hover{filter:brightness(1.1)}
+.acts .ghost{background:#161c27;border:1px solid var(--line)}
+.acts .ghost:hover{border-color:rgba(251,191,36,.5)}
+kbd{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:5px;
+  background:rgba(148,163,184,.12);border:1px solid var(--line);color:var(--dim)}
+
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fbtn{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;
+  background:#161c27;border:1px solid var(--line);font-size:12.5px;
+  transition:border-color .15s}
+.fbtn:hover{border-color:rgba(34,211,238,.45)}
+.fbtn:active{transform:scale(.95)}
+.fbtn b{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--dim)}
+@keyframes fflash{0%{border-color:rgba(34,211,238,.9);box-shadow:0 0 0 3px rgba(34,211,238,.16)}}
+.fbtn.flash{animation:fflash .45s ease-out}
+.dot{width:13px;height:13px;border-radius:4px;flex:none;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.4),inset 0 -1px 2px rgba(0,0,0,.35)}
+.dU{background:linear-gradient(160deg,#fff,#cfd9e2)}
+.dD{background:linear-gradient(160deg,#ffdf6b,#e0a800)}
+.dF{background:linear-gradient(160deg,#2fd07c,#008537)}
+.dB{background:linear-gradient(160deg,#3f86f7,#00378c)}
+.dL{background:linear-gradient(160deg,#ff9040,#e04a00)}
+.dR{background:linear-gradient(160deg,#fa4b64,#9e0c24)}
+
+#hist{display:flex;flex-wrap:wrap;gap:6px;min-height:32px;max-height:138px;
+  overflow-y:auto;align-content:flex-start}
+.hchip{font-family:var(--mono);font-size:11.5px;padding:3px 8px;border-radius:7px;
+  background:#151b26;border:1px solid var(--line);display:inline-flex;align-items:center;gap:5px}
+.hchip i{width:7px;height:7px;border-radius:2px}
+.h-U i{background:#e8eef3}.h-D i{background:#ffc400}.h-F i{background:#00a344}
+.h-B i{background:#2f6fe0}.h-L i{background:#ff5800}.h-R i{background:#c8102e}
+.hsep{font-size:10.5px;color:var(--dim);border:1px dashed rgba(148,163,184,.32);
+  border-radius:7px;padding:3px 9px}
+.hempty{font-size:11px;color:var(--dim)}
+#panel footer{font-size:11px;color:var(--dim);line-height:1.8;margin-top:auto}
+
+@media (max-width:760px){
+  #stage{flex:0 0 100%}
+  #panel{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- ── 左:3D 舞台 ── -->
+  <main id="stage">
+    <div id="viewport">
+      <div id="scene">
+        <div id="ground"></div>
+        <!-- 27 个立方块由 JS 生成 -->
+      </div>
+    </div>
+    <div id="hints">
+      <span><b>拖拽</b> 旋转视角</span>
+      <span><b>点击色块</b> 转动所在面</span>
+      <span><b>←↑↓→</b> 转层</span>
+      <span><b>Shift</b> 反向</span>
+      <span><b>R</b> 随机打乱</span>
+      <span><b>␣</b> 中断并复原</span>
+    </div>
+  </main>
+
+  <!-- ── 右:实验室控制台 ── -->
+  <aside id="panel">
+    <header>
+      <div class="mark"><i></i></div>
+      <div class="ttl">
+        <h1>CUBE <span>/</span> LAB</h1>
+        <p>三阶魔方实验室 · 纯 CSS 3D TRANSFORM</p>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="srow">
+        <div class="badge ok" id="badge"><i></i><span id="badgeTxt">已复原</span></div>
+        <div class="moves"><b id="moveCount">0</b><span>转动步数</span></div>
+      </div>
+    </section>
+
+    <section class="card acts">
+      <button id="btnScramble" class="primary">随机打乱 <kbd>R</kbd></button>
+      <button id="btnRestore" class="ghost">中断并复原 <kbd>␣</kbd></button>
+    </section>
+
+    <section class="card">
+      <h2>转层控制 <small>Shift + 点击 = 反向</small></h2>
+      <div class="fgrid">
+        <button class="fbtn" data-face="U"><i class="dot dU"></i>上<b>U</b></button>
+        <button class="fbtn" data-face="D"><i class="dot dD"></i>下<b>D</b></button>
+        <button class="fbtn" data-face="L"><i class="dot dL"></i>左<b>L</b></button>
+        <button class="fbtn" data-face="R"><i class="dot dR"></i>右<b>R</b></button>
+        <button class="fbtn" data-face="F"><i class="dot dF"></i>前<b>F</b></button>
+        <button class="fbtn" data-face="B"><i class="dot dB"></i>后<b>B</b></button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>最近转动</h2>
+      <div id="hist"></div>
+    </section>
+
+    <footer>
+      27 个独立块体 · 54 张圆角贴纸 · 整数坐标 + 3×3 朝向矩阵驱动<br>
+      数学系 y 上 / CSS 系 y 下, 经 D=diag(1,-1,1) 换轴渲染 · 无图片 · 无外部资源
+    </footer>
+  </aside>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const stage = $('#stage'), scene = $('#scene'),
+      badgeEl = $('#badge'), badgeTxt = $('#badgeTxt'),
+      moveEl = $('#moveCount'), histEl = $('#hist');
+
+/* ════════ 1. 坐标系 · 矩阵工具 ════════
+   数学坐标系: +x 右, +y 上, +z 前(朝观察者)。CSS 屏幕系 y 轴向下。
+   渲染转换: 位置 y 取反; 朝向矩阵 cssM = D·M·D (D=diag(1,-1,1));
+   旋转: 数学绕 x/z 转 θ ≡ CSS rotateX/Z(-θ), 数学绕 y 转 θ ≡ CSS rotateY(θ)。 */
+const KP = 1.09;                    /* 节距/块宽比 → 块间缝隙 */
+let U = 64;                         /* 块宽 px, 随舞台尺寸调整 */
+
+const FACE = {                      /* n=外法线(数学系) · axis+q=顺时针一层(右手 q·90°) */
+  U:{n:[0, 1,0], axis:'y', q:-1},   /* 俯视顺时针: 前→左  = Ry(-90°) */
+  D:{n:[0,-1,0], axis:'y', q: 1},   /* 仰视顺时针: 前→右  = Ry(+90°) */
+  R:{n:[ 1,0,0], axis:'x', q:-1},   /* 右视顺时针: 前→上  = Rx(-90°) */
+  L:{n:[-1,0,0], axis:'x', q: 1},   /* 左视顺时针: 前→下  = Rx(+90°) */
+  F:{n:[0,0, 1], axis:'z', q:-1},   /* 前视顺时针: 右→下  = Rz(-90°) */
+  B:{n:[0,0,-1], axis:'z', q: 1},   /* 后视顺时针: 右→上  = Rz(+90°) */
+};
+const FACE_KEYS = Object.keys(FACE);
+const I3 = [[1,0,0],[0,1,0],[0,0,1]];
+const DEG = Math.PI/180;
+
+function rotMat(axis, q){           /* 整数旋转矩阵(右手 q·90°), q∈{…,-2,-1,1,2} */
+  const h = ((q % 4) + 4) % 4, c = [1,0,-1,0][h], s = [0,1,0,-1][h];
+  return axis === 'x' ? [[1,0,0],[0,c,-s],[0,s,c]]
+       : axis === 'y' ? [[c,0,s],[0,1,0],[-s,0,c]]
+       :                [[c,-s,0],[s,c,0],[0,0,1]];
+}
+const matMul = (A,B) => A.map(r => [0,1,2].map(c => r[0]*B[0][c] + r[1]*B[1][c] + r[2]*B[2][c]));
+const matVec = (A,v) => [0,1,2].map(i => A[i][0]*v[0] + A[i][1]*v[1] + A[i][2]*v[2]);
+const matEq  = (A,B) => A.every((r,i) => r.every((v,j) => v === B[i][j]));
+
+/* 朝向矩阵 → CSS matrix3d(列主序), 含 D·M·D 换轴(Y 翻转) */
+function cssM3(M){
+  const f = i => i === 1 ? -1 : 1, e = (i,j) => f(i)*f(j)*M[i][j];
+  return `matrix3d(${e(0,0)},${e(1,0)},${e(2,0)},0,${e(0,1)},${e(1,1)},${e(2,1)},0,${e(0,2)},${e(1,2)},${e(2,2)},0,0,0,0,1)`;
+}
+const t3 = p => `translate3d(${(p[0]*KP*U).toFixed(2)}px,${(-p[1]*KP*U).toFixed(2)}px,${(p[2]*KP*U).toFixed(2)}px)`;
+const dirOf = nl => nl[1]===1 ? 'U' : nl[1]===-1 ? 'D' : nl[0]===1 ? 'R' : nl[0]===-1 ? 'L' : nl[2]===1 ? 'F' : 'B';
+const cubieT = c => t3(c.p) + ' ' + cssM3(c.m);
+
+/* ════════ 2. 构建 27 块 · 54 贴纸 ════════ */
+const cubies = [], faceEls = [];
+const LOCALS = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+
+function buildCube(){
+  for (let x=-1; x<=1; x++) for (let y=-1; y<=1; y++) for (let z=-1; z<=1; z++){
+    const el = document.createElement('div'); el.className = 'cubie';
+    const cb = {el, home:[x,y,z], p:[x,y,z], m:I3.map(r=>r.slice()), faces:[]};
+    for (const nl of LOCALS){
+      const exterior = [x+nl[0], y+nl[1], z+nl[2]].some(c => Math.abs(c) > 1);
+      const f = document.createElement('div');
+      f.className = 'cface f-' + dirOf(nl);
+      const rec = {el:f, cubie:cb, nl, v:null};
+      if (exterior){                        /* 仅外表面贴彩色圆角贴纸 → 共 54 张 */
+        const st = document.createElement('div');
+        st.className = 'sticker s-' + dirOf(nl);
+        st._rec = rec;
+        f.appendChild(st);
+      }
+      cb.faces.push(rec); faceEls.push(rec);
+      el.appendChild(f);
+    }
+    el.style.transform = cubieT(cb);
+    scene.appendChild(el);
+    cubies.push(cb);
+  }
+}
+
+/* ════════ 3. 视角 · 随朝向动态明暗 ════════ */
+let rx = -24, ry = -34;                     /* 初始微俯视: 白U/绿F/红R 三面可见 */
+let lightQueued = false;
+const LIGHT = (() => { const v=[-0.42,-0.86,0.5], l=Math.hypot(v[0],v[1],v[2]); return v.map(x=>x/l); })();
+
+function applyView(){
+  scene.style.transform = `rotateX(${rx.toFixed(3)}deg) rotateY(${ry.toFixed(3)}deg)`;
+  scheduleLight();
+}
+function viewM(){                           /* 场景视图矩阵(CSS 基) V = Rx·Ry */
+  const a = rx*DEG, b = ry*DEG,
+        ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
+  return matMul([[1,0,0],[0,ca,-sa],[0,sa,ca]], [[cb,0,sb],[0,1,0],[-sb,0,cb]]);
+}
+function refreshGeom(){                     /* 缓存每张面片世界法线 v = cssM·n_css */
+  for (const f of faceEls){
+    const M = f.cubie.m, g = i => i===1 ? -1 : 1;
+    const cm = [0,1,2].map(i => [0,1,2].map(j => g(i)*g(j)*M[i][j]));   /* cssM = D·M·D */
+    f.v = matVec(cm, [f.nl[0], -f.nl[1], f.nl[2]]);
+  }
+  scheduleLight();
+}
+function scheduleLight(){
+  if (lightQueued) return; lightQueued = true;
+  requestAnimationFrame(() => { lightQueued = false; paintLight(); });
+}
+function paintLight(){                      /* 明暗随三维朝向动态变化(视空间固定光源) */
+  const V = viewM();
+  for (const f of faceEls){
+    const nv = matVec(V, f.v);
+    const d = nv[0]*LIGHT[0] + nv[1]*LIGHT[1] + nv[2]*LIGHT[2];
+    const hi = d > 0 ? d*0.40 : 0, sh = d < 0 ? -d*0.58 : 0;
+    const a = hi.toFixed(3), b = sh.toFixed(3);
+    if (f._a !== a){ f._a = a; f.el.style.setProperty('--hi', a); }
+    if (f._b !== b){ f._b = b; f.el.style.setProperty('--sh', b); }
+  }
+}
+
+/* ════════ 4. 转层引擎 ════════ */
+const queue = [];
+let animating = false, currentAnim = null, scrambling = false, moveCount = 0;
+const hist = [];
+
+function enqueue(face, prime, silent){
+  if (queue.length >= 24) return;
+  queue.push({face, prime:!!prime, silent:!!silent});
+  processQueue();
+}
+function processQueue(){
+  if (animating || !queue.length) return;
+  turn(queue.shift());
+}
+function turn(mv){
+  animating = true;
+  const fd = FACE[mv.face], q = fd.q * (mv.prime ? -1 : 1), R = rotMat(fd.axis, q);
+  const layer = cubies.filter(c => c.p[0]*fd.n[0] + c.p[1]*fd.n[1] + c.p[2]*fd.n[2] === 1);
+  /* 数学绕轴旋转 → CSS rotate3d: 绕 y 角度同号, 绕 x/z 取反 */
+  const ax = fd.axis==='x' ? [1,0,0] : fd.axis==='y' ? [0,1,0] : [0,0,1];
+  const deg = (fd.axis==='y' ? 1 : -1) * q * 90;
+  const pre = `rotate3d(${ax[0]},${ax[1]},${ax[2]},`;
+  /* 同构关键帧: 起止两帧函数序列完全一致(rotate3d+translate3d+matrix3d),
+     浏览器逐函数插值 → 90° 角线性展开 → 9 块绕同一轴走同心圆弧;
+     终帧 R·T·M 恒等于烘焙态 T'·M', 故动画结束零跳变、无撕裂 */
+  const anims = layer.map(c => {
+    const tr = t3(c.p), m3 = cssM3(c.m);
+    return c.el.animate(
+      [{transform:`${pre}0deg) ${tr} ${m3}`},
+       {transform:`${pre}${deg}deg) ${tr} ${m3}`}],
+      {duration:260, easing:'cubic-bezier(.3,.75,.25,1)'});
+  });
+  currentAnim = anims;
+  /* 转层期间对移动层逐帧动态光照: 面片世界法线随旋转角实时变化 */
+  const moving = layer.flatMap(c => c.faces);
+  let raf = 0, live = true;
+  const tick = () => {
+    if (!live) return;
+    try {
+      const t = anims[0].effect.getComputedTiming();
+      const p = t.progress == null ? 0 : t.progress;
+      const th = p * deg * DEG, cth = Math.cos(th), sth = Math.sin(th);
+      const k = ax;
+      for (const f of moving){
+        const v = f.v, kd = k[0]*v[0] + k[1]*v[1] + k[2]*v[2];
+        const nv = [
+          v[0]*cth + (k[1]*v[2]-k[2]*v[1])*sth + k[0]*kd*(1-cth),
+          v[1]*cth + (k[2]*v[0]-k[0]*v[2])*sth + k[1]*kd*(1-cth),
+          v[2]*cth + (k[0]*v[1]-k[1]*v[0])*sth + k[2]*kd*(1-cth),
+        ];
+        const d = nv[0]*LIGHT[0] + nv[1]*LIGHT[1] + nv[2]*LIGHT[2];
+        const hi = d > 0 ? d*0.40 : 0, sh = d < 0 ? -d*0.58 : 0;
+        const a = hi.toFixed(3), b = sh.toFixed(3);
+        if (f._a !== a){ f._a = a; f.el.style.setProperty('--hi', a); }
+        if (f._b !== b){ f._b = b; f.el.style.setProperty('--sh', b); }
+      }
+    } catch (err) { /* 光照循环不阻断烘焙 */ }
+    raf = requestAnimationFrame(tick);
+  };
+  tick();
+  Promise.all(anims.map(a => a.finished)).then(() => {
+    live = false; cancelAnimationFrame(raf);
+    for (const c of layer){                 /* 烘焙整数坐标与朝向矩阵: p'=R·p, M'=R·M */
+      c.p = matVec(R, c.p);
+      c.m = matMul(R, c.m);
+      c.el.style.transform = cubieT(c);
+    }
+    done(mv);
+  }).catch(() => {                          /* 被空格复原中断: resetCube 已全量重置 */
+    live = false; cancelAnimationFrame(raf);
+    animating = false; currentAnim = null;
+  });
+}
+function done(mv){
+  animating = false; currentAnim = null;
+  if (!mv.silent){
+    moveCount++; scrambling = false;
+    pushHist(mv.face + (mv.prime ? '\u2032' : ''));
+  } else if (!queue.length) scrambling = false;
+  refreshGeom(); updateStatus(); processQueue();
+}
+
+function isSolved(){
+  return cubies.every(c => c.p[0]===c.home[0] && c.p[1]===c.home[1] && c.p[2]===c.home[2] && matEq(c.m, I3));
+}
+function updateStatus(){
+  const ok = isSolved();
+  badgeEl.className = 'badge ' + (scrambling ? 'busy' : ok ? 'ok' : 'no');
+  badgeTxt.textContent = scrambling ? '打乱中' : ok ? '已复原' : '未复原';
+  moveEl.textContent = moveCount;
+}
+function resetCube(){                       /* 瞬时复原: 中断队列 + 归位全部整数状态 */
+  if (currentAnim) currentAnim.forEach(a => { try{a.cancel()}catch(e){} });
+  queue.length = 0; scrambling = false;
+  for (const c of cubies){
+    c.p = c.home.slice(); c.m = I3.map(r => r.slice());
+    c.el.style.transform = cubieT(c);
+  }
+  moveCount = 0;
+  refreshGeom(); updateStatus();
+}
+function restore(){ resetCube(); pushHist('__reset'); }
+function scramble(){                        /* 20 步随机打乱(避免连续同面) */
+  resetCube(); scrambling = true; pushHist('__scramble'); updateStatus();
+  let prev = '';
+  for (let i = 0; i < 20; i++){
+    let fk; do { fk = FACE_KEYS[Math.random()*6|0]; } while (fk === prev);
+    prev = fk;
+    enqueue(fk, Math.random() < .5, true);
+  }
+}
+
+/* ════════ 5. 交互: 6px 阈值锁定拖拽 · 点击贴纸转层 ════════ */
+let press = null; const LOCK = 6;
+
+stage.addEventListener('pointerdown', e => {
+  if (press || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  press = {x0:e.clientX, y0:e.clientY, lx:e.clientX, ly:e.clientY, id:e.pointerId, locked:false};
+  try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+});
+stage.addEventListener('pointermove', e => {
+  if (!press || e.pointerId !== press.id) return;
+  if (!press.locked){
+    /* 相对按下点的累计位移 ≤ 6px: 仍可能是点击, 不转视角 */
+    if (Math.hypot(e.clientX-press.x0, e.clientY-press.y0) <= LOCK) return;
+    press.locked = true;                    /* 超阈值 → 锁定为视角拖拽, 消除慢拖误触 */
+    stage.classList.add('dragging');
+  }
+  ry += (e.clientX - press.lx) * 0.36;      /* 抓取感: 前面跟手 */
+  rx -= (e.clientY - press.ly) * 0.36;
+  rx = Math.max(-88, Math.min(88, rx));
+  press.lx = e.clientX; press.ly = e.clientY;
+  applyView();
+});
+function endPress(e){
+  if (!press || e.pointerId !== press.id) return;
+  const click = !press.locked;
+  press = null; stage.classList.remove('dragging');
+  if (!click) return;                       /* 拖拽结束: 不触发转层 */
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const st = el && el.closest('.sticker');
+  if (st && st._rec) turnBySticker(st._rec, e.shiftKey);
+}
+stage.addEventListener('pointerup', endPress);
+stage.addEventListener('pointercancel', () => { press = null; stage.classList.remove('dragging'); });
+stage.addEventListener('contextmenu', e => e.preventDefault());
+
+function turnBySticker(rec, prime){
+  /* 点击色块: 转动该贴纸所在的面。
+     面归属由贴纸的世界法线(立方体自身坐标系)直接决定, 与相机轨道角无关 ——
+     rec.v 恒为 ±单位轴向量, 任意视角下点击同一贴纸始终转动它所在的那一面 */
+  const w = rec.v;
+  const ax = Math.abs(w[0]), ay = Math.abs(w[1]), az = Math.abs(w[2]);
+  let face;
+  if (ay >= ax && ay >= az) face = w[1] < 0 ? 'U' : 'D';   /* CSS -y = 世界上方 */
+  else if (ax >= az)        face = w[0] > 0 ? 'R' : 'L';
+  else                      face = w[2] > 0 ? 'F' : 'B';
+  enqueue(face, prime);
+}
+
+/* ════════ 6. 键盘 · 面板 ════════ */
+const KEYMAP = {ArrowUp:'U', ArrowDown:'D', ArrowLeft:'L', ArrowRight:'R'};
+window.addEventListener('keydown', e => {
+  const k = e.key;
+  if (KEYMAP[k]){ e.preventDefault(); enqueue(KEYMAP[k], e.shiftKey); flash(KEYMAP[k]); }
+  else if (k === 'r' || k === 'R'){ if (e.repeat) return; e.preventDefault(); scramble(); }
+  else if (k === ' '){ if (e.repeat) return; e.preventDefault(); restore(); }
+});
+document.querySelectorAll('.fbtn').forEach(b => b.addEventListener('click', e => {
+  enqueue(b.dataset.face, e.shiftKey); flash(b.dataset.face);
+}));
+$('#btnScramble').addEventListener('click', scramble);
+$('#btnRestore').addEventListener('click', restore);
+function flash(face){
+  const b = document.querySelector(`.fbtn[data-face="${face}"]`);
+  if (b){ b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash'); }
+}
+
+/* ════════ 7. 转动历史 ════════ */
+function pushHist(t){ hist.unshift(t); if (hist.length > 30) hist.pop(); renderHist(); }
+function renderHist(){
+  histEl.innerHTML = hist.slice(0, 20).map(t =>
+    t === '__reset'    ? '<span class="hsep">复原</span>' :
+    t === '__scramble' ? '<span class="hsep">打乱 ×20</span>' :
+    `<span class="hchip h-${t[0]}"><i></i>${t}</span>`
+  ).join('') || '<span class="hempty">暂无转动</span>';
+}
+
+/* ════════ 8. 尺寸 · 启动 ════════ */
+function sizeStage(){
+  const r = stage.getBoundingClientRect();
+  U = Math.max(40, Math.min(92, Math.round(Math.min(r.width, r.height) * 0.155)));
+  stage.style.setProperty('--u', U + 'px');
+}
+new ResizeObserver(() => {
+  sizeStage();
+  for (const c of cubies) c.el.style.transform = cubieT(c);
+  scheduleLight();
+}).observe(stage);
+
+sizeStage();
+buildCube();
+applyView();
+refreshGeom();
+updateStatus();
+renderHist();
+})();
+</script>
+</body>
+</html>
