@@ -33,6 +33,7 @@ AI 辅助生成的交互式前端作品合集，包含三维场景、数字孪�
 | <a href="./assets/project-thumbnails/ocean-shallows.webp"><img src="./assets/project-thumbnails/ocean-shallows.webp" width="160" height="90" alt="浅海 · Ocean Shallows"></a> | ocean-shallows | 俯视视角的热带浅海：白沙沙滩、随风摇曳的棕榈树、由浅绿松石渐变到深蓝的海水，水下焦散光网与七种热带鱼，点击水面投下涟漪 | [在线](https://fanhuayishiy.github.io/ai-demo/ocean-shallows/) | [README](./ocean-shallows/README.md) |
 | <a href="./assets/project-thumbnails/ship-in-a-bottle.webp"><img src="./assets/project-thumbnails/ship-in-a-bottle.webp" width="160" height="90" alt="瓶中沧海 · 前进·梅利号"></a> | ship-in-a-bottle | 玻璃瓶里的体素海洋，前进·梅利号四点浪高采样浮沉绕岛，四档天气、时刻滑杆与 Space 风暴，全部封闭在瓶内（Three.js r160 单 HTML） | [在线](https://fanhuayishiy.github.io/ai-demo/ship-in-a-bottle/) | [README](./ship-in-a-bottle/README.md) |
 | <a href="./assets/project-thumbnails/rubiks-cube-lab.webp"><img src="./assets/project-thumbnails/rubiks-cube-lab.webp" width="160" height="90" alt="三阶魔方实验室 · CUBE / LAB"></a> | rubiks-cube-lab | 纯 CSS 3D Transform 的可交互三阶魔方实验室：27 块独立块体沿同心圆弧转层、明暗随朝向动态变化、拖拽视角、20 步打乱与一键复原，单文件零外部资源 | [在线](https://fanhuayishiy.github.io/ai-demo/rubiks-cube-lab/) | [README](./rubiks-cube-lab/README.md) |
+| <a href="./assets/project-thumbnails/miniature-port.webp"><img src="./assets/project-thumbnails/miniature-port.webp" width="160" height="90" alt="微缩港口 · Golden Hour Miniature Port"></a> | miniature-port | 可自由旋转的 1:87 微缩港口沙盘：石膏托盘、芥末黄岸桥与程序化海水，日暮与夜航双模式，六视角与三档画质 | [在线](https://fanhuayishiy.github.io/ai-demo/miniature-port/) | [README](./miniature-port/README.md) |
 
 ## 本地运行
 
@@ -161,6 +162,12 @@ Blender 程序化建模的双极空气开关，提供工程动画、可编辑模
 纯 CSS 3D Transform 打造的可交互三阶魔方实验室：27 个独立立方块、54 张圆角贴纸，转层动画用同构 rotate3d + matrix3d 关键帧，9 块沿同一轴走同心圆弧无撕裂。支持拖拽旋转视角（6px 阈值锁定防慢拖误触）、点击色块转层、键盘方向键与 Shift 反向、R 键 20 步打乱与空格一键瞬时复原。数学坐标系与 CSS 屏幕系经 D=diag(1,-1,1) 换轴，整数坐标与 3×3 朝向矩阵驱动全部状态，单文件零图片零外部资源。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/rubiks-cube-lab/) · [README（含主生成提示原文）](./rubiks-cube-lab/README.md)
+
+## miniature-port — 微缩港口 · Golden Hour Miniature Port
+
+奶油白石膏托盘里收进一整座黄昏的集装箱码头：岸桥、货轮、灯塔、控制塔与蓝绿松石海水全部程序化生成，可自由旋转并切换日暮／夜航。针对卡顿与发糊重做了渲染管线：离屏 MSAA、全模块安全合批、Bloom 默认关闭、DPR 下限锁 1.0。开发机为纯软件渲染，60fps 需在真实 GPU 上实测。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/miniature-port/) · [README（含主生成提示原文）](./miniature-port/README.md)
 
 ---
 

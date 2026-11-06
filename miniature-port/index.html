@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#e9e2d5" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23eee8dc'/%3E%3Cpath d='M6 22h20M9 22V11h9v11M18 14h5l2 8' fill='none' stroke='%23b4673f' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='13.5' cy='14.5' r='1.2' fill='%23b4673f'/%3E%3C/svg%3E" />
+  <title>微缩港口 · Golden Hour Miniature Port</title>
+  <meta name="description" content="一座可自由旋转、超高精度、可昼夜切换的微缩港口沙盘。" />
+  <script type="module" crossorigin src="./assets/index-8eIWcX-w.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-BwAgPUwk.css">
+</head>
+<body>
+  <div id="app">
+    <canvas id="scene"></canvas>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="vignette" aria-hidden="true"></div>
+
+    <!-- ── 左上标题 ───────────────────────────────────────────── -->
+    <header class="masthead">
+      <div class="eyebrow"><span class="dot"></span> MINIATURE DIORAMA &nbsp;·&nbsp; Nº 01</div>
+      <h1>微缩港口</h1>
+      <div class="subtitle">GOLDEN HOUR <span>—</span> 黄昏的集装箱码头</div>
+      <p class="lede">一座 1:87 的港口沙盘。潮水、岸桥、灯火与归港的船，<br />被收进一方奶油色的石膏托盘里。</p>
+      <div class="rule"></div>
+      <div class="meta"><span>60 × 44 M</span><i></i><span>THREE.JS / WEBGL</span><i></i><span id="clockLabel">17:42</span></div>
+    </header>
+
+    <!-- ── 右上控制 ───────────────────────────────────────────── -->
+    <aside class="control-panel" id="controlPanel">
+      <div class="panel-head"><span>场景控制</span><span class="panel-no">01 / 03</span></div>
+
+      <div class="control-row">
+        <label>时段</label>
+        <div class="seg" id="timeSeg">
+          <button class="seg-btn active" data-time="day">日暮</button>
+          <button class="seg-btn" data-time="night">夜航</button>
+        </div>
+      </div>
+
+      <div class="control-row">
+        <label>自动环绕</label>
+        <button class="switch" id="rotateToggle" aria-pressed="false"><span class="knob"></span></button>
+      </div>
+
+      <div class="control-row">
+        <label>微缩景深</label>
+        <button class="switch on" id="dofToggle" aria-pressed="true"><span class="knob"></span></button>
+      </div>
+
+      <div class="control-row">
+        <label>标注热点</label>
+        <button class="switch on" id="hotspotToggle" aria-pressed="true"><span class="knob"></span></button>
+      </div>
+
+      <div class="control-row">
+        <label>画质</label>
+        <div class="seg" id="qualitySeg">
+          <button class="seg-btn" data-quality="smooth">流畅</button>
+          <button class="seg-btn active" data-quality="balanced">均衡</button>
+          <button class="seg-btn" data-quality="fine">精细</button>
+        </div>
+      </div>
+
+      <div class="control-row">
+        <label>曝光</label>
+        <input type="range" id="exposure" min="0.6" max="1.8" step="0.02" value="1.0" />
+      </div>
+
+      <button class="ghost-btn" id="shotBtn">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg>
+        保存画面
+      </button>
+    </aside>
+
+    <!-- ── 信息卡（点击热点） ─────────────────────────────────── -->
+    <div class="info-card" id="infoCard" aria-hidden="true">
+      <button class="info-close" id="infoClose">×</button>
+      <div class="info-index" id="infoIndex">01</div>
+      <h3 id="infoTitle">岸边集装箱起重机</h3>
+      <div class="info-en" id="infoEn">SHIP-TO-SHORE GANTRY CRANE</div>
+      <p id="infoBody"></p>
+      <div class="info-spec" id="infoSpec"></div>
+    </div>
+
+    <!-- ── 3D 热点（由 JS 注入） ──────────────────────────────── -->
+    <div class="hotspots" id="hotspots"></div>
+
+    <!-- ── 底部视角条 ─────────────────────────────────────────── -->
+    <footer class="bottom-bar">
+      <div class="views" id="views">
+        <span class="views-label">视角</span>
+        <button class="view-btn active" data-view="overview">全景</button>
+        <button class="view-btn" data-view="cranes">岸桥</button>
+        <button class="view-btn" data-view="berth">船坞</button>
+        <button class="view-btn" data-view="lighthouse">灯塔</button>
+        <button class="view-btn" data-view="top">俯瞰</button>
+        <button class="view-btn" data-view="water">水线</button>
+      </div>
+      <div class="hint">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v18M3 12h18"/></svg>
+        拖拽旋转 · 滚轮缩放 · 右键平移
+      </div>
+      <div class="stats" id="stats">— FPS</div>
+    </footer>
+
+    <!-- ── 右下角标 ───────────────────────────────────────────── -->
+    <div class="corner-mark"><span>SCALE 1:87</span><span class="cm-line"></span><span>PORT OF · 微港</span></div>
+
+    <!-- ── 加载遮罩 ───────────────────────────────────────────── -->
+    <div class="loader" id="loader">
+      <div class="loader-inner">
+        <div class="loader-mark"><span></span><span></span><span></span></div>
+        <div class="loader-title">正在搭建港口</div>
+        <div class="loader-sub" id="loaderSub">CONSTRUCTING DIORAMA</div>
+        <div class="loader-bar"><i id="loaderBar"></i></div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

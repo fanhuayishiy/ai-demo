@@ -32,8 +32,10 @@ const shipPreview = 'ship-in-a-bottle/index.html';
 const shipTitle = '瓶中沧海 · 前进·梅利号';
 const cubePreview = 'rubiks-cube-lab/index.html';
 const cubeTitle = '三阶魔方实验室 · CUBE / LAB';
+const portPreview = 'miniature-port/index.html';
+const portTitle = '微缩港口 · Golden Hour Miniature Port';
 // 新项目一律追加到末尾，所以这个列表只会在尾部增长。
-const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview];
+const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview, portPreview];
 
 function* walk(node) {
   yield node;
@@ -53,13 +55,18 @@ function cardByTitle(title) {
   return [...walk(card)];
 }
 
+/** 卡片内的可交互预览链接。 */
+function coverHref(cardNodes) {
+  return attribute(cardNodes.find(node => node.tagName === 'a' && hasClass(node, 'badge') && hasClass(node, 'cover')), 'href');
+}
+
 test('collection appends new previews at the tail after the fourteen originals in their original order', () => {
   assert.deepEqual(discoverPreviews(html), [...existingPreviews, ...appendedPreviews]);
 });
 
-test('homepage metadata advertises nineteen runnable projects', () => {
+test('homepage metadata advertises twenty runnable projects', () => {
   const description = nodes.find(node => node.tagName === 'meta' && attribute(node, 'name') === 'description');
-  assert.match(attribute(description, 'content'), /19 个可运行项目/u);
+  assert.match(attribute(description, 'content'), /20 个可运行项目/u);
 });
 
 test('Roadster card presents an offline mini-game with preview and prompt links', () => {
@@ -90,35 +97,67 @@ test('FIRELINK card keeps its preview and reproduction prompt links', () => {
   }
 });
 
-test('the newest project sits last in the homepage grid', () => {
+test('the newest project sits last in the homepage grid without displacing its predecessor', () => {
   const cards = nodes.filter(node => hasClass(node, 'card'));
-  const heading = [...walk(cards.at(-1))].find(node => node.tagName === 'h2');
-  assert.equal(text(heading), cubeTitle);
-  const preview = [...walk(cards.at(-1))].find(node => node.tagName === 'a' && hasClass(node, 'badge') && hasClass(node, 'cover'));
-  assert.equal(attribute(preview, 'href'), `./${cubePreview}`);
+  const last = [...walk(cards.at(-1))];
+  assert.equal(text(last.find(node => node.tagName === 'h2')), portTitle);
+  assert.equal(coverHref(last), `./${portPreview}`);
+
+  // 追加只能发生在末尾：上一个项目必须原封不动地留在倒数第二位。
+  const previous = [...walk(cards.at(-2))];
+  assert.equal(text(previous.find(node => node.tagName === 'h2')), cubeTitle);
+  assert.equal(coverHref(previous), `./${cubePreview}`);
+
+  // 新卡片沿用全站统一的真实截图结构。
+  const shot = last.find(node => node.tagName === 'img' && hasClass(node, 'project-shot'));
+  assert.equal(attribute(shot, 'src'), './assets/project-thumbnails/miniature-port.webp');
+  assert.equal(attribute(shot, 'width'), '640');
+  assert.equal(attribute(shot, 'height'), '360');
+  assert.equal(attribute(shot, 'loading'), 'lazy');
+  assert.equal(attribute(shot, 'decoding'), 'async');
+  assert.ok(attribute(shot, 'alt').includes('微缩港口'));
+  const prompt = last.find(node => node.tagName === 'a' && hasClass(node, 'prompt-link'));
+  assert.equal(attribute(prompt, 'href'), 'https://github.com/fanhuayishiy/ai-demo/blob/main/miniature-port/README.md');
 });
 
 test('README lists the same projects in the same order, newest last', () => {
   const rows = readme.split(/\r?\n/u).filter(line => line.startsWith('|') && /\| [a-z][\w-]+ \|/u.test(line));
   const expectedProjects = [...existingPreviews, ...appendedPreviews].map(preview => preview.split('/')[0]);
   assert.deepEqual(rows.map(row => /\| ([a-z][\w-]+) \|/u.exec(row)[1]), expectedProjects);
-  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/rubiks-cube-lab/)'));
-  assert.ok(rows.at(-1).includes('[README](./rubiks-cube-lab/README.md)'));
+  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/miniature-port/)'));
+  assert.ok(rows.at(-1).includes('[README](./miniature-port/README.md)'));
+  assert.ok(rows.at(-1).includes('./assets/project-thumbnails/miniature-port.webp'));
+  assert.ok(rows.at(-2).includes('[在线](https://fanhuayishiy.github.io/ai-demo/rubiks-cube-lab/)'));
+  assert.ok(rows.at(-2).includes('[README](./rubiks-cube-lab/README.md)'));
 });
 
 test('README puts the newest overview immediately before the contribution instructions', () => {
   const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
   const contributionIndex = headings.indexOf('## 新增项目');
   assert.ok(contributionIndex > 0);
-  assert.ok(headings[contributionIndex - 1].startsWith('## rubiks-cube-lab '));
-  const overviewStart = readme.indexOf('## rubiks-cube-lab ');
+  assert.ok(headings[contributionIndex - 1].startsWith('## miniature-port '));
+  assert.ok(headings[contributionIndex - 2].startsWith('## rubiks-cube-lab '));
+  const overviewStart = readme.indexOf('## miniature-port ');
   const overview = readme.slice(overviewStart, readme.indexOf('## 新增项目', overviewStart));
+  assert.match(overview, /微缩港口|石膏托盘|岸桥/u);
+  assert.match(overview, /离屏 MSAA/u);
+  assert.match(overview, /\[在线预览\]\(https:\/\/fanhuayishiy\.github\.io\/ai-demo\/miniature-port\/\)/u);
+  assert.ok(overview.includes('[README（含主生成提示原文）](./miniature-port/README.md)'));
+});
+
+test('README keeps the previous newest overview intact directly before the new one', () => {
+  const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
+  const cubeIndex = headings.findIndex(heading => heading.startsWith('## rubiks-cube-lab '));
+  assert.ok(cubeIndex > 0);
+  assert.ok(headings[cubeIndex + 1].startsWith('## miniature-port '));
+  const overviewStart = readme.indexOf('## rubiks-cube-lab ');
+  const overview = readme.slice(overviewStart, readme.indexOf('## miniature-port ', overviewStart));
   assert.match(overview, /魔方|CUBE|LAB/u);
   assert.match(overview, /\[在线预览\]\(https:\/\/fanhuayishiy\.github\.io\/ai-demo\/rubiks-cube-lab\/\)/u);
   assert.ok(overview.includes('[README（含主生成提示原文）](./rubiks-cube-lab/README.md)'));
 });
 
-test('README keeps the Roadster overview directly before the newest overview', () => {
+test('README keeps the Roadster overview directly before the Ocean overview', () => {
   const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
   const roadsterIndex = headings.findIndex(heading => heading.startsWith('## roadster-escape-toll '));
   assert.ok(roadsterIndex > 0);
@@ -145,4 +184,15 @@ test('README keeps the FIRELINK overview directly before the Roadster overview',
   assert.match(overview, /重载无人机物资投送/u);
   assert.match(overview, /不用于实际救援决策/u);
   assert.ok(overview.includes('(./modular-fire-response/docs/RECREATE_PROMPT.zh-CN.md)'));
+});
+
+test('new project README declares the original prompt unverifiable and supplies a separate reproduction prompt', () => {
+  const projectReadme = readFileSync(new URL('../miniature-port/README.md', import.meta.url), 'utf8');
+  assert.match(projectReadme, /## 主生成提示（原文）/u);
+  assert.match(projectReadme, /原文未能核验/u);
+  assert.match(projectReadme, /## 一键复现提示词/u);
+  assert.match(projectReadme, /不是历史原文/u);
+  for (const verbatim of ['优化一下性能，当前太卡了', '还是很卡而且很糊，优化到60fps', '提交到https://github.com/fanhuayishiy/ai-demo上']) {
+    assert.ok(projectReadme.includes(verbatim), `可逐字核验的请求缺失：${verbatim}`);
+  }
 });
