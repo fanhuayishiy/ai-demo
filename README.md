@@ -34,6 +34,7 @@ AI 辅助生成的交互式前端作品合集，包含三维场景、数字孪�
 | <a href="./assets/project-thumbnails/ship-in-a-bottle.webp"><img src="./assets/project-thumbnails/ship-in-a-bottle.webp" width="160" height="90" alt="瓶中沧海 · 前进·梅利号"></a> | ship-in-a-bottle | 玻璃瓶里的体素海洋，前进·梅利号四点浪高采样浮沉绕岛，四档天气、时刻滑杆与 Space 风暴，全部封闭在瓶内（Three.js r160 单 HTML） | [在线](https://fanhuayishiy.github.io/ai-demo/ship-in-a-bottle/) | [README](./ship-in-a-bottle/README.md) |
 | <a href="./assets/project-thumbnails/rubiks-cube-lab.webp"><img src="./assets/project-thumbnails/rubiks-cube-lab.webp" width="160" height="90" alt="三阶魔方实验室 · CUBE / LAB"></a> | rubiks-cube-lab | 纯 CSS 3D Transform 的可交互三阶魔方实验室：27 块独立块体沿同心圆弧转层、明暗随朝向动态变化、拖拽视角、20 步打乱与一键复原，单文件零外部资源 | [在线](https://fanhuayishiy.github.io/ai-demo/rubiks-cube-lab/) | [README](./rubiks-cube-lab/README.md) |
 | <a href="./assets/project-thumbnails/miniature-port.webp"><img src="./assets/project-thumbnails/miniature-port.webp" width="160" height="90" alt="微缩港口 · Golden Hour Miniature Port"></a> | miniature-port | 可自由旋转的 1:87 微缩港口沙盘：石膏托盘、芥末黄岸桥与程序化海水，日暮与夜航双模式，六视角与三档画质 | [在线](https://fanhuayishiy.github.io/ai-demo/miniature-port/) | [README](./miniature-port/README.md) |
+| <a href="./assets/project-thumbnails/atelier-104.webp"><img src="./assets/project-thumbnails/atelier-104.webp" width="160" height="90" alt="ATELIER 104 · 机械键盘工作台"></a> | atelier-104 | 原创 104 键机械键盘，主题定制、五层拆解与 3D 实键自动检测 | [在线](https://fanhuayishiy.github.io/ai-demo/atelier-104/dist/) | [README](./atelier-104/README.md) |
 
 ## 本地运行
 
@@ -168,6 +169,12 @@ Blender 程序化建模的双极空气开关，提供工程动画、可编辑模
 奶油白石膏托盘里收进一整座黄昏的集装箱码头：岸桥、货轮、灯塔、控制塔与蓝绿松石海水全部程序化生成，可自由旋转并切换日暮／夜航。针对卡顿与发糊重做了渲染管线：离屏 MSAA、全模块安全合批、Bloom 默认关闭、DPR 下限锁 1.0。开发机为纯软件渲染，60fps 需在真实 GPU 上实测。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/miniature-port/) · [README（含主生成提示原文）](./miniature-port/README.md)
+
+## atelier-104 — ATELIER 104 · 机械键盘工作台
+
+自定义外壳与键帽主题，旋转查看原创 104 键模型并探索五层结构。进入页面即可在 3D 预览上检测真实键盘，支持本地方案保存、导入导出与检测结果导出。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/atelier-104/dist/) · [README（含主生成提示原文）](./atelier-104/README.md)
 
 ---
 
