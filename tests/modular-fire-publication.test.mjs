@@ -36,8 +36,10 @@ const portPreview = 'miniature-port/index.html';
 const portTitle = '微缩港口 · Golden Hour Miniature Port';
 const keyboardPreview = 'atelier-104/dist/index.html';
 const keyboardTitle = 'ATELIER 104 · 机械键盘工作台';
+const rainPreview = 'cyber-rain-district/index.html';
+const rainTitle = '雨港 · 霓虹夜';
 // 新项目一律追加到末尾，所以这个列表只会在尾部增长。
-const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview, portPreview, keyboardPreview];
+const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview, portPreview, keyboardPreview, rainPreview];
 
 function* walk(node) {
   yield node;
@@ -66,9 +68,9 @@ test('collection appends new previews at the tail after the fourteen originals i
   assert.deepEqual(discoverPreviews(html), [...existingPreviews, ...appendedPreviews]);
 });
 
-test('homepage metadata advertises twenty-one runnable projects', () => {
+test('homepage metadata advertises twenty-two runnable projects', () => {
   const description = nodes.find(node => node.tagName === 'meta' && attribute(node, 'name') === 'description');
-  assert.match(attribute(description, 'content'), /21 个可运行项目/u);
+  assert.match(attribute(description, 'content'), /22 个可运行项目/u);
 });
 
 test('Roadster card presents an offline mini-game with preview and prompt links', () => {
@@ -102,45 +104,59 @@ test('FIRELINK card keeps its preview and reproduction prompt links', () => {
 test('the newest project sits last in the homepage grid without displacing its predecessor', () => {
   const cards = nodes.filter(node => hasClass(node, 'card'));
   const last = [...walk(cards.at(-1))];
-  assert.equal(text(last.find(node => node.tagName === 'h2')), keyboardTitle);
-  assert.equal(coverHref(last), `./${keyboardPreview}`);
+  assert.equal(text(last.find(node => node.tagName === 'h2')), rainTitle);
+  assert.equal(coverHref(last), `./${rainPreview}`);
 
   // 追加只能发生在末尾：上一个项目必须原封不动地留在倒数第二位。
   const previous = [...walk(cards.at(-2))];
-  assert.equal(text(previous.find(node => node.tagName === 'h2')), portTitle);
-  assert.equal(coverHref(previous), `./${portPreview}`);
+  assert.equal(text(previous.find(node => node.tagName === 'h2')), keyboardTitle);
+  assert.equal(coverHref(previous), `./${keyboardPreview}`);
 
   // 新卡片沿用全站统一的真实截图结构。
   const shot = last.find(node => node.tagName === 'img' && hasClass(node, 'project-shot'));
-  assert.equal(attribute(shot, 'src'), './assets/project-thumbnails/atelier-104.webp');
+  assert.equal(attribute(shot, 'src'), './assets/project-thumbnails/cyber-rain-district.webp');
   assert.equal(attribute(shot, 'width'), '640');
   assert.equal(attribute(shot, 'height'), '360');
   assert.equal(attribute(shot, 'loading'), 'lazy');
   assert.equal(attribute(shot, 'decoding'), 'async');
-  assert.ok(attribute(shot, 'alt').includes('ATELIER 104'));
+  assert.ok(attribute(shot, 'alt').includes('雨港'));
   const prompt = last.find(node => node.tagName === 'a' && hasClass(node, 'prompt-link'));
-  assert.equal(attribute(prompt, 'href'), 'https://github.com/fanhuayishiy/ai-demo/blob/main/atelier-104/README.md');
+  assert.equal(attribute(prompt, 'href'), 'https://github.com/fanhuayishiy/ai-demo/blob/main/cyber-rain-district/README.md');
 });
 
 test('README lists the same projects in the same order, newest last', () => {
   const rows = readme.split(/\r?\n/u).filter(line => line.startsWith('|') && /\| [a-z][\w-]+ \|/u.test(line));
   const expectedProjects = [...existingPreviews, ...appendedPreviews].map(preview => preview.split('/')[0]);
   assert.deepEqual(rows.map(row => /\| ([a-z][\w-]+) \|/u.exec(row)[1]), expectedProjects);
-  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/atelier-104/dist/)'));
-  assert.ok(rows.at(-1).includes('[README](./atelier-104/README.md)'));
-  assert.ok(rows.at(-1).includes('./assets/project-thumbnails/atelier-104.webp'));
-  assert.ok(rows.at(-2).includes('[在线](https://fanhuayishiy.github.io/ai-demo/miniature-port/)'));
-  assert.ok(rows.at(-2).includes('[README](./miniature-port/README.md)'));
+  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/cyber-rain-district/)'));
+  assert.ok(rows.at(-1).includes('[README](./cyber-rain-district/README.md)'));
+  assert.ok(rows.at(-1).includes('./assets/project-thumbnails/cyber-rain-district.webp'));
+  assert.ok(rows.at(-2).includes('[在线](https://fanhuayishiy.github.io/ai-demo/atelier-104/dist/)'));
+  assert.ok(rows.at(-2).includes('[README](./atelier-104/README.md)'));
 });
 
 test('README puts the newest overview immediately before the contribution instructions', () => {
   const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
   const contributionIndex = headings.indexOf('## 新增项目');
   assert.ok(contributionIndex > 0);
-  assert.ok(headings[contributionIndex - 1].startsWith('## atelier-104 '));
-  assert.ok(headings[contributionIndex - 2].startsWith('## miniature-port '));
-  const overviewStart = readme.indexOf('## atelier-104 ');
+  assert.ok(headings[contributionIndex - 1].startsWith('## cyber-rain-district '));
+  assert.ok(headings[contributionIndex - 2].startsWith('## atelier-104 '));
+  const overviewStart = readme.indexOf('## cyber-rain-district ');
   const overview = readme.slice(overviewStart, readme.indexOf('## 新增项目', overviewStart));
+  assert.match(overview, /WebGL 2/u);
+  assert.match(overview, /积水倒影/u);
+  assert.match(overview, /\[在线预览\]\(https:\/\/fanhuayishiy\.github\.io\/ai-demo\/cyber-rain-district\/\)/u);
+  assert.ok(overview.includes('[README（含主生成提示原文）](./cyber-rain-district/README.md)'));
+});
+
+test('README retains the keyboard overview directly before the rain district', () => {
+  const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
+  const contributionIndex = headings.indexOf('## 新增项目');
+  assert.ok(contributionIndex > 0);
+  assert.ok(headings[contributionIndex - 2].startsWith('## atelier-104 '));
+  assert.ok(headings[contributionIndex - 3].startsWith('## miniature-port '));
+  const overviewStart = readme.indexOf('## atelier-104 ');
+  const overview = readme.slice(overviewStart, readme.indexOf('## cyber-rain-district ', overviewStart));
   assert.match(overview, /104 键模型/u);
   assert.match(overview, /检测真实键盘/u);
   assert.match(overview, /\[在线预览\]\(https:\/\/fanhuayishiy\.github\.io\/ai-demo\/atelier-104\/dist\/\)/u);

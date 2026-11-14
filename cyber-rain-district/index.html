@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'">
+<title>雨港 · NEON AFTER HOURS</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050a13}body{touch-action:none}#scene{display:block;width:100%;height:100%}#lettering{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;transition:opacity .6s}.tools{position:fixed;right:34px;bottom:29px;display:flex;gap:10px;transition:opacity .6s}.tools button{width:39px;height:39px;border:1px solid #a4d1dc26;border-radius:50%;background:#08151d66;color:#c7e3e5aa;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(12px);transition:background .2s,color .2s,border-color .2s}.tools button:hover,.tools button:focus-visible{background:#14303be6;color:#e5ffff;border-color:#a4e9ef88;outline:none}.tools svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}.hide-ui .tools,.hide-ui #lettering{opacity:0;pointer-events:none}#failure{position:fixed;inset:0;display:none;align-items:center;justify-content:center;color:#bdeaf1;background:#06101a;padding:30px;white-space:pre-wrap} @media(max-width:600px){.tools{right:20px;bottom:23px;gap:8px}.tools button{width:35px;height:35px}}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="三维雨夜街区：霓虹灯、湿润路面、雨丝和薄雾"></canvas>
+<canvas id="lettering" aria-hidden="true"></canvas>
+<div class="tools" aria-label="画面控制">
+ <button id="pause" title="暂停 / 继续 · 空格键" aria-label="暂停动画"><svg viewBox="0 0 20 20"><path id="pauseIcon" d="M7 5v10M13 5v10"/></svg></button>
+ <button id="save" title="保存当前画面" aria-label="保存当前画面为 PNG"><svg viewBox="0 0 20 20"><path d="M10 3v9m-3-3 3 3 3-3M4 13v3h12v-3"/></svg></button>
+ <button id="full" title="全屏 · F 键；H 键隐藏界面" aria-label="切换全屏"><svg viewBox="0 0 20 20"><path d="M7 3H3v4m10-4h4v4M3 13v4h4m10-4v4h-4"/></svg></button>
+</div>
+<div id="failure" role="alert"></div>
+<script>
+'use strict';
+/* Entire scene, geometry, textures, lettering and renderer are made here.
+   No assets, dependencies, requests, imports or prebuilt rendering code. */
+(() => {
+const canvas=document.getElementById('scene'), hud=document.getElementById('lettering');
+const gl=canvas.getContext('webgl2',{alpha:false,antialias:false,preserveDrawingBuffer:false,powerPreference:'high-performance'});
+const fail=e=>{const el=document.getElementById('failure');el.style.display='flex';el.textContent='无法启动画面。请使用支持 WebGL 2 的现代浏览器，并开启硬件加速。\n'+String(e.message||e);console.error(e)};
+if(!gl){fail('WebGL 2 unavailable');return}
+try{
+let rng=61827;const rand=()=>{rng=(Math.imul(rng,1664525)+1013904223)>>>0;return rng/4294967296};
+const range=(a,b)=>a+(b-a)*rand(),pick=a=>a[Math.floor(rand()*a.length)], TAU=Math.PI*2;
+// An original 5 x 7 alphabet: all visible lettering uses these drawn cells.
+const font={A:['01110','10001','10001','11111','10001','10001','10001'],B:['11110','10001','10001','11110','10001','10001','11110'],C:['01111','10000','10000','10000','10000','10000','01111'],D:['11110','10001','10001','10001','10001','10001','11110'],E:['11111','10000','10000','11110','10000','10000','11111'],F:['11111','10000','10000','11110','10000','10000','10000'],G:['01111','10000','10000','10111','10001','10001','01111'],H:['10001','10001','10001','11111','10001','10001','10001'],I:['11111','00100','00100','00100','00100','00100','11111'],J:['00111','00010','00010','00010','10010','10010','01100'],K:['10001','10010','10100','11000','10100','10010','10001'],L:['10000','10000','10000','10000','10000','10000','11111'],M:['10001','11011','10101','10101','10001','10001','10001'],N:['10001','11001','11001','10101','10011','10011','10001'],O:['01110','10001','10001','10001','10001','10001','01110'],P:['11110','10001','10001','11110','10000','10000','10000'],Q:['01110','10001','10001','10001','10101','10010','01101'],R:['11110','10001','10001','11110','10100','10010','10001'],S:['01111','10000','10000','01110','00001','00001','11110'],T:['11111','00100','00100','00100','00100','00100','00100'],U:['10001','10001','10001','10001','10001','10001','01110'],V:['10001','10001','10001','10001','10001','01010','00100'],W:['10001','10001','10001','10101','10101','10101','01010'],X:['10001','10001','01010','00100','01010','10001','10001'],Y:['10001','10001','01010','00100','00100','00100','00100'],Z:['11111','00001','00010','00100','01000','10000','11111'],'0':['01110','10011','10101','10101','11001','10001','01110'],'1':['00100','01100','00100','00100','00100','00100','01110'],'2':['01110','10001','00001','00010','00100','01000','11111'],'3':['11110','00001','00001','01110','00001','00001','11110'],'4':['00010','00110','01010','10010','11111','00010','00010'],'5':['11111','10000','10000','11110','00001','00001','11110'],'6':['01110','10000','10000','11110','10001','10001','01110'],'7':['11111','00001','00010','00100','01000','01000','01000'],'8':['01110','10001','10001','01110','10001','10001','01110'],'9':['01110','10001','10001','01111','00001','00001','01110'],':':['00000','00100','00100','00000','00100','00100','00000'],'/':['00001','00001','00010','00100','01000','10000','10000'],'-':['00000','00000','00000','11111','00000','00000','00000'],'.':['00000','00000','00000','00000','00000','00110','00110']};
+function letters(ctx,str,x,y,s,color,spacing=1){ctx.fillStyle=color;for(const ch of str){const glyph=font[ch];if(glyph)for(let r=0;r<7;r++)for(let c=0;c<5;c++)if(glyph[r][c]==='1')ctx.fillRect(x+c*s,y+r*s,s*.86,s*.86);x+=(5+spacing)*s}}
+// Hand-drawn vector strokes, in a twenty-four unit square.
+const han={
+'雨':[[3,3,21,3],[12,3,12,21],[3,7,21,7,21,21,18,21],[3,7,3,21],[6,11,8,13],[16,11,18,13],[6,16,8,18],[16,16,18,18]],
+'夜':[[11,1,13,3],[3,5,21,5],[8,7,3,13],[6,10,6,22],[15,7,10,14],[13,10,20,10,18,16,14,20,10,22],[12,13,16,18,21,22],[15,12,17,14]],
+'酒':[[3,3,6,5],[2,9,5,11],[5,15,2,21],[9,3,22,3],[13,3,13,8],[18,3,18,8],[9,8,22,8,22,22,9,22,9,8],[13,8,13,12,11,15],[18,8,18,14,21,14],[10,18,21,18]],
+'店':[[11,2,13,4],[4,5,22,5],[4,5,4,15,2,21],[13,7,13,14],[13,10,21,10],[8,14,21,14,21,22,8,22,8,14]],
+'電':[[4,2,20,2],[12,2,12,11],[3,5,21,5,21,9],[3,5,3,9],[5,8,9,8],[15,8,19,8],[5,11,19,11,19,19,5,19,5,11],[5,15,19,15],[12,11,12,22,21,22,22,20]],
+'夢':[[3,3,21,3],[8,1,8,5],[16,1,16,5],[4,6,20,6,20,11,4,11,4,6],[9,6,9,11],[15,6,15,11],[2,13,22,13,22,16],[2,13,2,16],[10,15,5,19],[9,17,19,17,16,21,11,23],[9,19,12,21]],
+'茶':[[2,4,22,4],[7,1,7,7],[17,1,17,7],[12,7,7,11,2,13],[12,7,17,11,22,13],[5,14,19,14],[12,11,12,22],[8,17,3,21],[16,17,21,21]],
+'光':[[12,2,12,11],[4,4,7,8],[20,4,17,8],[2,11,22,11],[9,11,8,17,3,22],[15,11,15,21,21,21,22,18]],
+'街':[[6,2,2,7],[6,8,2,14],[4,12,4,22],[8,6,16,6],[12,2,12,13],[7,12,17,12],[8,17,16,17],[12,13,12,21],[7,22,17,20],[19,3,23,3],[18,9,23,9],[21,9,21,22,18,22]]};
+function glyph(ctx,ch,x,y,size,col){ctx.strokeStyle=col;ctx.lineWidth=size*.055;ctx.lineCap='round';ctx.lineJoin='round';for(const p of han[ch]||[]){ctx.beginPath();ctx.moveTo(x+p[0]*size/24,y+p[1]*size/24);for(let i=2;i<p.length;i+=2)ctx.lineTo(x+p[i]*size/24,y+p[i+1]*size/24);ctx.stroke()}}
+// Sixteen procedural material tiles. Padding prevents texture bleeding.
+const atlas=document.createElement('canvas');atlas.width=atlas.height=2048;const ac=atlas.getContext('2d');const tile=512;
+function tileDraw(id,fn){ac.save();ac.translate((id%4)*tile,Math.floor(id/4)*tile);ac.beginPath();ac.rect(0,0,tile,tile);ac.clip();fn(ac);ac.restore()}
+tileDraw(0,c=>{c.fillStyle='#888e94';c.fillRect(0,0,512,512);for(let i=0;i<10000;i++){const v=range(50,165)|0;c.fillStyle=`rgba(${v},${v},${v},.12)`;c.fillRect(rand()*512,rand()*512,range(1,5),range(1,12))}c.strokeStyle='#535e68';c.lineWidth=3;for(let y=64;y<512;y+=128){c.beginPath();c.moveTo(0,y);c.lineTo(512,y);c.stroke()}for(let i=0;i<24;i++){c.fillStyle='#34404b30';c.fillRect(rand()*512,0,range(1,4),range(100,512))}});
+tileDraw(1,c=>{c.fillStyle='#65767e';c.fillRect(0,0,512,512);for(let x=0;x<512;x+=64){c.fillStyle='#273842';c.fillRect(x,0,3,512);c.fillStyle='#8a9a9f';c.fillRect(x+4,0,2,512)}for(let y=0;y<512;y+=128){c.fillStyle='#26353d';c.fillRect(0,y,512,3)}for(let i=0;i<1500;i++){c.fillStyle='#13293418';c.fillRect(rand()*512,rand()*512,rand()*4,rand()*35)}});
+tileDraw(2,c=>{c.fillStyle='#65727a';c.fillRect(0,0,512,512);for(let y=0;y<512;y+=15){c.fillStyle='#a6b2b3';c.fillRect(0,y,512,2);c.fillStyle='#172731';c.fillRect(0,y+10,512,4)}for(let i=0;i<500;i++){c.fillStyle='#121e2c20';c.fillRect(rand()*512,rand()*512,range(1,5),range(20,150))}});
+tileDraw(3,c=>{c.fillStyle='#b2bcc1';c.fillRect(0,0,512,512);for(let i=0;i<26000;i++){const v=range(20,240)|0;c.fillStyle=`rgba(${v},${v},${v},.4)`;c.fillRect(rand()*512,rand()*512,range(1,3),range(1,3))}c.lineWidth=.8;c.strokeStyle='#273741';for(let i=0;i<9;i++){let x=rand()*512,y=rand()*512;c.beginPath();c.moveTo(x,y);for(let j=0;j<8;j++){x+=range(-25,25);y+=range(4,27);c.lineTo(x,y)}c.stroke()}});
+const designs=[
+ {id:4,words:['雨','夜'],color:'#ff368b',small:'NIGHT RAIN',vertical:true},
+ {id:5,words:['電','夢'],color:'#60f7f0',small:'ELECTRIC DREAM',vertical:true},
+ {id:6,words:[],color:'#ffb256',small:'HOTEL',vertical:true},
+ {id:7,words:['酒','店'],color:'#ff544d',small:'BAR  /  04',vertical:false},
+ {id:8,words:['茶'],color:'#b1ffcb',small:'TEA 24',vertical:false},
+ {id:9,words:['光'],color:'#ca9aff',small:'KINO',vertical:false},
+ {id:10,words:[],color:'#40f5ee',small:'NOODLES',vertical:false},
+ {id:11,words:[],color:'#ffc57a',small:'OPEN 24',vertical:false},
+ {id:12,words:['雨','街'],color:'#57d7ff',small:'RAIN DISTRICT',vertical:true}
+];
+for(const d of designs)tileDraw(d.id,c=>{c.fillStyle='#030609';c.fillRect(0,0,512,512);c.strokeStyle=d.color;c.lineWidth=3;c.strokeRect(19,15,474,482);c.strokeStyle=d.color+'44';c.lineWidth=1;c.strokeRect(27,23,458,466);c.shadowColor=d.color;c.shadowBlur=3;if(d.words.length){if(d.vertical){d.words.forEach((s,i)=>{c.save();c.translate(41,72+i*178);c.scale(1,.36);glyph(c,s,0,0,430,d.color);c.restore()});letters(c,d.small,40,465,3.1,d.color)}else{d.words.forEach((s,i)=>glyph(c,s,40+i*236,82,d.words.length===1?230:210,d.color));letters(c,d.small,47,376,6,d.color)}}else if(d.vertical){for(let i=0;i<d.small.length;i++){c.save();c.translate(116,36+i*87);c.scale(5.9,1);letters(c,d.small[i],0,0,9,d.color);c.restore()}letters(c,'03 / 24H',77,480,3,d.color)}else{const sz=Math.min(10,420/(d.small.length*6));letters(c,d.small,46,192,sz,d.color);c.lineWidth=3;c.beginPath();c.moveTo(46,135);c.lineTo(466,135);c.moveTo(46,330);c.lineTo(466,330);c.stroke();letters(c,'AFTER HOURS',73,410,4,d.color)}});
+tileDraw(13,c=>{c.fillStyle='#15343c';c.fillRect(0,0,512,512);for(let y=14;y<512;y+=6){c.fillStyle='#6cffe51a';c.fillRect(0,y,512,1)}letters(c,'CITY',45,32,14,'#c2fff0');letters(c,'TRANSIT',45,146,9,'#5cd9d7');c.strokeStyle='#4baaaa';c.lineWidth=4;c.beginPath();c.moveTo(45,350);c.lineTo(140,350);c.lineTo(220,250);c.lineTo(390,250);c.lineTo(450,320);c.stroke();for(let i=0;i<7;i++){c.fillStyle='#b0f3db';c.beginPath();c.arc(50+i*65,350-i*13,7,0,TAU);c.fill()}letters(c,'07  02:17',50,445,6,'#a3f5c6')});
+tileDraw(14,c=>{c.fillStyle='#ded6b6';c.fillRect(0,0,512,512);c.fillStyle='#172b37';c.fillRect(24,24,464,464);letters(c,'LOST',53,57,15,'#f29b6b');glyph(c,'夢',139,195,230,'#becac9');letters(c,'SIGNAL  009',57,450,5,'#788e99')});
+tileDraw(15,c=>{c.fillStyle='#ffffff';c.fillRect(0,0,512,512)});
+const atlasTexture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,atlasTexture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,atlas);gl.generateMipmap(gl.TEXTURE_2D);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+// Column-major matrices and vector arithmetic.
+const sub=(a,b)=>a.map((v,i)=>v-b[i]),dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],norm=a=>{const l=Math.hypot(...a)||1;return a.map(x=>x/l)};
+function mul(a,b){const r=new Float32Array(16);for(let c=0;c<4;c++)for(let y=0;y<4;y++)for(let k=0;k<4;k++)r[c*4+y]+=a[k*4+y]*b[c*4+k];return r}
+function perspective(fov,aspect,near,far){const f=1/Math.tan(fov/2);return new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)/(near-far),-1,0,0,2*far*near/(near-far),0])}
+function look(eye,to,up=[0,1,0]){const z=norm(sub(eye,to)),x=norm(cross(up,z)),y=cross(z,x);return new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-dot(x,eye),-dot(y,eye),-dot(z,eye),1])}
+const geometry=[];
+function material(color=[.3,.35,.42],tile=0,emit=0,kind=0){return{color,tile,emit,kind}}
+const steel=material([.12,.17,.21],1),dark=material([.055,.075,.09],1),trim=material([.23,.28,.31],1),rubber=material([.018,.025,.032],0),cream=material([.42,.4,.33],0);
+const cyan=[.055,.85,1],pink=[1,.045,.29],amber=[1,.42,.085],mint=[.15,1,.69];
+const glow=(col,intensity=3)=>material(col,15,intensity);
+function vertex(p,n,uv,m){const tx=m.tile%4,ty=Math.floor(m.tile/4);geometry.push(...p,...n,(tx+(8+uv[0]*496)/512)/4,(ty+(8+uv[1]*496)/512)/4,...m.color,m.emit,m.kind)}
+function quad(a,b,c,d,m,n){n=n||norm(cross(sub(b,a),sub(c,a)));vertex(a,n,[0,1],m);vertex(b,n,[1,1],m);vertex(c,n,[1,0],m);vertex(a,n,[0,1],m);vertex(c,n,[1,0],m);vertex(d,n,[0,0],m)}
+function box(x,y,z,w,h,d,m){const a=x-w/2,b=x+w/2,l=y-h/2,u=y+h/2,n=z-d/2,f=z+d/2;quad([a,l,f],[b,l,f],[b,u,f],[a,u,f],m,[0,0,1]);quad([b,l,n],[a,l,n],[a,u,n],[b,u,n],m,[0,0,-1]);quad([b,l,f],[b,l,n],[b,u,n],[b,u,f],m,[1,0,0]);quad([a,l,n],[a,l,f],[a,u,f],[a,u,n],m,[-1,0,0]);quad([a,u,f],[b,u,f],[b,u,n],[a,u,n],m,[0,1,0]);quad([a,l,n],[b,l,n],[b,l,f],[a,l,f],m,[0,-1,0])}
+function rod(a,b,r,m,segments=8){const dir=norm(sub(b,a)),u=norm(cross(dir,Math.abs(dir[1])>.9?[1,0,0]:[0,1,0])),v=cross(dir,u);for(let i=0;i<segments;i++){const p=i*TAU/segments,q=(i+1)*TAU/segments;const off=t=>u.map((x,k)=>r*(Math.cos(t)*x+Math.sin(t)*v[k]));const o=off(p),o2=off(q);quad(a.map((x,k)=>x+o[k]),a.map((x,k)=>x+o2[k]),b.map((x,k)=>x+o2[k]),b.map((x,k)=>x+o[k]),m,norm(o.map((x,k)=>x+o2[k])))}}
+function ellipsoid(x,y,z,rx,ry,rz,m,seg=12,rings=7){for(let j=0;j<rings;j++)for(let i=0;i<seg;i++){const p=(jj,ii)=>{const a=jj*Math.PI/rings,b=ii*TAU/seg;return[x+rx*Math.sin(a)*Math.cos(b),y+ry*Math.cos(a),z+rz*Math.sin(a)*Math.sin(b)]};quad(p(j,i),p(j,i+1),p(j+1,i+1),p(j+1,i),m)}}
+function sign(x,y,z,w,h,id,col){box(x,y,z,w+.12,h+.12,.18,dark);quad([x-w/2,y-h/2,z+.102],[x+w/2,y-h/2,z+.102],[x+w/2,y+h/2,z+.102],[x-w/2,y+h/2,z+.102],material([1,1,1],id,2.9));box(x-w/2-.03,y,z+.04,.035,h,.05,glow(col,2));box(x+w/2+.03,y,z+.04,.035,h,.05,glow(col,2))}
+function wallPanel(s,y,z,w,h,mat,x=6.02){const xx=s*x;quad([xx,y-h/2,z+s*w/2],[xx,y-h/2,z-s*w/2],[xx,y+h/2,z-s*w/2],[xx,y+h/2,z+s*w/2],mat,[-s,0,0])}
+// Street canyon. Facades are fully modeled, including shopfronts and services.
+const rows=[{z:9,d:12,h:19},{z:-4,d:12,h:25},{z:-17,d:12,h:21},{z:-31,d:14,h:32},{z:-47,d:16,h:36},{z:-65,d:18,h:42},{z:-85,d:20,h:47}];
+for(const s of [-1,1]){
+ box(s*6.12,.1,-40,2.05,.22,121,material([.25,.29,.32],0));
+ box(s*5.14,.15,-40,.15,.27,121,trim);
+ for(let z=-99;z<21;z+=1.4)box(s*5.55,.218,z,.7,.014,.025,dark);
+ for(let idx=0;idx<rows.length;idx++){
+  const row=rows[idx],h=row.h+(s===1?range(-3,4):0),z=row.z,w=range(5.5,8.2),center=s*(6.23+w/2);
+  box(center,h/2,z,w,h,row.d-.3,material(pick([[.23,.29,.35],[.18,.24,.3],[.27,.26,.31]]),idx%2));
+  box(s*6.12,4.45,z,.25,.34,row.d-.15,dark);box(s*6.12,h-.25,z,.4,.4,row.d+.05,trim);
+  for(let yy=5.5;yy<h-1;yy+=3.0){box(s*6.19,yy-.35,z,.12,.1,row.d,steel);for(let zz=z-row.d/2+1.1;zz<z+row.d/2-.4;zz+=1.72){
+   const lit=rand()>.68,col=lit?pick([[.10,.29,.33],[.36,.23,.12],[.085,.18,.29],[.15,.25,.23]]):[.018,.036,.051];
+   wallPanel(s,yy+.65,zz,1.05,1.6,material(col,15,lit?range(.12,.55):0,3),6.205);
+   box(s*6.17,yy-.2,zz,.22,.09,1.18,trim);box(s*6.16,yy+.63,zz,.13,1.6,.035,dark);
+   if(rand()>.72)box(s*5.97,yy-.38,zz,.48,.36,.7,steel);
+  }}
+  // Front-facing windows between successive building masses.
+  for(let yy=6;yy<h-1;yy+=3)for(let xx=6.7;xx<6.23+w-.5;xx+=1.55){box(s*xx,yy,z+row.d/2-.135,.75,1.5,.018,material([.055,.14,.18],15,rand()>.68?.3:0,3))}
+  for(let zz=z-row.d/2+1.65;zz<z+row.d/2-1;zz+=3.45){
+   box(s*6.04,2.1,zz,.19,4,3.29,dark);
+   if(rand()>.28){wallPanel(s,2.0,zz,2.93,3.35,material([.042,.1,.13],15,0,1),5.92);
+    wallPanel(s,2.5,zz,2.77,.07,glow(pick([cyan,pink,amber]),1.25),5.90);
+    for(let dz=-1.35;dz<=1.4;dz+=1.35)box(s*5.86,2,zz+dz,.12,3.45,.07,steel);
+    box(s*5.85,.58,zz,.12,.09,2.9,steel);box(s*5.85,3.6,zz,.12,.1,2.9,steel);
+    wallPanel(s,1.8,zz,.7,1.1,material([.4,.48,.5],14,.06),5.83);
+   }else wallPanel(s,2.0,zz,2.95,3.4,material([.35,.38,.41],2),5.92);
+   box(s*5.65,4.0,zz,.92,.16,3.2,material([.09,.14,.17],1));
+   box(s*5.23,3.85,zz,.08,.22,3.2,material([.12,.19,.21],2));
+   if(idx<4){for(let k=0;k<4;k++)box(s*5.64,.25+k*.025,zz-1.2,.7,.025,.2,steel)}
+  }
+  const pipeZ=z+row.d/2-.6;rod([s*5.95,.2,pipeZ],[s*5.95,h-1,pipeZ],.065,trim);
+  for(let yy=1;yy<h;yy+=3)box(s*5.9,yy,pipeZ,.2,.09,.22,dark);
+  for(let i=0;i<3;i++){const zz=z+range(-3,3);box(s*range(7,10),h+.5,zz,range(.7,2),1,1.5,steel);rod([s*range(6.5,9),h,zz],[s*range(6.5,9),h+range(2,5),zz],.035,dark)}
+ }
+}
+// Sloping shop canopies and staggered fire escapes break the regular facade grid.
+for(const [s,z,length] of [[-1,10,4.5],[-1,-8,4],[1,-19,3.5]]){
+ const inner=s*5.96,outer=s*4.82;
+ quad([inner,4.18,z-length/2],[inner,4.18,z+length/2],[outer,3.65,z+length/2],[outer,3.65,z-length/2],material([.065,.115,.13],1),[0,1,0]);
+ box(outer,3.57,z,.07,.18,length,material([.04,.065,.073],2));
+ for(const dz of [-length/2,length/2]){rod([inner,3.15,z+dz],[outer,3.65,z+dz],.024,steel,6);rod([inner,4.18,z+dz],[outer,3.65,z+dz],.026,trim,6)}
+ rod([outer,3.65,z-length/2],[outer,3.65,z+length/2],.018,material([.18,.26,.27],15),6);
+}
+for(const [s,z,base] of [[-1,-.8,6.2],[-1,-14,9.1],[1,-31,12.0]]){
+ const x=s*5.52,front=s*4.96;
+ for(let level=0;level<2;level++){
+  const y=base+level*3.1,zz=z-level*3.1;box(x,y,zz,1.12,.12,1.65,steel);
+  for(let k=0;k<6;k++){const zp=zz-.76+k*.30;rod([front,y,zp],[front,y+.9,zp],.014,trim,5)}
+  rod([front,y+.9,zz-.8],[front,y+.9,zz+.8],.022,trim,6);
+ }
+ for(let k=0;k<12;k++){const yy=base+.19+k*.245,zz=z-.7-k*.20;box(x,yy,zz,1.05,.08,.25,steel);if(k%3===0)rod([front,yy,zz],[front,yy+.85,zz],.016,trim,5)}
+ rod([front,base+1.,z-.7],[front,base+3.7,z-2.9],.022,trim,6);
+}
+
+// More distant irregular skyline, fading into the damp air.
+for(let i=0;i<52;i++){const x=range(-48,48),z=range(-160,-105),h=range(22,90),w=range(3,10);box(x,h/2,z,w,h,range(5,13),material([.13,.21,.27],1));for(let y=8;y<h-2;y+=3.4)for(let xx=x-w/2+.6;xx<x+w/2-.2;xx+=1.25)if(rand()>.45)box(xx,y,z+7,.28,.8,.03,material([.13,.35,.41],15,range(.1,.7)));if(i%6===0)box(x,h+1,z,.13,.4,.13,glow([.9,.13,.1],2))}
+// The principal neon signs compose a warm/cool zig-zag through the street.
+sign(-4.86,7.1,6.0,1.48,4.5,4,pink);
+sign(4.92,10.6,1.4,1.28,6.25,6,amber);
+sign(4.80,6.2,-11,1.3,4.1,5,cyan);
+sign(-4.75,4.25,-6,2.55,1.05,10,cyan);
+sign(4.65,3.8,-2,2.1,1.12,7,pink);
+sign(-4.82,6.6,-21,1.45,3.85,12,cyan);
+sign(4.8,6.8,-27,1.35,2,9,[.6,.25,1]);
+sign(-4.8,3.9,-33,1.8,1.1,11,amber);
+sign(4.8,4,-43,1.8,1.1,8,mint);
+for(const [s,z,y] of [[-1,6,7.1],[1,1.4,10.6],[1,-11,6.2],[-1,-21,6.6]]){rod([s*6.1,y+1.7,z-.05],[s*4.9,y+1.7,z-.05],.045,steel);rod([s*6.1,y-1.7,z-.05],[s*4.9,y-1.7,z-.05],.045,steel)}
+wallPanel(-1,4.7,3.2,4.2,.78,material([1,1,1],11,2.8),5.74);
+wallPanel(1,4.7,8,4.6,.75,material([1,1,1],10,2.7),5.74);
+wallPanel(-1,10,-10,4.1,3.2,material([1,1,1],13,1.2),6.0);
+// Elevated pedestrian passage, lit ribs and distant transit signal.
+box(0,11,-39,12.6,1.25,2.7,steel);box(0,11.75,-39,12.6,.1,2.9,trim);
+for(let x=-6;x<=6;x+=.7){box(x,11.2,-37.62,.045,1.1,.05,trim);if(Math.abs(x)<5.5)box(x,11,-37.58,.42,.27,.02,glow(cyan,.6))}
+sign(.6,13.6,-64,3.7,2.1,7,pink);
+// Sagging cables and fine neon strips.
+for(const [z,y] of [[-1,15],[-15,13],[-30,17],[-57,22]])for(let layer=0;layer<3;layer++){let prev=null;for(let i=0;i<=32;i++){const x=-6.1+i*12.2/32,p=[x,y-1.2*(1-(x/6.1)**2)+layer*.2,z+layer*.25];if(prev)rod(prev,p,.012,dark,5);prev=p}}
+for(const s of [-1,1])for(let z=-11;z>-71;z-=19){rod([s*5.25,0,z],[s*5.25,6.2,z],.065,steel);rod([s*5.25,6.2,z],[s*4.3,6.2,z],.055,steel);box(s*4.27,6.16,z,.52,.07,.32,glow(s<0?cyan:amber,4))}
+// Near-field vending machine, glass-fronted kiosks and pavement clutter.
+// A circular all-night marker and exposed service equipment break the grid.
+const marker=[4.8,4.65,8.2],markerRadius=.52;
+for(let i=0;i<40;i++){const a=i*TAU/40,b=(i+1)*TAU/40,p=[marker[0]+Math.cos(a)*markerRadius,marker[1]+Math.sin(a)*markerRadius,marker[2]],q=[marker[0]+Math.cos(b)*markerRadius,marker[1]+Math.sin(b)*markerRadius,marker[2]];quad(marker,p,q,marker,dark,[0,0,1]);rod(p,q,.018,glow(amber,2.4),5)}
+for(let ch=0;ch<2;ch++){const rows=font['24'[ch]];for(let y=0;y<7;y++)for(let x=0;x<5;x++)if(rows[y][x]==='1')box(4.48+ch*.36+x*.056,4.83-y*.059,8.22,.043,.045,.012,glow(amber,2.2))}
+rod([5.95,5.05,8.15],[4.8,5.05,8.15],.035,steel);
+for(const [s,z,y] of [[1,10,6.8],[-1,9,5.4],[1,-8,8.3],[-1,-14,7.4]]){box(s*5.87,y,z,.58,.8,1.25,material([.24,.28,.28],1));for(let i=0;i<9;i++)box(s*5.56,y-.31+i*.073,z,.018,.025,1.08,dark);rod([s*5.91,y-.3,z+.55],[s*5.91,.3,z+.55],.035,steel);box(s*5.55,y+.21,z-.49,.019,.06,.08,glow(amber,.65))}
+box(5.35,1.45,4.8,1.05,2.65,.85,material([.17,.23,.25],1));
+quad([4.91,.62,5.24],[5.65,.62,5.24],[5.65,2.48,5.24],[4.91,2.48,5.24],material([1,1,1],13,1.8));
+box(5.36,.4,5.25,.67,.19,.04,rubber);box(5.78,1.3,5.25,.1,.18,.05,glow(amber,2));
+for(let z of [11,1,-8,-24]){box(-5.45,.57,z,.65,.83,.62,material([.12,.22,.23],1));box(-5.45,1.01,z,.72,.08,.7,trim);ellipsoid(-5.05,.34,z+.54,.37,.34,.33,material([.025,.033,.039],0),9,5)}
+// Drain gratings and a rain-polished circular manhole.
+for(let z=-45;z<18;z+=8)for(const s of [-1,1]){box(s*4.86,.015,z,.36,.025,.82,dark);for(let k=0;k<7;k++)box(s*4.86,.032,z-.33+k*.11,.34,.009,.035,trim)}
+// The manhole and worn paint are shaded directly on the wet road.
+// Two quiet figures, one under a twelve-panel umbrella.
+function person(x,z,scale=1){
+ const s=scale,P=(a,b,c)=>[x+a*s,b*s,z+c*s];
+ const coat=material([.038,.065,.083],0),coatSide=material([.027,.047,.061],0),pants=material([.018,.027,.036],0),metal=material([.15,.21,.24],15),hand=material([.19,.16,.14],0);
+ const joints=[[-.11,.68,.015,-.13,.34,.06,-.14,.09,.12],[.10,.68,-.035,.12,.36,-.12,.17,.09,-.20]];
+ for(const j of joints){rod(P(...j.slice(0,3)),P(...j.slice(3,6)),.068*s,pants,7);rod(P(...j.slice(3,6)),P(...j.slice(6,9)),.057*s,pants,7);ellipsoid(x+j[6]*s,.065*s,z+(j[8]+.065)*s,.09*s,.065*s,.17*s,rubber,8,4)}
+ const rings=[[.48,.255,.205,-.015],[.95,.205,.155,-.025],[1.35,.235,.15,-.03],[1.46,.105,.105,-.025]],segments=10;
+ const cp=(r,a,k)=>P(r[3]+Math.sin(a)*r[1],r[0]+(k===0?.021*Math.cos(a*3):0),Math.cos(a)*r[2]);
+ for(let j=0;j<rings.length-1;j++)for(let i=0;i<segments;i++){const a=i*TAU/segments,b=(i+1)*TAU/segments;quad(cp(rings[j],a,j),cp(rings[j],b,j),cp(rings[j+1],b,j+1),cp(rings[j+1],a,j+1),i%3===0?coatSide:coat)}
+ ellipsoid(x-.025*s,1.59*s,z-.012*s,.155*s,.205*s,.165*s,coat,10,6);
+ rod(P(-.025,1.47,.151),P(-.025,1.75,.07),.008*s,coatSide,5);
+ const limb=(a,b,c)=>{rod(P(...a),P(...b),.074*s,coat,7);rod(P(...b),P(...c),.061*s,coat,7);ellipsoid(x+c[0]*s,c[1]*s,z+c[2]*s,.048*s,.065*s,.047*s,hand,7,4)};
+ limb([.19,1.33,0],[.34,1.04,.06],[.25,1.17,.15]);limb([-.23,1.31,0],[-.29,.98,.08],[-.22,.81,.14]);
+ const top=2.12,rad=.88,ribs=10,canopyA=material([.045,.10,.12],15),canopyB=material([.032,.068,.085],15),ribMat=material([.10,.18,.20],15),rimMat=material([.07,.24,.27],15,.12);
+ const canopy=(r,a)=>{const scallop=Math.abs(Math.sin(a*ribs/2));return P(.17+Math.sin(a)*rad*r*(1-.015*scallop*r*r),top-.29*Math.pow(r,1.65)-.032*scallop*Math.pow(r,6),.11+Math.cos(a)*rad*r*(1-.015*scallop*r*r))};
+ const radial=[0,.42,.76,1];
+ for(let i=0;i<ribs*2;i++){const a=i*TAU/(ribs*2),b=(i+1)*TAU/(ribs*2);for(let j=0;j<radial.length-1;j++)quad(canopy(radial[j],a),canopy(radial[j+1],a),canopy(radial[j+1],b),canopy(radial[j],b),Math.floor(i/2)%2?canopyA:canopyB);rod(canopy(1,a),canopy(1,b),.008*s,rimMat,5)}
+ for(let i=0;i<ribs;i++){const a=i*TAU/ribs;for(const [r0,r1] of [[0,.55],[.55,1]]){const p=canopy(r0,a),q=canopy(r1,a);p[1]-=.012*s;q[1]-=.012*s;rod(p,q,.008*s,ribMat,5)}}
+ rod(P(.25,1.12,.15),P(.17,top,.11),.011*s,metal,6);ellipsoid(x+.17*s,(top+.018)*s,z+.11*s,.03*s,.04*s,.03*s,ribMat,7,4);
+}
+person(-.65,-7,1.06);person(-2.3,-38,.95);
+// Parked compact vehicle at the far curb, with small amber marker lights.
+box(3.4,.6,-25,1.65,.73,3.5,material([.14,.2,.24],1));box(3.4,1.12,-25.3,1.4,.63,1.9,material([.055,.11,.15],15,0,1));box(3.4,1.46,-25.3,1.45,.1,1.98,steel);
+for(const x of [2.65,4.15])for(const z of [-26.05,-23.9])ellipsoid(x,.38,z,.19,.35,.36,rubber,9,5);
+for(const x of [2.83,3.97])box(x,.67,-23.23,.36,.12,.05,glow(amber,4));
+// Road markings are integrated into the ground material.
+const meshData=new Float32Array(geometry);const vertexCount=meshData.length/13;geometry.length=0;
+const lights=[[-4.65,7.5,6.4,1,.03,.23,21],[4.65,9.2,1.8,1,.35,.055,21],[-4.4,3.8,-5.5,.025,.7,1,17],[4.5,5.9,-10.5,.02,.82,1,18],[4.4,3.8,-1.5,1,.04,.16,11],[-4.7,5.5,-20.4,.06,.56,1,18],[4.6,5.5,-26.5,.56,.12,1,13],[-4.4,3.8,-32,1,.32,.08,12],[0,12,-38,.04,.48,.63,24],[.5,12,-63,1,.04,.16,25],[4.6,2.5,5.5,.02,.8,.7,6],[-5.1,3.6,2,1,.43,.12,9],[3.4,.7,-22.8,1,.41,.08,5],[-4.6,5.9,-11,.03,.6,.8,6],[4.8,4.65,8.4,1,.35,.08,6],[0,28,-75,.1,.27,.43,45]];
+const lightPos=new Float32Array(lights.flatMap(l=>l.slice(0,3))),lightCol=new Float32Array(lights.flatMap(l=>l.slice(3,7)));
+// Compact native renderer: planar reflection, physical fog, rain, bloom.
+const header='#version 300 es\nprecision highp float;\n';
+const lighting=`
+uniform vec3 uEye;uniform vec3 uLights[16];uniform vec4 uLightColor[16];uniform float uTime;
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+1.),f.x),f.y);}
+float fbm(vec2 p){return noise(p)*.56+noise(p*2.03)*.27+noise(p*4.09)*.12+noise(p*8.13)*.05;}
+vec3 fogColor(vec3 p){float side=smoothstep(-13.,13.,p.x);return mix(vec3(.014,.048,.065),vec3(.026,.029,.052),side)+vec3(.008,.014,.02)*max(0.,p.y)/65.;}
+vec3 fog(vec3 color,vec3 p){float dist=length(p-uEye);float meanHeight=max((p.y+abs(uEye.y))*.5,0.);float f=1.-exp(-dist*(.006+.016*exp(-meanHeight*.22)));vec3 haze=fogColor(p);float pool=exp(-pow((p.x+.3)*.18,2.)-pow((p.y-3.)*.12,2.));haze+=vec3(.003,.012,.016)*pool*smoothstep(28.,90.,dist);return mix(color,haze,min(f,.98));}
+vec3 illumination(vec3 p,vec3 n){vec3 light=vec3(.027,.043,.066)*(.45+.55*max(n.y,0.));for(int i=0;i<16;i++){vec3 d=uLights[i]-p;float dd=dot(d,d);float f=uLightColor[i].w/(dd+1.9);light+=uLightColor[i].rgb*f*(.13+.87*max(dot(n,normalize(d)),0.));}return light;}
+`;
+const meshVS=header+`layout(location=0)in vec3 aPosition;layout(location=1)in vec3 aNormal;layout(location=2)in vec2 aUV;layout(location=3)in vec3 aColor;layout(location=4)in vec2 aMaterial;uniform mat4 uPV;out vec3 vPosition;out vec3 vNormal;out vec2 vUV;out vec3 vColor;out vec2 vMaterial;void main(){vPosition=aPosition;vNormal=aNormal;vUV=aUV;vColor=aColor;vMaterial=aMaterial;gl_Position=uPV*vec4(aPosition,1);}`;
+const meshFS=header+lighting+`in vec3 vPosition;in vec3 vNormal;in vec2 vUV;in vec3 vColor;in vec2 vMaterial;
+uniform sampler2D uAtlas;out vec4 outColor;
+// Intersect a reflected eye ray with the real neon boards across the street.
+vec3 reflectedSign(vec3 p,vec3 r,vec3 center,vec2 size,float tile){
+ if(abs(r.z)<.015)return vec3(0);
+ float t=(center.z-p.z)/r.z;if(t<.08||t>65.)return vec3(0);
+ vec2 q=(p.xy+r.xy*t-center.xy)/size+.5;
+ if(min(q.x,q.y)<.015||max(q.x,q.y)>.985)return vec3(0);
+ vec2 uv=(vec2(mod(tile,4.),floor(tile/4.))+(8.+vec2(q.x,1.-q.y)*496.)/512.)/4.;
+ vec3 ink=max(textureLod(uAtlas,uv,1.2).rgb-.035,vec3(0));
+ return pow(ink,vec3(1.1))*2.5*exp(-t*.012);
+}
+void main(){
+ vec3 n=normalize(vNormal),v=normalize(uEye-vPosition);
+ vec3 tex=texture(uAtlas,vUV).rgb,base=tex*vColor;
+ float kind=vMaterial.y,em=vMaterial.x;
+ bool windowPane=kind>2.5,glass=(kind>.5&&kind<1.5)||windowPane;
+ vec2 wall=abs(n.x)>.5?vPosition.zy:vPosition.xy;
+ if(kind<.5&&em<.01){
+  float damp=noise(wall*vec2(8.,.24));
+  float grit=noise(wall*35.);
+  base*=mix(.48,1.,damp)*(.83+.22*grit);
+  base*=.62+.38*smoothstep(.1,1.5,vPosition.y);
+ }
+ if(windowPane){
+  float room=hash(floor(wall/vec2(1.72,3.)));
+  float phase=vPosition.y*(7.+room*2.)+room*13.;
+  float filterWidth=fwidth(phase);
+  float blinds=mix(.52+.48*smoothstep(.12,.30,fract(phase)),.78,smoothstep(.25,.9,filterWidth));
+  base*=blinds;
+ }
+ vec3 color=base*illumination(vPosition,n);
+ if(em>0.){
+  float pulse=1.+.018*sin(uTime*1.7+vPosition.z*.8)+.008*sin(uTime*11.+vPosition.z);
+  color+=pow(max(base-vec3(.035),vec3(0)),vec3(1.1))*em*pulse;
+ }
+ if(glass){
+  float fr=.07+.7*pow(1.-abs(dot(n,v)),4.);
+  float lane=hash(vec2(floor(wall.x*25.),3.));
+  float run=fract(wall.y*.35-uTime*(.12+lane*.08)+lane);
+  float water=pow(max(0.,1.-abs(fract(wall.x*25.)-.5)*2.),18.)*smoothstep(.25,.95,run);
+  vec3 r=reflect(-v,n);r.y+=water*.014;
+  r.xz+=vec2(noise(wall*6.+vec2(0.,-uTime*.10))-.5)*.004;
+  vec3 reflected=reflectedSign(vPosition,r,vec3(-4.86,7.1,6.0),vec2(1.48,4.5),4.);
+  reflected+=reflectedSign(vPosition,r,vec3(4.92,10.6,1.4),vec2(1.28,6.25),6.);
+  reflected+=reflectedSign(vPosition,r,vec3(4.80,6.2,-11.),vec2(1.3,4.1),5.);
+  reflected+=reflectedSign(vPosition,r,vec3(-4.75,4.25,-6.),vec2(2.55,1.05),10.);
+  reflected+=reflectedSign(vPosition,r,vec3(4.65,3.8,-2.),vec2(2.1,1.12),7.);
+  reflected+=reflectedSign(vPosition,r,vec3(-4.82,6.6,-21.),vec2(1.45,3.85),12.);
+  color+=reflected*fr+vec3(.004,.013,.019)*fr;
+  for(int i=0;i<6;i++){
+   vec3 d=uLights[i]-vPosition;vec3 halfway=normalize(normalize(d)+v);
+   float sheen=pow(max(dot(n,halfway),0.),90.);
+   color+=uLightColor[i].rgb*uLightColor[i].w/(dot(d,d)+2.)*(sheen*.22+water*.003);
+  }
+ }else if(em<.01){
+  for(int i=0;i<4;i++){
+   vec3 d=uLights[i]-vPosition;vec3 halfway=normalize(normalize(d)+v);
+   color+=uLightColor[i].rgb*uLightColor[i].w/(dot(d,d)+3.)*pow(max(dot(n,halfway),0.),42.)*.035;
+  }
+ }
+ color*=.72+.28*smoothstep(0.,1.0,vPosition.y);
+ outColor=vec4(fog(color,vPosition),1);
+}`;
+const screenVS=header+`out vec2 vUV;void main(){vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2));vUV=p;gl_Position=vec4(p*2.-1.,0,1);}`;
+const skyFS=header+`in vec2 vUV;uniform float uTime;out vec4 outColor;void main(){float h=clamp(vUV.y,0.,1.);vec3 c=mix(vec3(.035,.082,.105),vec3(.006,.014,.03),smoothstep(.25,1.,h));float haze=exp(-pow((vUV.x-.43)*2.5,2.)-pow((h-.45)*3.,2.));c+=vec3(.008,.019,.022)*haze;outColor=vec4(c,1);}`;
+const groundVS=header+`layout(location=0)in vec3 aPosition;uniform mat4 uPV;uniform mat4 uReflectionPV;out vec3 vPosition;out vec4 vReflection;void main(){vPosition=aPosition;vReflection=uReflectionPV*vec4(aPosition,1);gl_Position=uPV*vec4(aPosition,1);}`;
+const groundFS=header+lighting+`in vec3 vPosition;in vec4 vReflection;
+uniform sampler2D uReflection;uniform vec2 uReflectionSize;out vec4 outColor;
+vec3 rainRings(vec2 p){
+ vec2 cell=floor(p*2.2);vec2 slope=vec2(0);float highlights=0.;
+ for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++){
+  vec2 id=cell+vec2(x,y);float seed=hash(id);
+  vec2 center=(id+vec2(seed,hash(id+7.8)))/2.2;
+  vec2 delta=p-center;float d=length(delta),life=fract(uTime*.72+seed*9.);
+  float radius=life*.38,wave=d-radius;
+  float envelope=exp(-abs(wave)*46.)*(1.-life)*smoothstep(0.,.08,life);
+  slope+=normalize(delta+vec2(.0001))*cos(wave*100.)*envelope*.009;
+  highlights+=pow(max(sin(wave*100.),0.),4.)*envelope;
+ }
+ return vec3(slope,highlights);
+}
+void main(){
+ vec2 p=vPosition.xz;float distanceToEye=length(vPosition-uEye);
+ float field=fbm(p*.39+vec2(noise(p*.11)*1.9,0.));
+ float puddle=smoothstep(.43,.62,field);
+ puddle=max(puddle,smoothstep(4.35,5.08,abs(p.x))*.85);
+ vec3 rings=rainRings(p);float nearDetail=1.-smoothstep(12.,55.,distanceToEye);
+ vec2 grain=vec2(noise(p*91.),noise(p*77.+11.))-.5;
+ vec2 water=vec2(noise(p*vec2(3.,17.)+vec2(0.,uTime*.07)),noise(p*vec2(8.,3.)))-.5;
+ vec2 ripples=rings.xy*puddle;
+ vec2 shift=(water*.0018+ripples*.22)*clamp(17./distanceToEye,.2,1.);
+ vec2 uv=vReflection.xy/vReflection.w*.5+.5;
+ vec2 px=1./uReflectionSize;float roughness=mix(1.,.12,puddle);
+ vec2 smear=vec2(2.4,13.)*px*roughness;
+ vec3 reflected=texture(uReflection,clamp(uv+shift,vec2(.002),vec2(.998))).rgb*.38;
+ reflected+=texture(uReflection,clamp(uv+shift+smear,vec2(.002),vec2(.998))).rgb*.155;
+ reflected+=texture(uReflection,clamp(uv+shift-smear,vec2(.002),vec2(.998))).rgb*.155;
+ reflected+=texture(uReflection,clamp(uv+shift+vec2(-smear.x,smear.y*.45),vec2(.002),vec2(.998))).rgb*.155;
+ reflected+=texture(uReflection,clamp(uv+shift+vec2(smear.x,-smear.y*.45),vec2(.002),vec2(.998))).rgb*.155;
+ // Road paint belongs to the same wet surface; it never floats above the water.
+ float stripeIndex=floor((p.x+4.175)/1.15),stripeX=-3.6+stripeIndex*1.15;
+ float crossing=(1.-smoothstep(.235,.26,abs(p.x-stripeX)))*(1.-smoothstep(.80,.86,abs(p.y-13.2)));
+ crossing*=step(0.,stripeIndex)*step(stripeIndex,6.);
+ float centerLine=(1.-smoothstep(.028,.045,abs(p.x-.1)))*(1.-smoothstep(1.1,1.22,abs(mod(p.y+4.,8.)-4.)))*step(p.y,6.);
+ float wear=smoothstep(.3,.51,noise(p*vec2(14.,5.)))*mix(.65,1.,noise(p*73.));
+ float paint=max(crossing,centerLine)*wear;
+ vec3 asphalt=mix(vec3(.046,.054,.064),vec3(.23,.24,.21),paint);
+ asphalt*=.73+noise(p*112.)*.3*nearDetail;
+ float lid=1.-smoothstep(.64,.67,length(p-vec2(-.8,9.)));
+ float grille=(1.-smoothstep(.08,.13,abs(fract(p.x*8.)-.5)))*(1.-smoothstep(.2,.32,abs(fract(p.y*8.)-.5)));
+ asphalt=mix(asphalt,vec3(.065,.078,.083)*(1.-grille*.7),lid);
+ float ring=1.-smoothstep(.008,.025,abs(length(p-vec2(-.8,9.))-.62));
+ asphalt+=vec3(.07)*ring;
+ puddle=mix(puddle,.65,lid);roughness=mix(roughness,.3,lid);
+ vec3 n=normalize(vec3(water.x*.018+grain.x*.08*(1.-puddle)*nearDetail+ripples.x,1.,water.y*.018+grain.y*.08*(1.-puddle)*nearDetail+ripples.y));
+ vec3 v=normalize(uEye-vPosition);
+ float fresnel=.055+.89*pow(1.-max(dot(n,v),0.),4.);
+ vec3 localLight=asphalt*illumination(vPosition,n);
+ localLight*=1.-.35*smoothstep(4.65,5.15,abs(p.x));
+ for(int i=0;i<16;i++){
+  vec3 d=uLights[i]-vPosition,h=normalize(normalize(d)+v);
+  float spec=pow(max(dot(n,h),0.),mix(26.,165.,puddle));
+  localLight+=uLightColor[i].rgb*uLightColor[i].w/(dot(d,d)+2.)*spec*.12;
+ }
+ float reflectionWeight=clamp((fresnel+.15)*mix(.38,.97,puddle),.06,.94);
+ // The reflection target already includes the complete reflected optical path.
+ vec3 color=mix(fog(localLight,vPosition),reflected*vec3(.89,.95,.98),reflectionWeight);
+ color+=reflected*rings.z*.035*puddle*nearDetail;
+ outColor=vec4(color,1);
+}`;
+const rainVS=header+`layout(location=0)in vec4 aDrop;layout(location=1)in vec2 aCorner;uniform mat4 uPV;uniform float uTime;out vec2 vUV;out float vDepth;out vec3 vPosition;void main(){float speed=11.+aDrop.w*8.;float y=mod(aDrop.y-uTime*speed,32.);vec3 p=vec3(aDrop.x+y*.34,y,aDrop.z+y*.05);float length=.24+aDrop.w*.53;p+=vec3(.34,1.,.05)*aCorner.y*length;p.x+=aCorner.x*(.006+aDrop.w*.004);vPosition=p;vDepth=-p.z;vUV=vec2(aCorner.x*.5+.5,aCorner.y);gl_Position=uPV*vec4(p,1);}`;
+const rainFS=header+lighting+`in vec2 vUV;in float vDepth;in vec3 vPosition;out vec4 outColor;void main(){float shape=pow(max(0.,1.-abs(vUV.x-.5)*2.),1.4)*sin(vUV.y*3.14159);vec3 col=vec3(.15,.29,.39);for(int i=0;i<6;i++){float d=length(uLights[i]-vPosition);col+=uLightColor[i].rgb*2.2/(1.+d*d*.22);}float a=shape*.22*exp(-max(0.,vDepth)*.015);outColor=vec4(col,a);}`;
+const mistVS=header+`layout(location=0)in vec4 aPuff;layout(location=1)in vec2 aCorner;uniform mat4 uPV;uniform float uTime;out vec2 vUV;out float vSeed;void main(){vec3 p=aPuff.xyz;float life=fract(aPuff.w+uTime*.055);p.y+=life*2.2;p.x+=sin(life*3.+aPuff.w*8.)*.55;p.xy+=aCorner*vec2(1.6,1.0)*(1.+life);vUV=aCorner*.5+.5;vSeed=life;gl_Position=uPV*vec4(p,1);}`;
+const mistFS=header+lighting+`in vec2 vUV;in float vSeed;out vec4 outColor;void main(){vec2 p=vUV*2.-1.;float d=dot(p,p);float a=exp(-d*3.5)*(1.-smoothstep(.5,1.,d))*sin(vSeed*3.14159)*.10;float n=fbm(vUV*6.+vec2(uTime*.12,0.));outColor=vec4(vec3(.25,.42,.47),a*n);}`;
+const bloomFS=header+`in vec2 vUV;uniform sampler2D uSource;uniform vec2 uStep;uniform int uMode;out vec4 outColor;void main(){vec3 c=texture(uSource,vUV).rgb;if(uMode==0){float b=max(max(c.r,c.g),c.b);c*=smoothstep(.43,1.25,b);outColor=vec4(c,1);return;}c*=.227027;c+=texture(uSource,vUV+uStep*1.384615).rgb*.316216;c+=texture(uSource,vUV-uStep*1.384615).rgb*.316216;c+=texture(uSource,vUV+uStep*3.230769).rgb*.070270;c+=texture(uSource,vUV-uStep*3.230769).rgb*.070270;outColor=vec4(c,1);}`;
+const postFS=header+`in vec2 vUV;uniform sampler2D uScene;uniform sampler2D uBloom;uniform sampler2D uBloomWide;uniform vec2 uSize;uniform float uTime;out vec4 outColor;
+float luma(vec3 c){return dot(c,vec3(.299,.587,.114));}
+vec3 edgeSmooth(vec2 uv){
+ vec2 px=1./uSize;vec3 center=texture(uScene,uv).rgb;
+ vec3 nw=texture(uScene,uv+vec2(-1.,1.)*px).rgb,ne=texture(uScene,uv+px).rgb;
+ vec3 sw=texture(uScene,uv-px).rgb,se=texture(uScene,uv+vec2(1.,-1.)*px).rgb;
+ float a=luma(nw),b=luma(ne),c=luma(sw),d=luma(se),m=luma(center);
+ float low=min(m,min(min(a,b),min(c,d))),high=max(m,max(max(a,b),max(c,d)));
+ if(high-low<max(.025,high*.12))return center;
+ vec2 dir=vec2(-(a+b-c-d),a+c-b-d);
+ float reduction=max((a+b+c+d)*.03125,.004);
+ dir=clamp(dir/(min(abs(dir.x),abs(dir.y))+reduction),vec2(-5.),vec2(5.))*px;
+ vec3 first=.5*(texture(uScene,uv+dir*.166667).rgb+texture(uScene,uv-dir*.166667).rgb);
+ vec3 second=first*.5+.25*(texture(uScene,uv-dir*.5).rgb+texture(uScene,uv+dir*.5).rgb);
+ float test=luma(second);return test<low||test>high?first:second;
+}
+vec3 aces(vec3 x){return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.);}
+void main(){
+ vec2 uv=vUV;vec3 c=edgeSmooth(uv);
+ c+=texture(uBloom,uv).rgb*.27+texture(uBloomWide,uv).rgb*.38;
+ c=aces(c*1.30);c=pow(c,vec3(1./2.2));
+ float vignette=1.-.31*pow(length((uv-.5)*vec2(1.,.86))*1.35,1.8);
+ c*=vignette;
+ float grain=fract(sin(dot(gl_FragCoord.xy+floor(uTime*10.),vec2(12.9898,78.233)))*43758.5453)-.5;
+ c+=grain*.008;outColor=vec4(c,1);
+}`;
+function shader(type,source){const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s}
+function program(v,f){const p=gl.createProgram();const vs=shader(gl.VERTEX_SHADER,v),fs=shader(gl.FRAGMENT_SHADER,f);gl.attachShader(p,vs);gl.attachShader(p,fs);gl.linkProgram(p);gl.deleteShader(vs);gl.deleteShader(fs);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(p));return{p,u:new Map()}}
+const meshProgram=program(meshVS,meshFS),groundProgram=program(groundVS,groundFS),skyProgram=program(screenVS,skyFS),rainProgram=program(rainVS,rainFS),mistProgram=program(mistVS,mistFS),bloomProgram=program(screenVS,bloomFS),postProgram=program(screenVS,postFS);
+function uniform(p,name){if(!p.u.has(name))p.u.set(name,gl.getUniformLocation(p.p,name));return p.u.get(name)}
+function use(p){gl.useProgram(p.p)}function f1(p,n,x){gl.uniform1f(uniform(p,n),x)}function i1(p,n,x){gl.uniform1i(uniform(p,n),x)}function f2(p,n,x,y){gl.uniform2f(uniform(p,n),x,y)}function mat(p,n,x){gl.uniformMatrix4fv(uniform(p,n),false,x)}
+function tex(p,name,t,unit){gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(gl.TEXTURE_2D,t);i1(p,name,unit)}
+function makeVAO(data,attributes){const vao=gl.createVertexArray(),buffer=gl.createBuffer();gl.bindVertexArray(vao);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);const stride=attributes.reduce((a,b)=>a+b,0)*4;let offset=0;attributes.forEach((n,i)=>{gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,n,gl.FLOAT,false,stride,offset);offset+=n*4});gl.bindVertexArray(null);return vao}
+const meshVAO=makeVAO(meshData,[3,3,2,3,2]);const groundVAO=makeVAO(new Float32Array([-5.15,-.015,48,5.15,-.015,48,5.15,-.015,-175,-5.15,-.015,48,5.15,-.015,-175,-5.15,-.015,-175]),[3]);
+const rainData=[],corners=[[-1,0],[1,0],[1,1],[-1,0],[1,1],[-1,1]];for(let i=0;i<2800;i++){const drop=[range(-20,17),range(0,32),range(-105,26),rand()];for(const c of corners)rainData.push(...drop,...c)}for(let i=0;i<600;i++){const drop=[range(-12,5),range(0,32),range(-5,29),rand()];for(const c of corners)rainData.push(...drop,...c)}const rainVAO=makeVAO(new Float32Array(rainData),[4,2]);
+const mistData=[];for(const [x,z] of [[-4.5,1],[4.6,-15],[-4.4,-27],[0,-48]])for(let i=0;i<6;i++){const puff=[x+range(-.4,.4),range(.2,.9),z+range(-1,1),i/6];for(const c of corners)mistData.push(...puff,c[0],c[1]*2-1)}const mistVAO=makeVAO(new Float32Array(mistData),[4,2]);
+const emptyVAO=gl.createVertexArray();const hdr=!!gl.getExtension('EXT_color_buffer_float');if(hdr)gl.getExtension('OES_texture_float_linear');
+function target(w,h,depth=false){const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,hdr?gl.RGBA16F:gl.RGBA,w,h,0,gl.RGBA,hdr?gl.HALF_FLOAT:gl.UNSIGNED_BYTE,null);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);const fb=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,fb);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,t,0);let rb=null;if(depth){rb=gl.createRenderbuffer();gl.bindRenderbuffer(gl.RENDERBUFFER,rb);gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_COMPONENT24,w,h);gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,rb)}if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE){gl.deleteTexture(t);gl.deleteFramebuffer(fb);if(rb)gl.deleteRenderbuffer(rb);throw Error('Framebuffer unavailable')}return{t,fb,rb,w,h}}
+function dispose(t){if(!t)return;gl.deleteTexture(t.t);gl.deleteFramebuffer(t.fb);if(t.rb)gl.deleteRenderbuffer(t.rb)}
+let sceneTarget,reflectionTarget,bloomA,bloomB,wideA,wideB,w=0,h=0,resizeNeeded=true,frame=0,time=8,previous=0,paused=matchMedia('(prefers-reduced-motion: reduce)').matches,visible=true;
+let renderClock=0,animationRequest=0;let mouseX=0,mouseY=0,parallaxX=0,parallaxY=0,quality=1,slowFrames=0;const diagnostics={ready:false,version:2,frames:0,vertices:vertexCount,renderer:'Native WebGL 2',hdr,fpsLimit:60,externalResources:0};window.__rainCity=diagnostics;
+function lettering(){const dpr=Math.min(devicePixelRatio||1,2),ww=innerWidth,hh=innerHeight;hud.width=ww*dpr;hud.height=hh*dpr;const c=hud.getContext('2d');c.scale(dpr,dpr);const m=ww<600?23:36;const small=ww<600;glyph(c,'雨',m,31,29,'#bdced3');glyph(c,'夜',m+33,31,29,'#bdced3');c.fillStyle='#88c4cd8a';c.fillRect(m,72,62,1);letters(c,'DISTRICT 07',m,84,1.1,'#a0c2cb99');letters(c,'02:17 / RAIN',ww-(small?143:172),35,small?1.05:1.25,'#b2cbd29c');c.beginPath();c.fillStyle='#7ce8df';c.arc(ww-(small?158:188),39,2,0,TAU);c.fill();letters(c,'NEON AFTER HOURS',m,hh-61,small?1.55:2,'#c2d6d9b3');letters(c,'A CITY THAT NEVER DRIES',m,hh-34,small?.72:.92,'#7f9ca985')}
+function resize(){
+ const dpr=Math.min(devicePixelRatio||1,1.65),nw=innerWidth*dpr,nh=innerHeight*dpr;
+ const limit=Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE),gl.getParameter(gl.MAX_RENDERBUFFER_SIZE));
+ const cap=Math.min(1,1920/nw,1440/nh,Math.sqrt(2304000/(nw*nh)),limit/nw,limit/nh);
+ w=Math.max(2,Math.round(nw*cap*quality));h=Math.max(2,Math.round(nh*cap*quality));
+ for(const t of [sceneTarget,reflectionTarget,bloomA,bloomB,wideA,wideB])dispose(t);
+ sceneTarget=reflectionTarget=bloomA=bloomB=wideA=wideB=null;
+ let allocated=false,lastError;
+ for(let attempt=0;attempt<3&&!allocated;attempt++){
+  const made=[],keep=t=>(made.push(t),t);
+  try{
+   const scene=keep(target(w,h,true)),reflection=keep(target(Math.max(2,w>>1),Math.max(2,h>>1),true));
+   const a=keep(target(Math.max(2,w>>2),Math.max(2,h>>2))),b=keep(target(a.w,a.h));
+   const wide=keep(target(Math.max(2,w>>4),Math.max(2,h>>4))),other=keep(target(wide.w,wide.h));
+   [sceneTarget,reflectionTarget,bloomA,bloomB,wideA,wideB]=[scene,reflection,a,b,wide,other];allocated=true;
+  }catch(error){made.forEach(dispose);lastError=error;quality*=.75;w=Math.max(2,Math.floor(w*.75));h=Math.max(2,Math.floor(h*.75));for(let i=0;i<8&&gl.getError()!==gl.NO_ERROR;i++){}}
+ }
+ if(!allocated)throw lastError;
+ canvas.width=w;canvas.height=h;lettering();resizeNeeded=false;diagnostics.resolution=[w,h];
+}
+function bind(t){gl.bindFramebuffer(gl.FRAMEBUFFER,t?t.fb:null);gl.viewport(0,0,t?t.w:w,t?t.h:h)}
+function litUniforms(p,eye){gl.uniform3fv(uniform(p,'uEye'),eye);gl.uniform3fv(uniform(p,'uLights[0]'),lightPos);gl.uniform4fv(uniform(p,'uLightColor[0]'),lightCol);f1(p,'uTime',time)}
+function screen(){gl.bindVertexArray(emptyVAO);gl.drawArrays(gl.TRIANGLES,0,3)}
+function background(){gl.disable(gl.DEPTH_TEST);gl.depthMask(false);use(skyProgram);f1(skyProgram,'uTime',time);screen();gl.depthMask(true);gl.enable(gl.DEPTH_TEST)}
+function buildings(pv,eye){use(meshProgram);mat(meshProgram,'uPV',pv);litUniforms(meshProgram,eye);tex(meshProgram,'uAtlas',atlasTexture,0);gl.bindVertexArray(meshVAO);gl.drawArrays(gl.TRIANGLES,0,vertexCount)}
+function bloomPass(source,dest,dx,dy,mode=1){bind(dest);use(bloomProgram);tex(bloomProgram,'uSource',source,0);f2(bloomProgram,'uStep',dx,dy);i1(bloomProgram,'uMode',mode);screen()}
+function draw(){if(resizeNeeded)resize();parallaxX+=(mouseX-parallaxX)*.025;parallaxY+=(mouseY-parallaxY)*.025;const aspect=w/h;const eye=[1.0+parallaxX*.29,1.85+parallaxY*.10,22.8+Math.max(0,1-aspect)*14],aim=[-.35+parallaxX*.18,3.8+parallaxY*.12,-31];const fov=aspect<1?1.09:Math.PI/3.12;const proj=perspective(fov,aspect,.12,250),view=look(eye,aim),pv=mul(proj,view);const mirror=new Float32Array([1,0,0,0,0,-1,0,0,0,0,1,0,0,0,0,1]),rpv=mul(pv,mirror);const reflectedEye=[eye[0],-eye[1],eye[2]];
+ gl.disable(gl.BLEND);gl.disable(gl.CULL_FACE);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.depthMask(true);
+ bind(reflectionTarget);gl.clearColor(0,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);background();buildings(rpv,reflectedEye);
+ bind(sceneTarget);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);background();buildings(pv,eye);
+ use(groundProgram);mat(groundProgram,'uPV',pv);mat(groundProgram,'uReflectionPV',rpv);litUniforms(groundProgram,eye);tex(groundProgram,'uReflection',reflectionTarget.t,0);f2(groundProgram,'uReflectionSize',reflectionTarget.w,reflectionTarget.h);gl.bindVertexArray(groundVAO);gl.drawArrays(gl.TRIANGLES,0,6);
+ gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+ use(mistProgram);mat(mistProgram,'uPV',pv);f1(mistProgram,'uTime',time);gl.bindVertexArray(mistVAO);gl.drawArrays(gl.TRIANGLES,0,mistData.length/6);
+ gl.blendFunc(gl.SRC_ALPHA,gl.ONE);use(rainProgram);mat(rainProgram,'uPV',pv);litUniforms(rainProgram,eye);gl.bindVertexArray(rainVAO);gl.drawArrays(gl.TRIANGLES,0,rainData.length/6);gl.disable(gl.BLEND);gl.disable(gl.DEPTH_TEST);
+ bloomPass(sceneTarget.t,bloomA,0,0,0);bloomPass(bloomA.t,bloomB,1/bloomA.w,0);bloomPass(bloomB.t,bloomA,0,1/bloomA.h);bloomPass(bloomA.t,wideA,1/bloomA.w,0);bloomPass(wideA.t,wideB,1.5/wideA.w,0);bloomPass(wideB.t,wideA,0,1.5/wideA.h);
+ bind(null);use(postProgram);tex(postProgram,'uScene',sceneTarget.t,0);tex(postProgram,'uBloom',bloomA.t,1);tex(postProgram,'uBloomWide',wideA.t,2);f2(postProgram,'uSize',w,h);f1(postProgram,'uTime',time);screen();gl.depthMask(true);
+ diagnostics.ready=true;diagnostics.frames=++frame;diagnostics.time=time;diagnostics.paused=paused;
+}
+function schedule(){if(visible&&!diagnostics.contextLost&&!animationRequest)animationRequest=requestAnimationFrame(loop)}
+function loop(now){
+ animationRequest=0;if(!visible||diagnostics.contextLost)return;
+ const delta=previous?Math.min((now-previous)/1000,.1):.016;previous=now;
+ if(!paused){time+=delta;if(frame>40&&frame<240&&delta>.047)slowFrames++;if(frame===240&&slowFrames>100&&quality===1){quality=.78;resizeNeeded=true;diagnostics.adaptiveQuality=true}}
+ const settling=Math.abs(mouseX-parallaxX)>.005||Math.abs(mouseY-parallaxY)>.005;
+ if((!paused||resizeNeeded||frame<2||settling)&&(resizeNeeded||now-renderClock>=1000/60-.3)){renderClock=now-((now-renderClock)%(1000/60));draw()}
+ if(!paused||resizeNeeded||settling)schedule();else previous=0;
+}
+function togglePause(){paused=!paused;document.getElementById('pauseIcon').setAttribute('d',paused?'M7 4l8 6-8 6Z':'M7 5v10M13 5v10');document.getElementById('pause').setAttribute('aria-label',paused?'继续动画':'暂停动画');diagnostics.paused=paused;previous=0;schedule()}
+async function fullscreen(){try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch(e){console.info('Fullscreen is not available',e.message)}}
+document.getElementById('pause').addEventListener('click',togglePause);document.getElementById('full').addEventListener('click',fullscreen);
+document.getElementById('save').addEventListener('click',()=>{draw();canvas.toBlob(blob=>{if(!blob)return;const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='雨港-霓虹夜.png';a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)},'image/png')});
+addEventListener('pointermove',e=>{mouseX=(e.clientX/innerWidth-.5)*2;mouseY=-(e.clientY/innerHeight-.5)*2;schedule()});addEventListener('pointerout',e=>{if(!e.relatedTarget){mouseX=0;mouseY=0;schedule()}});
+addEventListener('keydown',e=>{if(e.code==='Space'&&e.target.tagName!=='BUTTON'){e.preventDefault();togglePause()}if(e.key.toLowerCase()==='f')fullscreen();if(e.key.toLowerCase()==='h')document.body.classList.toggle('hide-ui')});
+addEventListener('resize',()=>{resizeNeeded=true;schedule()});
+document.addEventListener('visibilitychange',()=>{visible=!document.hidden;previous=0;if(!visible&&animationRequest){cancelAnimationFrame(animationRequest);animationRequest=0}else schedule()});
+canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();diagnostics.contextLost=true;if(animationRequest)cancelAnimationFrame(animationRequest);animationRequest=0});
+canvas.addEventListener('webglcontextrestored',()=>location.reload());
+if(paused){document.getElementById('pauseIcon').setAttribute('d','M7 4l8 6-8 6Z');document.getElementById('pause').setAttribute('aria-label','继续动画')}
+draw();const initialError=gl.getError();if(initialError!==gl.NO_ERROR)throw Error('WebGL error: '+initialError);diagnostics.initialError=initialError;schedule();
+}catch(e){fail(e)}
+})();
+</script>
+</body>
+</html>
