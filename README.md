@@ -36,6 +36,7 @@ AI 辅助生成的交互式前端作品合集，包含三维场景、数字孪�
 | <a href="./assets/project-thumbnails/miniature-port.webp"><img src="./assets/project-thumbnails/miniature-port.webp" width="160" height="90" alt="微缩港口 · Golden Hour Miniature Port"></a> | miniature-port | 可自由旋转的 1:87 微缩港口沙盘：石膏托盘、芥末黄岸桥与程序化海水，日暮与夜航双模式，六视角与三档画质 | [在线](https://fanhuayishiy.github.io/ai-demo/miniature-port/) | [README](./miniature-port/README.md) |
 | <a href="./assets/project-thumbnails/atelier-104.webp"><img src="./assets/project-thumbnails/atelier-104.webp" width="160" height="90" alt="ATELIER 104 · 机械键盘工作台"></a> | atelier-104 | 原创 104 键机械键盘，主题定制、五层拆解与 3D 实键自动检测 | [在线](https://fanhuayishiy.github.io/ai-demo/atelier-104/dist/) | [README](./atelier-104/README.md) |
 | <a href="./assets/project-thumbnails/cyber-rain-district.webp"><img src="./assets/project-thumbnails/cyber-rain-district.webp" width="160" height="90" alt="雨港 · 霓虹夜"></a> | cyber-rain-district | 单文件三维雨夜街区，霓虹在湿地与玻璃中映光，斜雨和薄雾构成夜间氛围。 | [在线](https://fanhuayishiy.github.io/ai-demo/cyber-rain-district/) | [README](./cyber-rain-district/README.md) |
+| <a href="./assets/project-thumbnails/sagrada-familia.webp"><img src="./assets/project-thumbnails/sagrada-familia.webp" width="160" height="90" alt="Sagrada Família · 圣家堂建造时间线"></a> | sagrada-familia | 默认蓝调夜景的圣家堂三维展示，支持 1882—2026 年建造时间线、18 塔规划全貌与环绕探索。 | [在线](https://fanhuayishiy.github.io/ai-demo/sagrada-familia/) | [README](./sagrada-familia/README.md) |
 
 ## 本地运行
 
@@ -182,6 +183,12 @@ Blender 程序化建模的双极空气开关，提供工程动画、可编辑模
 原生 WebGL 2 程序化生成街区、招牌字形与材质，表现积水倒影、玻璃映光、雨滴涟漪和远景薄雾。支持轻微镜头视差、暂停、全屏与 PNG 导出，独立 HTML 可离线运行。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/cyber-rain-district/) · [README（含主生成提示原文）](./cyber-rain-district/README.md)
+
+## sagrada-familia — Sagrada Família · 圣家堂建造时间线
+
+沿 1882—2026 年时间线观察圣家堂主要构件逐步生长，切换日景、蓝调夜景与 18 塔规划全貌。支持环绕、缩放、平移、立面特写和点击聚焦，单文件 HTML 可直接运行。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/sagrada-familia/) · [README（含主生成提示原文）](./sagrada-familia/README.md)
 
 ---
 

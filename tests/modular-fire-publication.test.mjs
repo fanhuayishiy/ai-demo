@@ -38,8 +38,10 @@ const keyboardPreview = 'atelier-104/dist/index.html';
 const keyboardTitle = 'ATELIER 104 · 机械键盘工作台';
 const rainPreview = 'cyber-rain-district/index.html';
 const rainTitle = '雨港 · 霓虹夜';
+const basilicaPreview = 'sagrada-familia/index.html';
+const basilicaTitle = 'Sagrada Família · 圣家堂建造时间线';
 // 新项目一律追加到末尾，所以这个列表只会在尾部增长。
-const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview, portPreview, keyboardPreview, rainPreview];
+const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview, portPreview, keyboardPreview, rainPreview, basilicaPreview];
 
 function* walk(node) {
   yield node;
@@ -68,9 +70,9 @@ test('collection appends new previews at the tail after the fourteen originals i
   assert.deepEqual(discoverPreviews(html), [...existingPreviews, ...appendedPreviews]);
 });
 
-test('homepage metadata advertises twenty-two runnable projects', () => {
+test('homepage metadata advertises twenty-three runnable projects', () => {
   const description = nodes.find(node => node.tagName === 'meta' && attribute(node, 'name') === 'description');
-  assert.match(attribute(description, 'content'), /22 个可运行项目/u);
+  assert.match(attribute(description, 'content'), /23 个可运行项目/u);
 });
 
 test('Roadster card presents an offline mini-game with preview and prompt links', () => {
@@ -104,45 +106,66 @@ test('FIRELINK card keeps its preview and reproduction prompt links', () => {
 test('the newest project sits last in the homepage grid without displacing its predecessor', () => {
   const cards = nodes.filter(node => hasClass(node, 'card'));
   const last = [...walk(cards.at(-1))];
-  assert.equal(text(last.find(node => node.tagName === 'h2')), rainTitle);
-  assert.equal(coverHref(last), `./${rainPreview}`);
+  assert.equal(text(last.find(node => node.tagName === 'h2')), basilicaTitle);
+  assert.equal(coverHref(last), `./${basilicaPreview}`);
 
   // 追加只能发生在末尾：上一个项目必须原封不动地留在倒数第二位。
   const previous = [...walk(cards.at(-2))];
-  assert.equal(text(previous.find(node => node.tagName === 'h2')), keyboardTitle);
-  assert.equal(coverHref(previous), `./${keyboardPreview}`);
+  assert.equal(text(previous.find(node => node.tagName === 'h2')), rainTitle);
+  assert.equal(coverHref(previous), `./${rainPreview}`);
+  const keyboard = [...walk(cards.at(-3))];
+  assert.equal(text(keyboard.find(node => node.tagName === 'h2')), keyboardTitle);
+  assert.equal(coverHref(keyboard), `./${keyboardPreview}`);
 
   // 新卡片沿用全站统一的真实截图结构。
   const shot = last.find(node => node.tagName === 'img' && hasClass(node, 'project-shot'));
-  assert.equal(attribute(shot, 'src'), './assets/project-thumbnails/cyber-rain-district.webp');
+  assert.equal(attribute(shot, 'src'), './assets/project-thumbnails/sagrada-familia.webp');
   assert.equal(attribute(shot, 'width'), '640');
   assert.equal(attribute(shot, 'height'), '360');
   assert.equal(attribute(shot, 'loading'), 'lazy');
   assert.equal(attribute(shot, 'decoding'), 'async');
-  assert.ok(attribute(shot, 'alt').includes('雨港'));
+  assert.ok(attribute(shot, 'alt').includes('圣家堂'));
   const prompt = last.find(node => node.tagName === 'a' && hasClass(node, 'prompt-link'));
-  assert.equal(attribute(prompt, 'href'), 'https://github.com/fanhuayishiy/ai-demo/blob/main/cyber-rain-district/README.md');
+  assert.equal(attribute(prompt, 'href'), 'https://github.com/fanhuayishiy/ai-demo/blob/main/sagrada-familia/README.md');
 });
 
 test('README lists the same projects in the same order, newest last', () => {
   const rows = readme.split(/\r?\n/u).filter(line => line.startsWith('|') && /\| [a-z][\w-]+ \|/u.test(line));
   const expectedProjects = [...existingPreviews, ...appendedPreviews].map(preview => preview.split('/')[0]);
   assert.deepEqual(rows.map(row => /\| ([a-z][\w-]+) \|/u.exec(row)[1]), expectedProjects);
-  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/cyber-rain-district/)'));
-  assert.ok(rows.at(-1).includes('[README](./cyber-rain-district/README.md)'));
-  assert.ok(rows.at(-1).includes('./assets/project-thumbnails/cyber-rain-district.webp'));
-  assert.ok(rows.at(-2).includes('[在线](https://fanhuayishiy.github.io/ai-demo/atelier-104/dist/)'));
-  assert.ok(rows.at(-2).includes('[README](./atelier-104/README.md)'));
+  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/sagrada-familia/)'));
+  assert.ok(rows.at(-1).includes('[README](./sagrada-familia/README.md)'));
+  assert.ok(rows.at(-1).includes('./assets/project-thumbnails/sagrada-familia.webp'));
+  assert.ok(rows.at(-2).includes('[在线](https://fanhuayishiy.github.io/ai-demo/cyber-rain-district/)'));
+  assert.ok(rows.at(-2).includes('[README](./cyber-rain-district/README.md)'));
+  assert.ok(rows.at(-2).includes('./assets/project-thumbnails/cyber-rain-district.webp'));
+  assert.ok(rows.at(-3).includes('[在线](https://fanhuayishiy.github.io/ai-demo/atelier-104/dist/)'));
+  assert.ok(rows.at(-3).includes('[README](./atelier-104/README.md)'));
 });
 
 test('README puts the newest overview immediately before the contribution instructions', () => {
   const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
   const contributionIndex = headings.indexOf('## 新增项目');
   assert.ok(contributionIndex > 0);
-  assert.ok(headings[contributionIndex - 1].startsWith('## cyber-rain-district '));
-  assert.ok(headings[contributionIndex - 2].startsWith('## atelier-104 '));
-  const overviewStart = readme.indexOf('## cyber-rain-district ');
+  assert.ok(headings[contributionIndex - 1].startsWith('## sagrada-familia '));
+  assert.ok(headings[contributionIndex - 2].startsWith('## cyber-rain-district '));
+  const overviewStart = readme.indexOf('## sagrada-familia ');
   const overview = readme.slice(overviewStart, readme.indexOf('## 新增项目', overviewStart));
+  assert.match(overview, /1882—2026/u);
+  assert.match(overview, /蓝调夜景/u);
+  assert.match(overview, /18 塔规划全貌/u);
+  assert.ok(overview.includes('[在线预览](https://fanhuayishiy.github.io/ai-demo/sagrada-familia/)'));
+  assert.ok(overview.includes('[README（含主生成提示原文）](./sagrada-familia/README.md)'));
+});
+
+test('README retains the rain district overview directly before the basilica', () => {
+  const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
+  const rainIndex = headings.findIndex(heading => heading.startsWith('## cyber-rain-district '));
+  assert.ok(rainIndex > 0);
+  assert.ok(headings[rainIndex + 1].startsWith('## sagrada-familia '));
+  assert.ok(headings[rainIndex - 1].startsWith('## atelier-104 '));
+  const overviewStart = readme.indexOf('## cyber-rain-district ');
+  const overview = readme.slice(overviewStart, readme.indexOf('## sagrada-familia ', overviewStart));
   assert.match(overview, /WebGL 2/u);
   assert.match(overview, /积水倒影/u);
   assert.match(overview, /\[在线预览\]\(https:\/\/fanhuayishiy\.github\.io\/ai-demo\/cyber-rain-district\/\)/u);
@@ -151,10 +174,10 @@ test('README puts the newest overview immediately before the contribution instru
 
 test('README retains the keyboard overview directly before the rain district', () => {
   const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
-  const contributionIndex = headings.indexOf('## 新增项目');
-  assert.ok(contributionIndex > 0);
-  assert.ok(headings[contributionIndex - 2].startsWith('## atelier-104 '));
-  assert.ok(headings[contributionIndex - 3].startsWith('## miniature-port '));
+  const rainIndex = headings.findIndex(heading => heading.startsWith('## cyber-rain-district '));
+  assert.ok(rainIndex > 0);
+  assert.ok(headings[rainIndex - 1].startsWith('## atelier-104 '));
+  assert.ok(headings[rainIndex - 2].startsWith('## miniature-port '));
   const overviewStart = readme.indexOf('## atelier-104 ');
   const overview = readme.slice(overviewStart, readme.indexOf('## cyber-rain-district ', overviewStart));
   assert.match(overview, /104 键模型/u);
@@ -213,4 +236,16 @@ test('new project README declares the original prompt unverifiable and supplies 
   for (const verbatim of ['优化一下性能，当前太卡了', '还是很卡而且很糊，优化到60fps', '提交到https://github.com/fanhuayishiy/ai-demo上']) {
     assert.ok(projectReadme.includes(verbatim), `可逐字核验的请求缺失：${verbatim}`);
   }
+});
+
+test('basilica publication includes the original request and distinguishes historical progress from the planned completion', () => {
+  const projectReadme = readFileSync(new URL('../sagrada-familia/README.md', import.meta.url), 'utf8');
+  const preview = readFileSync(new URL('../sagrada-familia/index.html', import.meta.url), 'utf8');
+  assert.match(projectReadme, /## 主生成提示（原文）/u);
+  assert.ok(projectReadme.includes('默认为蓝调，整体再对一下'));
+  assert.ok(projectReadme.includes('2026 年指耶稣塔外部落成'));
+  assert.ok(projectReadme.includes('并非测绘模型'));
+  assert.match(preview, /<body class="night">/u);
+  assert.match(preview, /night=1,nightTarget=1/u);
+  assert.match(preview, /id="year" min="1882" max="2026" step="1"/u);
 });
