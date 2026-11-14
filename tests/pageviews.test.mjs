@@ -151,6 +151,15 @@ test('runs one top-level JSONP request that can identify the page referrer', (t)
   cleanup();
 });
 
+test('the existing page request also exposes site totals without a second network call', (t) => {
+  const f = fixture(t);
+  const received = [];
+  f.start({ onCount: (count, stats) => received.push({ count, stats }) });
+  request(f).payload(7);
+  assert.deepEqual(received, [{ count: 7, stats: { sitePv: 999, siteUv: 555 } }]);
+  assert.equal(f.document.querySelectorAll('script[data-ai-demo-pageviews]').length, 0);
+});
+
 test('accepts a genuine zero count and removes every transient resource', (t) => {
   const f = fixture(t);
   t.mock.method(f.window, 'clearTimeout');

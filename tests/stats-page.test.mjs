@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { JSDOM } from 'jsdom';
+import { connectSiteVisitTotal, renderSiteVisitTotal } from '../assets/site-visit-total.mjs';
 import { connectStatsPage, syncProjectCount } from '../stats/stats.mjs';
 
 const root = new URL('../', import.meta.url);
@@ -19,7 +20,35 @@ test('the homepage links to a dedicated aggregate statistics page', () => {
   try {
     const links = [...dom.window.document.querySelectorAll('a[href="./stats/"]')];
     assert.ok(links.length >= 2, 'header and footer should both provide a stable route');
-    assert.match(links[0].textContent, /项目统计/);
+    assert.match(links[0].textContent, /项目合计/);
+    assert.equal(dom.window.document.querySelector('#site-visit-total').textContent.trim(), '—');
+    assert.equal(dom.window.document.querySelector('script[src="./assets/site-visit-total.mjs"]').getAttribute('type'), 'module');
+  } finally {
+    dom.window.close();
+  }
+});
+
+test('the homepage renders the site-wide total from the shared pageview response', () => {
+  const dom = new JSDOM('<a id="site-visit-link"><strong id="site-visit-total" data-state="loading">—</strong></a>', {
+    url: 'https://fanhuayishiy.github.io/ai-demo/',
+  });
+  try {
+    assert.equal(renderSiteVisitTotal({ document: dom.window.document, stats: { sitePv: 12345, siteUv: 678 } }), true);
+    assert.equal(dom.window.document.querySelector('#site-visit-total').textContent, '12,345');
+    assert.equal(dom.window.document.querySelector('#site-visit-total').dataset.state, 'live');
+    assert.match(dom.window.document.querySelector('#site-visit-link').getAttribute('aria-label'), /12,345/);
+  } finally {
+    dom.window.close();
+  }
+});
+
+test('the homepage listens for totals that arrive after its module starts', () => {
+  const dom = new JSDOM('<strong id="site-visit-total">—</strong>', { url: 'https://fanhuayishiy.github.io/ai-demo/' });
+  try {
+    const cleanup = connectSiteVisitTotal({ window: dom.window, document: dom.window.document });
+    dom.window.dispatchEvent(new dom.window.CustomEvent('ai-demo-site-pageviews', { detail: { sitePv: 128, siteUv: 111 } }));
+    assert.equal(dom.window.document.querySelector('#site-visit-total').textContent, '128');
+    cleanup();
   } finally {
     dom.window.close();
   }

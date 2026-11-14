@@ -1,4 +1,5 @@
 /node_modules/
 /_site/
 /audit-github-entry/
+/test-results/
 *.log

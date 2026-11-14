@@ -32,11 +32,11 @@ export function shouldCount(url, navigator = {}) {
 export function startPageviews({ window, document, onCount = () => {}, onUnavailable = () => {}, timeoutMs = 8000 }) {
   const subscriber = { onCount, onUnavailable, active: true };
 
-  function notify(listener, status, count) {
+  function notify(listener, status, count, stats) {
     if (!listener.active) return;
     listener.active = false;
     try {
-      if (status === 'count') listener.onCount(count);
+      if (status === 'count') listener.onCount(count, stats);
       else listener.onUnavailable();
     } catch (error) {
       // A consumer failure must not strand another subscriber or change an
@@ -48,7 +48,7 @@ export function startPageviews({ window, document, onCount = () => {}, onUnavail
 
   let request = pageviewRequests.get(document);
   if (request && request.status !== 'pending') {
-    notify(subscriber, request.status, request.count);
+    notify(subscriber, request.status, request.count, request.stats);
     return () => {};
   }
   if (request) {
@@ -89,14 +89,15 @@ export function startPageviews({ window, document, onCount = () => {}, onUnavail
     }
   }
 
-  function finish(status, count) {
+  function finish(status, count, stats) {
     if (request.status !== 'pending') return;
     request.status = status;
     request.count = count;
+    request.stats = stats;
     request.stop();
     const subscribers = [...request.subscribers];
     request.subscribers.clear();
-    for (const listener of subscribers) notify(listener, status, count);
+    for (const listener of subscribers) notify(listener, status, count, stats);
   }
 
   function fail() {
@@ -116,8 +117,11 @@ export function startPageviews({ window, document, onCount = () => {}, onUnavail
     callbackName = `__aiDemoPageviews_${token}`;
     window[callbackName] = (data) => {
       if (request.status !== 'pending') return;
-      if (data && Number.isSafeInteger(data.page_pv) && data.page_pv >= 0) finish('count', data.page_pv);
-      else fail();
+      if (data && Number.isSafeInteger(data.page_pv) && data.page_pv >= 0) {
+        const sitePv = Number.isSafeInteger(data.site_pv) && data.site_pv >= 0 ? data.site_pv : null;
+        const siteUv = Number.isSafeInteger(data.site_uv) && data.site_uv >= 0 ? data.site_uv : null;
+        finish('count', data.page_pv, sitePv === null ? null : { sitePv, siteUv });
+      } else fail();
     };
 
     script = document.createElement('script');

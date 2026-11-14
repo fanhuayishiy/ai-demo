@@ -156,11 +156,15 @@
       },
       copy: blob => ShareClipboard.beginImageCopy({navigator:window.navigator, ClipboardItem:window.ClipboardItem}, blob),
     });
-    const cleanupPageviews = Pageviews.startPageviews({window, document, onCount: count => {
+    const cleanupPageviews = Pageviews.startPageviews({window, document, onCount: (count, stats) => {
       const views = shadow.querySelector('.pageviews');
       shadow.querySelector('.pageview-count').textContent = count.toLocaleString('zh-CN');
       views.setAttribute('aria-label', '本页访问 ' + count + ' 次；不蒜子会接收 IP 和页面地址');
       views.hidden = false;
+      if (stats) {
+        window.__aiDemoSiteViews = stats;
+        window.dispatchEvent(new CustomEvent('ai-demo-site-pageviews', { detail: stats }));
+      }
       place();
     }});
     shadow.querySelector('[data-action="dismiss"]').addEventListener('click', () => {
