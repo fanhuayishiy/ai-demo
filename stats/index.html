@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>项目统计 · AI Demo Collection</title>
+<meta name="description" content="AI Demo Collection 首页与全部项目入口的累计访问量。">
+<meta name="theme-color" content="#101519">
+<style>
+:root{
+  color-scheme:dark;
+  --ink:#101519;
+  --panel:#182126;
+  --panel-hi:#202c31;
+  --line:#8fa0a533;
+  --paper:#e8e6e1;
+  --muted:#97a5a9;
+  --amber:#e6a74f;
+  --amber-soft:#d9c89f;
+  --mint:#8fc79b;
+  --red:#d77762;
+  font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif;
+  color:var(--paper);
+  background:var(--ink);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  padding:26px 24px 42px;
+  background:
+    radial-gradient(58% 42% at 50% -8%,#e6a74f24,transparent 75%),
+    linear-gradient(#8fa0a50b 1px,transparent 1px),
+    linear-gradient(90deg,#8fa0a50b 1px,transparent 1px),
+    var(--ink);
+  background-size:auto,38px 38px,38px 38px,auto;
+}
+a{color:inherit}
+.shell{width:min(1080px,100%);margin:0 auto}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:48px;margin-bottom:58px}
+.back{display:inline-flex;align-items:center;gap:9px;color:var(--muted);font-size:12px;letter-spacing:1.5px;text-decoration:none}
+.back::before{content:"←";color:var(--amber);font-size:17px}
+.back:hover{color:var(--paper)}
+.service{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:10px;letter-spacing:1.8px}
+.service-dot{width:7px;height:7px;border-radius:50%;background:#6f7f85;box-shadow:0 0 0 4px #6f7f8518;transition:.25s}
+.service[data-state="live"] .service-dot{background:var(--mint);box-shadow:0 0 0 4px #8fc79b1c,0 0 18px #8fc79b66}
+.service[data-state="error"] .service-dot{background:var(--red);box-shadow:0 0 0 4px #d777621c}
+.stage{display:grid;grid-template-columns:minmax(0,1.18fr) minmax(300px,.82fr);gap:clamp(36px,7vw,92px);align-items:center;min-height:520px}
+.eyebrow{margin:0 0 20px;color:var(--amber);font-size:10px;letter-spacing:3.4px;font-weight:700}
+h1{max-width:650px;margin:0;font-size:clamp(36px,5.8vw,68px);line-height:1.13;letter-spacing:-.045em;font-weight:520;text-wrap:balance}
+h1 span{color:var(--amber-soft)}
+.intro{max-width:560px;margin:22px 0 34px;color:var(--muted);font-size:14px;line-height:1.95;letter-spacing:.35px}
+.counter{
+  position:relative;
+  isolation:isolate;
+  width:min(590px,100%);
+  padding:23px 26px 20px;
+  border:1px solid #d4b88e54;
+  border-radius:13px;
+  background:linear-gradient(145deg,#202a2f,#151c20 68%);
+  box-shadow:inset 0 1px #ffffff12,0 22px 70px #00000059;
+  overflow:hidden;
+}
+.counter::before{content:"";position:absolute;inset:0;z-index:-1;background:repeating-linear-gradient(90deg,transparent 0 41px,#e6a74f0e 41px 42px);mask-image:linear-gradient(90deg,transparent,#000 25%,#000 75%,transparent)}
+.counter-head{display:flex;align-items:center;justify-content:space-between;gap:14px;color:var(--muted);font-size:10px;letter-spacing:1.8px}
+.counter-head b{color:var(--amber-soft);font-weight:600}
+.counter-line{display:flex;align-items:baseline;gap:12px;margin-top:5px;min-height:100px}
+.counter-value{
+  color:#f4c77b;
+  font-family:"Bahnschrift","DIN Alternate","Arial Narrow",ui-monospace,monospace;
+  font-size:clamp(64px,10vw,106px);
+  font-weight:300;
+  line-height:1;
+  letter-spacing:-.055em;
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 0 32px #e6a74f35;
+}
+.counter-value.is-ready{animation:counter-in .42s cubic-bezier(.2,.8,.2,1)}
+.counter-unit{padding-bottom:10px;color:var(--amber);font-family:ui-monospace,monospace;font-size:11px;letter-spacing:2px}
+.status{min-height:22px;margin:6px 0 0;color:var(--muted);font-size:11px;line-height:1.7}
+.status[data-state="live"]{color:var(--mint)}
+.status[data-state="error"]{color:#efad9f}
+.retry{margin-left:8px;padding:3px 9px;border:1px solid #d4b88e66;border-radius:5px;background:#253137;color:var(--paper);font:inherit;cursor:pointer}
+.retry:hover{border-color:var(--amber)}
+.retry:focus-visible,.back:focus-visible,.collection-link:focus-visible,a:focus-visible{outline:2px solid var(--amber);outline-offset:4px}
+.submetrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid var(--line);margin-top:19px;padding-top:17px}
+.metric{display:flex;flex-direction:column;gap:5px}
+.metric+.metric{border-left:1px solid var(--line);padding-left:22px}
+.metric-label{color:#7f8e93;font-size:9px;letter-spacing:1.7px}
+.metric-value{color:#d9e0df;font-size:17px;font-variant-numeric:tabular-nums}
+.dial-wrap{position:relative;justify-self:center;width:min(390px,90vw);aspect-ratio:1}
+.dial{position:absolute;inset:0;border-radius:50%;background:
+  repeating-conic-gradient(from -.7deg,#e6a74f 0 1.4deg,transparent 1.4deg 15deg);
+  -webkit-mask:radial-gradient(circle,transparent 0 67%,#000 67.4% 68.2%,transparent 68.6%);
+  mask:radial-gradient(circle,transparent 0 67%,#000 67.4% 68.2%,transparent 68.6%);
+  animation:dial-arrive .8s cubic-bezier(.16,.8,.2,1) both;
+}
+.orbit{position:absolute;inset:13%;border:1px solid #8fa0a53d;border-radius:50%}
+.orbit::before{content:"";position:absolute;inset:14%;border:1px dashed #e6a74f38;border-radius:50%}
+.orbit::after{content:"";position:absolute;width:9px;height:9px;left:50%;top:-5px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 5px #e6a74f12,0 0 26px #e6a74f80}
+.dial-core{position:absolute;inset:25%;display:grid;place-content:center;text-align:center;border:1px solid #d4b88e3d;border-radius:50%;background:radial-gradient(circle at 40% 32%,#28353a,#151d21 70%);box-shadow:inset 0 1px #ffffff15,0 18px 55px #0008}
+.dial-number{font-family:"Bahnschrift","DIN Alternate",ui-monospace,monospace;font-size:clamp(54px,8vw,76px);font-weight:300;line-height:1;color:var(--amber-soft);font-variant-numeric:tabular-nums}
+.dial-label{margin-top:9px;color:var(--muted);font-size:9px;letter-spacing:2.2px}
+.dial-caption{position:absolute;left:50%;bottom:-7px;transform:translate(-50%,100%);width:100%;margin:0;text-align:center;color:var(--muted);font-size:11px;line-height:1.7}
+.dial-caption b{color:#c9d2d4;font-weight:500}
+.method{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-top:72px;padding-top:22px;border-top:1px solid var(--line)}
+.method p{margin:0;color:#7f8e93;font-size:11px;line-height:1.85;letter-spacing:.2px}
+.method p strong{display:block;margin-bottom:4px;color:#c5cecf;font-weight:500;letter-spacing:1px}
+.collection-link{justify-self:end;align-self:start;display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border:1px solid #d4b88e45;border-radius:999px;color:var(--amber-soft);font-size:11px;letter-spacing:1px;text-decoration:none;transition:.2s}
+.collection-link:hover{border-color:var(--amber);color:#fff;transform:translateY(-1px)}
+footer{margin-top:48px;color:#68787e;font-size:10px;letter-spacing:1px;text-align:center}
+@keyframes dial-arrive{from{opacity:0;transform:rotate(-8deg) scale(.96)}to{opacity:1;transform:none}}
+@keyframes counter-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (max-width:780px){
+  body{padding:20px 16px 32px}
+  .topbar{margin-bottom:38px}
+  .stage{grid-template-columns:1fr;gap:50px;min-height:0}
+  h1{font-size:clamp(34px,11vw,54px)}
+  .dial-wrap{order:-1;width:min(292px,78vw);margin-top:4px}
+  .dial-caption{bottom:-12px}
+  .method{grid-template-columns:1fr;margin-top:62px}
+  .collection-link{justify-self:start}
+}
+@media (max-width:460px){
+  .topbar{align-items:flex-start}
+  .service{max-width:120px;text-align:right;line-height:1.6}
+  .counter{padding:19px 18px 17px}
+  .counter-line{min-height:82px}
+  .counter-value{font-size:62px}
+  .metric+.metric{padding-left:15px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="topbar" aria-label="页面导航">
+    <a class="back" href="../">AI Demo Collection</a>
+    <span class="service" id="service" data-state="loading"><i class="service-dot" aria-hidden="true"></i><span id="service-label">READING COUNTER</span></span>
+  </nav>
+
+  <main>
+    <section class="stage" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">COLLECTION / VISITS</p>
+        <h1 id="page-title">一整座小镇的<br><span>创作足迹</span></h1>
+        <p class="intro">首页与全部项目入口的访问，汇总在同一块记数牌上。这里展示浏览次数，不把同一位访客伪装成很多次“新增人数”。</p>
+
+        <section class="counter" aria-labelledby="aggregate-label">
+          <div class="counter-head"><span id="aggregate-label">全站累计访问</span><b>BUSUANZI · SITE PV</b></div>
+          <div class="counter-line">
+            <strong class="counter-value" id="aggregate-count" aria-live="polite">—</strong>
+            <span class="counter-unit">VIEWS</span>
+          </div>
+          <p class="status" id="aggregate-status" role="status" aria-live="polite" data-state="loading">正在读取合计数据…<button class="retry" id="aggregate-retry" type="button" hidden>重新读取</button></p>
+          <div class="submetrics">
+            <div class="metric"><span class="metric-label">独立访客 / SITE UV</span><span class="metric-value" id="aggregate-uv">—</span></div>
+            <div class="metric"><span class="metric-label">项目入口 / PROJECTS</span><span class="metric-value" id="aggregate-projects">24</span></div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="dial-wrap" id="project-dial" aria-label="24 个项目入口汇入一个全站总量">
+        <div class="dial" aria-hidden="true"></div>
+        <div class="orbit" aria-hidden="true"></div>
+        <div class="dial-core">
+          <span class="dial-number" id="dial-count">24</span>
+          <span class="dial-label">PROJECT SIGNALS</span>
+        </div>
+        <p class="dial-caption">每一格代表一个可运行入口<br><b>它们共同汇入同一个站点总量</b></p>
+      </aside>
+    </section>
+
+    <section class="method" aria-label="统计说明">
+      <p><strong>统计口径</strong>合计来自不蒜子的站点 PV，包含首页、本统计页与 24 个项目入口。PV 是页面浏览请求次数，不代表独立人数，也不承诺防刷。</p>
+      <a class="collection-link" href="../">返回项目合集 <span aria-hidden="true">↗</span></a>
+    </section>
+  </main>
+
+  <footer>AI DEMO COLLECTION · PUBLIC VISIT COUNTER</footer>
+</div>
+<script type="module" src="./stats.mjs"></script>
+</body>
+</html>

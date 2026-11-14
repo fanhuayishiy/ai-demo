@@ -4,7 +4,7 @@ AI 辅助生成的交互式前端作品合集，包含三维场景、数字孪�
 
 [![Open Source](https://img.shields.io/badge/open%20source-MIT-8fc79b?style=flat-square)](./LICENSE)
 
-[在线浏览全部项目](https://fanhuayishiy.github.io/ai-demo/) · [本地运行](#本地运行) · [新增项目](#新增项目) · [维护文档](./docs/maintaining.md)
+[在线浏览全部项目](https://fanhuayishiy.github.io/ai-demo/) · [项目访客统计](https://fanhuayishiy.github.io/ai-demo/stats/) · [本地运行](#本地运行) · [新增项目](#新增项目) · [维护文档](./docs/maintaining.md)
 
 各项目 README 的 **主生成提示（原文）** 保留可核验的原始请求；无法核验的历史原文会明确说明，整理后的复现提示词另行标注。
 

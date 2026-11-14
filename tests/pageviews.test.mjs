@@ -51,6 +51,23 @@ function request(f) {
   };
 }
 
+function siteRequest(f) {
+  const script = f.document.querySelector('script[data-ai-demo-site-pageviews]');
+  assert.ok(script, 'the aggregate statistics page should request site PV');
+  const endpoint = new URL(script.src);
+  const callback = endpoint.searchParams.get('jsonpCallback');
+  assert.match(callback, /^__aiDemoSitePageviews_[a-f0-9]{32}$/u);
+  assert.equal(typeof f.window[callback], 'function');
+  return {
+    script,
+    endpoint,
+    callback,
+    payload(data) {
+      f.window[callback](data);
+    },
+  };
+}
+
 test('counts the production homepage and parameter-free child pages', () => {
   const count = api('shouldCount');
   for (const url of [
@@ -288,6 +305,50 @@ test('invalid timeout inputs retain the finite default', (t) => {
     assert.equal(timer.mock.calls[0].arguments[1], 8000);
     cleanup();
   }
+});
+
+test('the statistics page reads one validated site-wide PV and UV total', (t) => {
+  const f = fixture(t, 'https://fanhuayishiy.github.io/ai-demo/stats/');
+  const stats = [];
+  const cleanup = api('startSitePageviews')({
+    window: f.window,
+    document: f.document,
+    onStats: value => stats.push(value),
+    onUnavailable: () => f.unavailable.push(true),
+  });
+  const direct = siteRequest(f);
+  assert.equal(direct.endpoint.origin, 'https://busuanzi.ibruce.info');
+  assert.equal(direct.script.getAttribute('referrerpolicy'), 'no-referrer-when-downgrade');
+  direct.payload({ site_pv: 124, site_uv: 108, page_pv: 3 });
+  assert.deepEqual(stats, [{ sitePv: 124, siteUv: 108 }]);
+  assert.deepEqual(f.unavailable, []);
+  assert.equal(f.document.querySelector('script[data-ai-demo-site-pageviews]'), null);
+  cleanup();
+});
+
+test('the aggregate total rejects malformed site PV without inventing a value', (t) => {
+  const f = fixture(t, 'https://fanhuayishiy.github.io/ai-demo/stats/');
+  const values = [];
+  api('startSitePageviews')({
+    window: f.window,
+    document: f.document,
+    onStats: value => values.push(value),
+    onUnavailable: () => f.unavailable.push(true),
+  });
+  siteRequest(f).payload({ site_pv: '124', site_uv: 108 });
+  assert.deepEqual(values, []);
+  assert.deepEqual(f.unavailable, [true]);
+});
+
+test('aggregate statistics honor local-only privacy without a network request', (t) => {
+  const f = fixture(t, 'http://localhost:5185/ai-demo/stats/');
+  api('startSitePageviews')({
+    window: f.window,
+    document: f.document,
+    onUnavailable: () => f.unavailable.push(true),
+  });
+  assert.deepEqual(f.unavailable, [true]);
+  assert.equal(f.document.querySelector('script[data-ai-demo-site-pageviews]'), null);
 });
 
 test('browser helper stays import-free and adds no storage, polling or persistent global', async () => {

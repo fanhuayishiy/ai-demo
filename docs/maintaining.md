@@ -80,7 +80,7 @@ npm run add:project -- \
 
 ### 本页访问量与隐私
 
-访问量由[不蒜子](https://busuanzi.ibruce.info/)提供，显示**当前页面的 PV**，不是独立人数，也不是仓库总访问量；不承诺防刷、精确真人计数、历史数据补录或服务可用性。有效结果到达前不显示数字，失败、拦截或超时会隐藏计数，不显示虚假的 0。
+访问量由[不蒜子](https://busuanzi.ibruce.info/)提供。项目入口显示**当前页面的 PV**；独立的[项目统计页](../stats/index.html)显示不蒜子的**站点 PV/UV 合计**。PV 不是独立人数，也不承诺防刷、精确真人计数、历史数据补录或服务可用性。有效结果到达前不显示数字，失败、拦截或超时会隐藏计数，不显示虚假的 0。
 
 - 正式 HTTPS 地址 `https://fanhuayishiy.github.io/ai-demo/` 的首页及其下所有预览页都会请求当前页统计；localhost、测试域名和带查询参数的页面不统计。
 - 尊重浏览器 Do Not Track 和 Global Privacy Control；不添加 cookies、localStorage、持久访客标识，不追踪分享或 GitHub 点击。
@@ -88,6 +88,12 @@ npm run add:project -- \
 - 统计脚本直接在当前正式页面中加载，并仅对这一条跨域脚本设置 `referrerpolicy="no-referrer-when-downgrade"`，让不蒜子收到不含查询参数的页面路径。这里没有统计 iframe。第三方 JSONP 会在当前页面来源中短暂执行，因此这是为“真实按页计数”接受的安全边界；回调只接受非负安全整数 `page_pv`，同一文档不轮询、不重复请求。
 
 2026-11-14 的正式站实测已确认：旧不透明 iframe 请求没有 Referer 并返回 400；顶层 JSONP 请求携带完整页面地址并返回有效 `page_pv`。完整发布后仍应抽查首页和至少两个不同项目；服务失败、拦截或超时时计数保持隐藏，不显示虚假的 0。见[验证记录](../docs/superpowers/sharing-pageviews-verification.md)。
+
+### 全站合计统计页
+
+线上地址为 `https://fanhuayishiy.github.io/ai-demo/stats/`，首页顶部与页脚均提供入口。主数字读取同一不蒜子响应的 `site_pv`，副数字读取 `site_uv`；这是站点级合计，包含首页、统计页和全部项目入口，而不是把各项目单页 PV 分别相加。
+
+统计页启动时会从首页 HTML 重新数出 `a.badge.cover` 卡片数量，所以未来追加项目后，页面中的“项目入口”数量会自动跟随，无需再单独改统计页。302 或请求失败时保留“—”并提供手动重试，不显示伪造的 0。localhost、非正式域名、带查询参数以及 DNT / GPC 访问不会请求不蒜子。
 
 在完整合集目录中可本地检查发布版本（Node.js 22）：
 
