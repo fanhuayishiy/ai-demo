@@ -1,0 +1,3 @@
+node_modules/
+# dist/ is committed so the collection can publish a static preview.
+test-results/

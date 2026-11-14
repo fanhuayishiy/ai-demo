@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#859c77" />
+    <meta
+      name="description"
+      content="在松风镇散散步，和邻居聊聊天，收获一颗刚刚成熟的胡萝卜。一个可游玩的 3D 体素小镇。"
+    />
+    <title>松风镇 · 慢慢走，春天很长</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='12' y='27' width='40' height='30' fill='%23f4d6a1'/%3E%3Cpath d='M5 29L32 5L59 29Z' fill='%23b86246'/%3E%3Crect x='27' y='38' width='12' height='19' fill='%23785a43'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <main id="game" aria-label="松风镇，使用 WASD 或方向键移动，E 互动"></main>
+    <header class="town-name">
+      <span class="town-mark" aria-hidden="true">♧</span>
+      <div>
+        <h1>松风镇</h1>
+        <p>慢慢走，春天很长。</p>
+      </div>
+    </header>
+    <div id="prompt" class="prompt" hidden><kbd>E</kbd><span></span></div>
+    <section id="dialogue" class="dialogue" aria-live="polite" hidden>
+      <div class="dialogue-top">
+        <span id="speaker"></span
+        ><button id="close-dialogue" aria-label="关闭对话">×</button>
+      </div>
+      <p id="message"></p>
+      <span class="dialogue-hint">E / Esc 收起</span>
+    </section>
+    <footer class="controls">
+      <span
+        ><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd
+        ><i> / 方向键</i> 漫步</span
+      ><b></b><span><kbd>E</kbd> 互动</span><b></b
+      ><span class="zoom-hint">滚轮 缩放</span
+      ><button id="help" title="查看小镇指南" aria-label="查看小镇指南">
+        ?
+      </button>
+    </footer>
+    <div id="touch-controls" aria-label="触屏控制">
+      <div class="dpad">
+        <button data-key="ArrowUp" aria-label="向上">↑</button
+        ><button data-key="ArrowLeft" aria-label="向左">←</button
+        ><button data-key="ArrowDown" aria-label="向下">↓</button
+        ><button data-key="ArrowRight" aria-label="向右">→</button>
+      </div>
+      <button id="touch-interact" aria-label="互动">E</button>
+    </div>
+    <div id="loading">
+      <span class="loading-house">⌂</span>
+      <p>推开窗，春天来了。</p>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

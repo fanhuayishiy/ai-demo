@@ -37,6 +37,7 @@ AI 辅助生成的交互式前端作品合集，包含三维场景、数字孪�
 | <a href="./assets/project-thumbnails/atelier-104.webp"><img src="./assets/project-thumbnails/atelier-104.webp" width="160" height="90" alt="ATELIER 104 · 机械键盘工作台"></a> | atelier-104 | 原创 104 键机械键盘，主题定制、五层拆解与 3D 实键自动检测 | [在线](https://fanhuayishiy.github.io/ai-demo/atelier-104/dist/) | [README](./atelier-104/README.md) |
 | <a href="./assets/project-thumbnails/cyber-rain-district.webp"><img src="./assets/project-thumbnails/cyber-rain-district.webp" width="160" height="90" alt="雨港 · 霓虹夜"></a> | cyber-rain-district | 单文件三维雨夜街区，霓虹在湿地与玻璃中映光，斜雨和薄雾构成夜间氛围。 | [在线](https://fanhuayishiy.github.io/ai-demo/cyber-rain-district/) | [README](./cyber-rain-district/README.md) |
 | <a href="./assets/project-thumbnails/sagrada-familia.webp"><img src="./assets/project-thumbnails/sagrada-familia.webp" width="160" height="90" alt="Sagrada Família · 圣家堂建造时间线"></a> | sagrada-familia | 默认蓝调夜景的圣家堂三维展示，支持 1882—2026 年建造时间线、18 塔规划全貌与环绕探索。 | [在线](https://fanhuayishiy.github.io/ai-demo/sagrada-familia/) | [README](./sagrada-familia/README.md) |
+| <a href="./assets/project-thumbnails/songfeng-town.webp"><img src="./assets/project-thumbnails/songfeng-town.webp" width="160" height="90" alt="松风镇 · 体素乡村漫步"></a> | songfeng-town | 暖色体素小镇，沿路探索小屋、菜园与树林，和村民聊天、采摘胡萝卜并穿过木桥 | [在线](https://fanhuayishiy.github.io/ai-demo/songfeng-town/dist/) | [README](./songfeng-town/README.md) |
 
 ## 本地运行
 
@@ -189,6 +190,12 @@ Blender 程序化建模的双极空气开关，提供工程动画、可编辑模
 沿 1882—2026 年时间线观察圣家堂主要构件逐步生长，切换日景、蓝调夜景与 18 塔规划全貌。支持环绕、缩放、平移、立面特写和点击聚焦，单文件 HTML 可直接运行。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/sagrada-familia/) · [README（含主生成提示原文）](./sagrada-familia/README.md)
+
+## songfeng-town — 松风镇 · 体素乡村漫步
+
+在斜俯视的松风镇里慢慢散步，探索三栋彩色小屋、中央广场、菜园和河对岸的树林。WASD 或方向键移动，靠近村民、告示牌与成熟作物按 E 互动，支持碰撞、平滑跟随镜头及轻微环境动画；模型全部程序生成。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/songfeng-town/dist/) · [README（含主生成提示原文）](./songfeng-town/README.md)
 
 ---
 

@@ -40,8 +40,10 @@ const rainPreview = 'cyber-rain-district/index.html';
 const rainTitle = '雨港 · 霓虹夜';
 const basilicaPreview = 'sagrada-familia/index.html';
 const basilicaTitle = 'Sagrada Família · 圣家堂建造时间线';
+const townPreview = 'songfeng-town/dist/index.html';
+const townTitle = '松风镇 · 体素乡村漫步';
 // 新项目一律追加到末尾，所以这个列表只会在尾部增长。
-const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview, portPreview, keyboardPreview, rainPreview, basilicaPreview];
+const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview, portPreview, keyboardPreview, rainPreview, basilicaPreview, townPreview];
 
 function* walk(node) {
   yield node;
@@ -70,9 +72,9 @@ test('collection appends new previews at the tail after the fourteen originals i
   assert.deepEqual(discoverPreviews(html), [...existingPreviews, ...appendedPreviews]);
 });
 
-test('homepage metadata advertises twenty-three runnable projects', () => {
+test('homepage metadata advertises twenty-four runnable projects', () => {
   const description = nodes.find(node => node.tagName === 'meta' && attribute(node, 'name') === 'description');
-  assert.match(attribute(description, 'content'), /23 个可运行项目/u);
+  assert.match(attribute(description, 'content'), /24 个可运行项目/u);
 });
 
 test('Roadster card presents an offline mini-game with preview and prompt links', () => {
@@ -106,56 +108,92 @@ test('FIRELINK card keeps its preview and reproduction prompt links', () => {
 test('the newest project sits last in the homepage grid without displacing its predecessor', () => {
   const cards = nodes.filter(node => hasClass(node, 'card'));
   const last = [...walk(cards.at(-1))];
-  assert.equal(text(last.find(node => node.tagName === 'h2')), basilicaTitle);
-  assert.equal(coverHref(last), `./${basilicaPreview}`);
+  assert.equal(text(last.find(node => node.tagName === 'h2')), townTitle);
+  assert.equal(coverHref(last), `./${townPreview}`);
 
   // 追加只能发生在末尾：上一个项目必须原封不动地留在倒数第二位。
   const previous = [...walk(cards.at(-2))];
-  assert.equal(text(previous.find(node => node.tagName === 'h2')), rainTitle);
-  assert.equal(coverHref(previous), `./${rainPreview}`);
-  const keyboard = [...walk(cards.at(-3))];
+  assert.equal(text(previous.find(node => node.tagName === 'h2')), basilicaTitle);
+  assert.equal(coverHref(previous), `./${basilicaPreview}`);
+  const rain = [...walk(cards.at(-3))];
+  assert.equal(text(rain.find(node => node.tagName === 'h2')), rainTitle);
+  assert.equal(coverHref(rain), `./${rainPreview}`);
+  const keyboard = [...walk(cards.at(-4))];
   assert.equal(text(keyboard.find(node => node.tagName === 'h2')), keyboardTitle);
   assert.equal(coverHref(keyboard), `./${keyboardPreview}`);
 
   // 新卡片沿用全站统一的真实截图结构。
-  const shot = last.find(node => node.tagName === 'img' && hasClass(node, 'project-shot'));
-  assert.equal(attribute(shot, 'src'), './assets/project-thumbnails/sagrada-familia.webp');
+  for (const [card, dir, label] of [[last, 'songfeng-town', '松风镇'], [previous, 'sagrada-familia', '圣家堂']]) {
+  const shot = card.find(node => node.tagName === 'img' && hasClass(node, 'project-shot'));
+  assert.equal(attribute(shot, 'src'), `./assets/project-thumbnails/${dir}.webp`);
   assert.equal(attribute(shot, 'width'), '640');
   assert.equal(attribute(shot, 'height'), '360');
   assert.equal(attribute(shot, 'loading'), 'lazy');
   assert.equal(attribute(shot, 'decoding'), 'async');
-  assert.ok(attribute(shot, 'alt').includes('圣家堂'));
-  const prompt = last.find(node => node.tagName === 'a' && hasClass(node, 'prompt-link'));
-  assert.equal(attribute(prompt, 'href'), 'https://github.com/fanhuayishiy/ai-demo/blob/main/sagrada-familia/README.md');
+  assert.ok(attribute(shot, 'alt').includes(label));
+  const prompt = card.find(node => node.tagName === 'a' && hasClass(node, 'prompt-link'));
+  assert.equal(attribute(prompt, 'href'), `https://github.com/fanhuayishiy/ai-demo/blob/main/${dir}/README.md`);
+  }
 });
 
 test('README lists the same projects in the same order, newest last', () => {
   const rows = readme.split(/\r?\n/u).filter(line => line.startsWith('|') && /\| [a-z][\w-]+ \|/u.test(line));
   const expectedProjects = [...existingPreviews, ...appendedPreviews].map(preview => preview.split('/')[0]);
   assert.deepEqual(rows.map(row => /\| ([a-z][\w-]+) \|/u.exec(row)[1]), expectedProjects);
-  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/sagrada-familia/)'));
-  assert.ok(rows.at(-1).includes('[README](./sagrada-familia/README.md)'));
-  assert.ok(rows.at(-1).includes('./assets/project-thumbnails/sagrada-familia.webp'));
-  assert.ok(rows.at(-2).includes('[在线](https://fanhuayishiy.github.io/ai-demo/cyber-rain-district/)'));
-  assert.ok(rows.at(-2).includes('[README](./cyber-rain-district/README.md)'));
-  assert.ok(rows.at(-2).includes('./assets/project-thumbnails/cyber-rain-district.webp'));
-  assert.ok(rows.at(-3).includes('[在线](https://fanhuayishiy.github.io/ai-demo/atelier-104/dist/)'));
-  assert.ok(rows.at(-3).includes('[README](./atelier-104/README.md)'));
+  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/songfeng-town/dist/)'));
+  assert.ok(rows.at(-1).includes('[README](./songfeng-town/README.md)'));
+  assert.ok(rows.at(-1).includes('./assets/project-thumbnails/songfeng-town.webp'));
+  assert.ok(rows.at(-2).includes('[在线](https://fanhuayishiy.github.io/ai-demo/sagrada-familia/)'));
+  assert.ok(rows.at(-2).includes('[README](./sagrada-familia/README.md)'));
+  assert.ok(rows.at(-2).includes('./assets/project-thumbnails/sagrada-familia.webp'));
+  assert.ok(rows.at(-3).includes('[在线](https://fanhuayishiy.github.io/ai-demo/cyber-rain-district/)'));
+  assert.ok(rows.at(-3).includes('[README](./cyber-rain-district/README.md)'));
+  assert.ok(rows.at(-3).includes('./assets/project-thumbnails/cyber-rain-district.webp'));
+  assert.ok(rows.at(-4).includes('[在线](https://fanhuayishiy.github.io/ai-demo/atelier-104/dist/)'));
+  assert.ok(rows.at(-4).includes('[README](./atelier-104/README.md)'));
 });
 
 test('README puts the newest overview immediately before the contribution instructions', () => {
   const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
   const contributionIndex = headings.indexOf('## 新增项目');
   assert.ok(contributionIndex > 0);
-  assert.ok(headings[contributionIndex - 1].startsWith('## sagrada-familia '));
-  assert.ok(headings[contributionIndex - 2].startsWith('## cyber-rain-district '));
-  const overviewStart = readme.indexOf('## sagrada-familia ');
+  assert.ok(headings[contributionIndex - 1].startsWith('## songfeng-town '));
+  assert.ok(headings[contributionIndex - 2].startsWith('## sagrada-familia '));
+  const overviewStart = readme.indexOf('## songfeng-town ');
   const overview = readme.slice(overviewStart, readme.indexOf('## 新增项目', overviewStart));
+  assert.match(overview, /WASD/u);
+  assert.match(overview, /按 E 互动/u);
+  assert.match(overview, /模型全部程序生成/u);
+  assert.ok(overview.includes('[在线预览](https://fanhuayishiy.github.io/ai-demo/songfeng-town/dist/)'));
+  assert.ok(overview.includes('[README（含主生成提示原文）](./songfeng-town/README.md)'));
+});
+
+test('README retains the basilica overview directly before the town', () => {
+  const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
+  const basilicaIndex = headings.findIndex(heading => heading.startsWith('## sagrada-familia '));
+  assert.ok(headings[basilicaIndex + 1].startsWith('## songfeng-town '));
+  assert.ok(headings[basilicaIndex - 1].startsWith('## cyber-rain-district '));
+  const overviewStart = readme.indexOf('## sagrada-familia ');
+  const overview = readme.slice(overviewStart, readme.indexOf('## songfeng-town ', overviewStart));
   assert.match(overview, /1882—2026/u);
   assert.match(overview, /蓝调夜景/u);
   assert.match(overview, /18 塔规划全貌/u);
   assert.ok(overview.includes('[在线预览](https://fanhuayishiy.github.io/ai-demo/sagrada-familia/)'));
   assert.ok(overview.includes('[README（含主生成提示原文）](./sagrada-familia/README.md)'));
+});
+
+test('town publication includes the original request and real local static assets', () => {
+  const projectReadme = readFileSync(new URL('../songfeng-town/README.md', import.meta.url), 'utf8');
+  const entry = readFileSync(new URL('../songfeng-town/dist/index.html', import.meta.url), 'utf8');
+  assert.match(projectReadme, /## 主生成提示（原文）/u);
+  assert.ok(projectReadme.includes('请帮我制作一个可在浏览器中游玩的 3D 体素小镇'));
+  assert.ok(projectReadme.includes('先确保移动、碰撞、镜头和互动正常，再完善画面'));
+  for (const pattern of [/src="(\.\/assets\/[^"]+\.js)"/u, /href="(\.\/assets\/[^"]+\.css)"/u]) {
+    const match = pattern.exec(entry);
+    assert.ok(match, 'built entry must use relative bundled assets');
+    assert.ok(readFileSync(new URL(`../songfeng-town/dist/${match[1]}`, import.meta.url)).length > 100);
+  }
+  assert.doesNotMatch(entry, /src="https?:/u);
 });
 
 test('README retains the rain district overview directly before the basilica', () => {
