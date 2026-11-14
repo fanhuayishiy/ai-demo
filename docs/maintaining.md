@@ -51,11 +51,11 @@ npm run add:project -- \
 
 线上预览由 `.github/workflows/pages.yml` 发布：每次推送到 `main`，自动测试、打包并部署到 GitHub Pages。现有预览网址保持不变。
 
-所有首页项目卡片指向的预览 HTML 会自动加入统一的「GitHub · 源码 / 提示词」入口，链接到本仓库。组件外观只维护一份：[`shared/github-entry.html`](../shared/github-entry.html)，分享与统计逻辑放在同目录的独立模块中，发布时编译内嵌。手机显示图标，可以关闭当前页入口；不统计点击、不自动跳转。它是发布页面的导航，不属于三维场景模型。
+首页本身及所有首页项目卡片指向的预览 HTML 会自动加入统一的「GitHub · 源码 / 提示词」入口，链接到本仓库。组件外观只维护一份：[`shared/github-entry.html`](../shared/github-entry.html)，分享与统计逻辑放在同目录的独立模块中，发布时编译内嵌。手机显示图标，可以关闭当前页入口；不统计点击、不自动跳转。它是发布页面的导航，不属于三维场景模型。
 
 入口在加载及窗口尺寸变化时选择较少遮挡控件的边缘位置，尊重设备安全区，不在动画循环中扫描页面。它不保证避开将来所有动态弹窗；如局部遮挡，可关闭本页入口。每个新项目仍应做正常的桌面与手机验收。
 
-**后续新增项目不用手动引入组件**：
+**固定发布规则：以后新增项目不用手动引入组件或统计代码**：
 
 1. 提交可运行的静态预览及其资源（Vite 项目先构建并提交 `dist`）。
 2. 用 `npm run add:project` 追加索引（见上方「新增项目 · 排序规则」）。脚本生成的卡片已经带上 `badge cover` 两个 class；若手写，必须两个都保留，例如：
@@ -64,7 +64,7 @@ npm run add:project -- \
    <a class="badge cover" href="./new-project/dist/index.html">可交互</a>
    ```
 
-3. 推送到 `main`。发布脚本自动发现新链接、添加组件，不需要登记第二份项目清单。目录地址 `./new-project/dist/` 也支持。
+3. 推送到 `main`。发布脚本自动给首页和新链接对应页面添加组件，不需要登记第二份项目清单，也不需要修改项目自己的 HTML。目录地址 `./new-project/dist/` 也支持。
 
 打包脚本会检查目标存在且为仓库内的 HTML，缺失或不安全的路径会阻止发布；重复打包不会叠加多个入口。分享所需的固定版本库内嵌到发布产物，不从 CDN 加载；统计是独立、可失败的外部请求。严格 CSP 仅在发布副本里精确放行不蒜子脚本来源、同源临时 iframe 与本地 blob 媒体，不移除原有策略。原项目源码和已提交构建文件不被改写，所以直接运行某个子项目开发服务（如 `localhost:5184`）不会显示此发布层入口。
 
@@ -82,12 +82,12 @@ npm run add:project -- \
 
 访问量由[不蒜子](https://busuanzi.ibruce.info/)提供，显示**当前页面的 PV**，不是独立人数，也不是仓库总访问量；不承诺防刷、精确真人计数、历史数据补录或服务可用性。有效结果到达前不显示数字，失败、拦截或超时会隐藏计数，不显示虚假的 0。
 
-- 仅正式 HTTPS 地址 `https://fanhuayishiy.github.io/ai-demo/` 下的子项目会请求统计；主页、localhost、测试域名和带查询参数的页面不统计。
+- 正式 HTTPS 地址 `https://fanhuayishiy.github.io/ai-demo/` 的首页及其下所有预览页都会请求当前页统计；localhost、测试域名和带查询参数的页面不统计。
 - 尊重浏览器 Do Not Track 和 Global Privacy Control；不添加 cookies、localStorage、持久访客标识，不追踪分享或 GitHub 点击。
 - 服务方会接收网络请求所带的 IP 与来源页面地址。不蒜子按来源地址识别页面，因此跳过含查询参数的链接；浏览器不会把 URL 片段发送为 Referer。
-- 第三方 JSONP 在 `sandbox="allow-scripts"` 的独立、不透明来源 iframe 中运行，不获得同源应用 DOM 权限。父页只接收来源、随机令牌和整数计数验证通过的消息；同一文档不轮询、不重复请求。
+- 统计脚本直接在当前正式页面中加载，并仅对这一条跨域脚本设置 `referrerpolicy="no-referrer-when-downgrade"`，让不蒜子收到不含查询参数的页面路径。这里没有统计 iframe。第三方 JSONP 会在当前页面来源中短暂执行，因此这是为“真实按页计数”接受的安全边界；回调只接受非负安全整数 `page_pv`，同一文档不轮询、不重复请求。
 
-浏览器可能进一步限制隔离 iframe 的 Referer；发布前必须用真实浏览器验证页面归属，不能只凭单元测试认为计数正确。若不可用，应保持计数隐藏，不应放宽 iframe 的同源权限。当前实现及尚未完成的实机验收见[验证记录](../docs/superpowers/sharing-pageviews-verification.md)。
+2026-11-14 的正式站实测已确认：旧不透明 iframe 请求没有 Referer 并返回 400；顶层 JSONP 请求携带完整页面地址并返回有效 `page_pv`。完整发布后仍应抽查首页和至少两个不同项目；服务失败、拦截或超时时计数保持隐藏，不显示虚假的 0。见[验证记录](../docs/superpowers/sharing-pageviews-verification.md)。
 
 在完整合集目录中可本地检查发布版本（Node.js 22）：
 

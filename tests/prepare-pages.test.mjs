@@ -119,7 +119,7 @@ test('fails usefully without a real closing body tag or with unbalanced injectio
   assert.throws(() => inject(preview.replace('</body>', start + '</body>'), fragment), /marker/i);
 });
 
-test('stages all current and future previews, preserves assets/docs, and never changes source or injects root', async (t) => {
+test('stages the homepage and all current and future previews while preserving source assets and docs', async (t) => {
   const fixtureData = await fixture(t, ['./one/dist/?foo=1#scene', 'one/dist/index.html', './two/preview.html', './future-fifteenth-project/dist/']);
   const { sourceDir, outputDir, put } = fixtureData;
   await put('future-fifteenth-project/dist/index.html', preview);
@@ -128,9 +128,10 @@ test('stages all current and future previews, preserves assets/docs, and never c
   await put('unlisted/index.html', preview);
   await put('LICENSE', 'MIT');
   const before = await snapshot(sourceDir);
+  const sourceHome = await readFile(path.join(sourceDir, 'index.html'), 'utf8');
   assert.deepEqual(await api('prepareSite')({ sourceDir, outputDir }), ['one/dist/index.html', 'two/preview.html', 'future-fifteenth-project/dist/index.html']);
   assert.deepEqual(await snapshot(sourceDir), before);
-  assert.equal(await readFile(path.join(outputDir, 'index.html'), 'utf8'), await readFile(path.join(sourceDir, 'index.html'), 'utf8'));
+  assert.equal(await readFile(path.join(outputDir, 'index.html'), 'utf8'), api('injectEntry')(sourceHome, fragment));
   for (const file of ['one/dist/index.html', 'two/preview.html', 'future-fifteenth-project/dist/index.html']) {
     assert.equal(await readFile(path.join(outputDir, file), 'utf8'), api('injectEntry')(preview, fragment));
     assert.equal((await lstat(path.join(outputDir, file))).nlink, 1);

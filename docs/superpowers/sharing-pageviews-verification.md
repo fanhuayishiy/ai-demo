@@ -1,5 +1,15 @@
 # Sharing and pageviews verification
 
+## 2026-11-14 direct JSONP repair
+
+The original pageview integration was present but did not count production pages. Browser probing showed that its hidden `sandbox="allow-scripts"` iframe requested Busuanzi without a `Referer`; the provider returned HTTP 400 and the counter stayed hidden.
+
+A top-level JSONP probe on `https://fanhuayishiy.github.io/ai-demo/rubiks-cube-lab/` sent the full page URL as `Referer` and received HTTP 200 with `page_pv: 2`. The fixed integration therefore runs one direct, referrer-enabled JSONP script per production page, validates only nonnegative safe-integer `page_pv`, and removes the script and callback after settlement. URL queries, localhost, non-production hosts, DNT and GPC remain excluded.
+
+The publication rule is now fixed: the collection homepage and every preview discovered from its normal cards receive the shared entry automatically. Future projects continue to use `npm run add:project`; their own source files do not contain a copied analytics snippet. The earlier notes below describe the superseded opaque-iframe design and are retained as historical evidence.
+
+Local verification for this repair: `npm test` passed 240 tests with one Windows symlink-permission skip and zero failures; `npm run build:pages` produced one shared entry and one direct pageview initializer on the homepage plus all 24 discovered project pages. The built artifact contains no sandboxed pageview frame. Public deployment and the visible counter on the homepage plus two project pages still require post-push browser checks.
+
 Date: 2026-10-08. Branch: `feat/share-and-pageviews`. Baseline: `7eba94b402857ed4beedeaeb8985cdf1018cb156`.
 
 ## Latest release preflight

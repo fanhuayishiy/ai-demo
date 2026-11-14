@@ -151,9 +151,13 @@ export async function prepareSite({ sourceDir, outputDir }) {
     throw new Error(`Output directory must be empty; refusing nonempty output: ${output}`);
   }
 
-  const previews = discoverPreviews(await readSafeFile(source, 'index.html'));
+  const homeHtml = await readSafeFile(source, 'index.html');
+  const previews = discoverPreviews(homeHtml);
   const fragment = await buildEntry({sourceDir:source, template:await readSafeFile(source, 'shared/github-entry.html')});
-  const prepared = new Map();
+  // The fixed publication rule is one shared entry on the collection homepage
+  // and every preview discovered from it. Future cards therefore opt in by
+  // using the normal add-project flow, with no analytics code in the project.
+  const prepared = new Map([['index.html', injectEntry(patchPreviewCsp(homeHtml), fragment)]]);
   for (const relative of previews) {
     if (within(output, path.join(source, relative))) throw new Error(`Preview target is inside the output directory: ${relative}`);
     try { prepared.set(relative, injectEntry(patchPreviewCsp(await readSafeFile(source, relative)), fragment)); }
@@ -169,7 +173,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const sourceDir = fileURLToPath(new URL('../', import.meta.url));
   try {
     const previews = await prepareSite({ sourceDir, outputDir: path.join(sourceDir, '_site') });
-    console.log(`Prepared _site with the shared GitHub entry in ${previews.length} preview pages.`);
+    console.log(`Prepared _site with the shared GitHub entry on the homepage and ${previews.length} preview pages.`);
   } catch (error) {
     console.error(`Pages packaging failed: ${error.message}`);
     process.exitCode = 1;
