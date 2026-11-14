@@ -8,7 +8,9 @@ A top-level JSONP probe on `https://fanhuayishiy.github.io/ai-demo/rubiks-cube-l
 
 The publication rule is now fixed: the collection homepage and every preview discovered from its normal cards receive the shared entry automatically. Future projects continue to use `npm run add:project`; their own source files do not contain a copied analytics snippet. The earlier notes below describe the superseded opaque-iframe design and are retained as historical evidence.
 
-Local verification for this repair: `npm test` passed 240 tests with one Windows symlink-permission skip and zero failures; `npm run build:pages` produced one shared entry and one direct pageview initializer on the homepage plus all 24 discovered project pages. The built artifact contains no sandboxed pageview frame. Public deployment and the visible counter on the homepage plus two project pages still require post-push browser checks.
+Local verification for this repair: `npm test` passed 240 tests with one Windows symlink-permission skip and zero failures; `npm run build:pages` produced one shared entry and one direct pageview initializer on the homepage plus all 24 discovered project pages. The built artifact contains no sandboxed pageview frame.
+
+GitHub Actions run 43586232095 passed its test, build and Pages deploy jobs. A fresh Chromium check of the collection homepage, Songfeng Town and Voxel Construction Site then observed one Busuanzi request each with HTTP 200, the exact public page URL as `Referer`, a visible counter value of `1`, and no analytics console errors.
 
 Date: 2026-10-08. Branch: `feat/share-and-pageviews`. Baseline: `7eba94b402857ed4beedeaeb8985cdf1018cb156`.
 
