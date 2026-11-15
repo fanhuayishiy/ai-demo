@@ -1,0 +1,935 @@
+{
+  "browser": "156.0.8078.4",
+  "initial": {
+    "stage": 3,
+    "progress": 0.2382317073170732,
+    "time": 10.524916666666677,
+    "elapsed": 1.4949999999999992,
+    "day": 1,
+    "auto": true,
+    "paused": true,
+    "waiting": false,
+    "world": {
+      "stage": 3,
+      "p": 0.2382317073170732,
+      "module": {
+        "id": "B-07",
+        "target": [
+          49.2,
+          -1,
+          -30
+        ],
+        "position": [
+          -55.16389578539088,
+          17.8,
+          100
+        ],
+        "carrier": "转运车",
+        "operation": "重载道运输 · 转弯减速",
+        "truck": [
+          -55.16389578539088,
+          4.6,
+          100
+        ],
+        "lift": 1,
+        "attached": false,
+        "installed": false,
+        "hook": [
+          -25,
+          56,
+          -30
+        ]
+      },
+      "island": {
+        "position": [
+          -18,
+          5,
+          -110
+        ],
+        "attached": false,
+        "installed": false,
+        "hook": [
+          -18,
+          56,
+          -110
+        ]
+      },
+      "water": -13.7,
+      "gate": 0,
+      "ship": {
+        "x": 60,
+        "y": 0,
+        "z": -15,
+        "heading": 0
+      },
+      "location": "dock",
+      "towLines": false,
+      "mooring": false,
+      "speed": 0,
+      "hullCount": 12,
+      "deck": 0.12,
+      "fittings": 0,
+      "gangway": false,
+      "scaffold": true,
+      "workersAtSeam": false,
+      "dockMooring": false,
+      "delivered": false,
+      "shift": {
+        "name": "日班施工",
+        "mode": "work",
+        "work": true
+      }
+    },
+    "mode": "orbit",
+    "view": "overview",
+    "cutaway": false,
+    "follow": false,
+    "fps": 5,
+    "drawCalls": 190,
+    "triangles": 78176,
+    "voxel": 0.2,
+    "moduleCount": 1,
+    "walkPosition": [
+      -425,
+      355,
+      470.00000000000006
+    ],
+    "cameraTarget": [
+      -42.000000000000014,
+      2,
+      18.000000000000004
+    ],
+    "renderScale": 0.75,
+    "gpuName": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "softwareRenderer": true
+  },
+  "stages": [
+    {
+      "stage": 0,
+      "progress": 0.5,
+      "time": 10.524916666666677,
+      "elapsed": 1.4949999999999992,
+      "day": 1,
+      "auto": true,
+      "paused": true,
+      "waiting": false,
+      "world": {
+        "stage": 0,
+        "p": 0.5,
+        "module": {
+          "id": "B-07",
+          "target": [
+            49.2,
+            -1,
+            -30
+          ],
+          "position": [
+            -180,
+            17,
+            100
+          ],
+          "carrier": "配套板件",
+          "operation": "排样放样",
+          "truck": [
+            -227,
+            4.6,
+            100
+          ],
+          "lift": 0,
+          "attached": false,
+          "installed": false,
+          "hook": [
+            -25,
+            56,
+            -30
+          ]
+        },
+        "island": {
+          "position": [
+            -18,
+            5,
+            -110
+          ],
+          "attached": false,
+          "installed": false,
+          "hook": [
+            -18,
+            56,
+            -110
+          ]
+        },
+        "water": -13.7,
+        "gate": 0,
+        "ship": {
+          "x": 60,
+          "y": 0,
+          "z": -15,
+          "heading": 0
+        },
+        "location": "dock",
+        "towLines": false,
+        "mooring": false,
+        "speed": 0,
+        "hullCount": 0,
+        "deck": 0,
+        "fittings": 0,
+        "gangway": false,
+        "scaffold": false,
+        "workersAtSeam": false,
+        "dockMooring": false,
+        "delivered": false,
+        "shift": {
+          "name": "日班施工",
+          "mode": "work",
+          "work": true
+        }
+      },
+      "mode": "orbit",
+      "view": "overview",
+      "cutaway": false,
+      "follow": false,
+      "fps": 0,
+      "drawCalls": 164,
+      "triangles": 25272,
+      "voxel": 0.2,
+      "moduleCount": 1,
+      "walkPosition": [
+        -424.9999999999999,
+        355.0000000000001,
+        469.9999999999999
+      ],
+      "cameraTarget": [
+        -42.000000000000014,
+        2,
+        18.000000000000004
+      ],
+      "renderScale": 0.75,
+      "gpuName": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "softwareRenderer": true
+    },
+    {
+      "stage": 1,
+      "progress": 0.58,
+      "time": 10.524916666666677,
+      "elapsed": 1.4949999999999992,
+      "day": 1,
+      "auto": true,
+      "paused": true,
+      "waiting": false,
+      "world": {
+        "stage": 1,
+        "p": 0.58,
+        "module": {
+          "id": "B-07",
+          "target": [
+            49.2,
+            -1,
+            -30
+          ],
+          "position": [
+            -180,
+            17,
+            100
+          ],
+          "carrier": "配套板件",
+          "operation": "切割成形 · 配套码放",
+          "truck": [
+            -227,
+            4.6,
+            100
+          ],
+          "lift": 0,
+          "attached": false,
+          "installed": false,
+          "hook": [
+            -25,
+            56,
+            -30
+          ]
+        },
+        "island": {
+          "position": [
+            -18,
+            5,
+            -110
+          ],
+          "attached": false,
+          "installed": false,
+          "hook": [
+            -18,
+            56,
+            -110
+          ]
+        },
+        "water": -13.7,
+        "gate": 0,
+        "ship": {
+          "x": 60,
+          "y": 0,
+          "z": -15,
+          "heading": 0
+        },
+        "location": "dock",
+        "towLines": false,
+        "mooring": false,
+        "speed": 0,
+        "hullCount": 0,
+        "deck": 0,
+        "fittings": 0,
+        "gangway": false,
+        "scaffold": false,
+        "workersAtSeam": false,
+        "dockMooring": false,
+        "delivered": false,
+        "shift": {
+          "name": "日班施工",
+          "mode": "work",
+          "work": true
+        }
+      },
+      "mode": "orbit",
+      "view": "overview",
+      "cutaway": false,
+      "follow": false,
+      "fps": 0,
+      "drawCalls": 134,
+      "triangles": 25272,
+      "voxel": 0.2,
+      "moduleCount": 1,
+      "walkPosition": [
+        -424.9999999999999,
+        355.0000000000001,
+        469.9999999999999
+      ],
+      "cameraTarget": [
+        -42.000000000000014,
+        2,
+        18.000000000000004
+      ],
+      "renderScale": 0.75,
+      "gpuName": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "softwareRenderer": true
+    },
+    {
+      "stage": 2,
+      "progress": 0.76,
+      "time": 10.524916666666677,
+      "elapsed": 1.4949999999999992,
+      "day": 1,
+      "auto": true,
+      "paused": true,
+      "waiting": false,
+      "world": {
+        "stage": 2,
+        "p": 0.76,
+        "module": {
+          "id": "B-07",
+          "target": [
+            49.2,
+            -1,
+            -30
+          ],
+          "position": [
+            -180,
+            17,
+            100
+          ],
+          "carrier": "胎架",
+          "operation": "肋骨组立 · 管路预装",
+          "truck": [
+            -227,
+            4.6,
+            100
+          ],
+          "lift": 0,
+          "attached": false,
+          "installed": false,
+          "hook": [
+            -25,
+            56,
+            -30
+          ]
+        },
+        "island": {
+          "position": [
+            -18,
+            5,
+            -110
+          ],
+          "attached": false,
+          "installed": false,
+          "hook": [
+            -18,
+            56,
+            -110
+          ]
+        },
+        "water": -13.7,
+        "gate": 0,
+        "ship": {
+          "x": 60,
+          "y": 0,
+          "z": -15,
+          "heading": 0
+        },
+        "location": "dock",
+        "towLines": false,
+        "mooring": false,
+        "speed": 0,
+        "hullCount": 0,
+        "deck": 0,
+        "fittings": 0,
+        "gangway": false,
+        "scaffold": false,
+        "workersAtSeam": false,
+        "dockMooring": false,
+        "delivered": false,
+        "shift": {
+          "name": "日班施工",
+          "mode": "work",
+          "work": true
+        }
+      },
+      "mode": "orbit",
+      "view": "overview",
+      "cutaway": false,
+      "follow": false,
+      "fps": 2,
+      "drawCalls": 157,
+      "triangles": 30160,
+      "voxel": 0.2,
+      "moduleCount": 1,
+      "walkPosition": [
+        -424.9999999999999,
+        355.0000000000001,
+        469.9999999999999
+      ],
+      "cameraTarget": [
+        -42.000000000000014,
+        2,
+        18.000000000000004
+      ],
+      "renderScale": 0.75,
+      "gpuName": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "softwareRenderer": true
+    },
+    {
+      "stage": 3,
+      "progress": 0.74,
+      "time": 10.524916666666677,
+      "elapsed": 1.4949999999999992,
+      "day": 1,
+      "auto": true,
+      "paused": true,
+      "waiting": false,
+      "world": {
+        "stage": 3,
+        "p": 0.74,
+        "module": {
+          "id": "B-07",
+          "target": [
+            49.2,
+            -1,
+            -30
+          ],
+          "position": [
+            24.714337733272615,
+            36,
+            -30
+          ],
+          "carrier": "龙门吊",
+          "operation": "大车就位 · 横梁移载",
+          "truck": [
+            -90,
+            4.6,
+            20
+          ],
+          "lift": 0,
+          "attached": true,
+          "installed": false,
+          "hook": [
+            24.714337733272615,
+            54,
+            -30
+          ]
+        },
+        "island": {
+          "position": [
+            -18,
+            5,
+            -110
+          ],
+          "attached": false,
+          "installed": false,
+          "hook": [
+            -18,
+            56,
+            -110
+          ]
+        },
+        "water": -13.7,
+        "gate": 0,
+        "ship": {
+          "x": 60,
+          "y": 0,
+          "z": -15,
+          "heading": 0
+        },
+        "location": "dock",
+        "towLines": false,
+        "mooring": false,
+        "speed": 0,
+        "hullCount": 14,
+        "deck": 0.12,
+        "fittings": 0,
+        "gangway": false,
+        "scaffold": true,
+        "workersAtSeam": false,
+        "dockMooring": false,
+        "delivered": false,
+        "shift": {
+          "name": "日班施工",
+          "mode": "work",
+          "work": true
+        }
+      },
+      "mode": "orbit",
+      "view": "overview",
+      "cutaway": false,
+      "follow": false,
+      "fps": 2,
+      "drawCalls": 194,
+      "triangles": 85160,
+      "voxel": 0.2,
+      "moduleCount": 1,
+      "walkPosition": [
+        -424.9999999999999,
+        355.0000000000001,
+        469.9999999999999
+      ],
+      "cameraTarget": [
+        -42.000000000000014,
+        2,
+        18.000000000000004
+      ],
+      "renderScale": 0.75,
+      "gpuName": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "softwareRenderer": true
+    },
+    {
+      "stage": 4,
+      "progress": 0.76,
+      "time": 10.524916666666677,
+      "elapsed": 1.4949999999999992,
+      "day": 1,
+      "auto": true,
+      "paused": true,
+      "waiting": false,
+      "world": {
+        "stage": 4,
+        "p": 0.76,
+        "module": {
+          "id": "B-07",
+          "target": [
+            49.2,
+            -1,
+            -30
+          ],
+          "position": [
+            49.2,
+            -1,
+            -30
+          ],
+          "carrier": "舰体支承",
+          "operation": "B-07 已合拢 · 结构继承",
+          "truck": [
+            -227,
+            4.6,
+            100
+          ],
+          "lift": 0,
+          "attached": false,
+          "installed": true,
+          "hook": [
+            -25,
+            56,
+            -30
+          ]
+        },
+        "island": {
+          "position": [
+            37.75785161583984,
+            29,
+            -40.302685480200196
+          ],
+          "attached": true,
+          "installed": false,
+          "hook": [
+            37.75785161583984,
+            58,
+            -40.302685480200196
+          ]
+        },
+        "water": -13.7,
+        "gate": 0,
+        "ship": {
+          "x": 60,
+          "y": 0,
+          "z": -15,
+          "heading": 0
+        },
+        "location": "dock",
+        "towLines": false,
+        "mooring": false,
+        "speed": 0,
+        "hullCount": 16,
+        "deck": 1,
+        "fittings": 0,
+        "gangway": false,
+        "scaffold": true,
+        "workersAtSeam": false,
+        "dockMooring": false,
+        "delivered": false,
+        "shift": {
+          "name": "日班施工",
+          "mode": "work",
+          "work": true
+        }
+      },
+      "mode": "orbit",
+      "view": "overview",
+      "cutaway": false,
+      "follow": false,
+      "fps": 2,
+      "drawCalls": 221,
+      "triangles": 89236,
+      "voxel": 0.2,
+      "moduleCount": 1,
+      "walkPosition": [
+        -424.9999999999999,
+        355.0000000000001,
+        469.9999999999999
+      ],
+      "cameraTarget": [
+        -42.000000000000014,
+        2,
+        18.000000000000004
+      ],
+      "renderScale": 0.75,
+      "gpuName": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "softwareRenderer": true
+    },
+    {
+      "stage": 5,
+      "progress": 0.37,
+      "time": 10.524916666666677,
+      "elapsed": 1.4949999999999992,
+      "day": 1,
+      "auto": true,
+      "paused": true,
+      "waiting": false,
+      "world": {
+        "stage": 5,
+        "p": 0.37,
+        "module": {
+          "id": "B-07",
+          "target": [
+            49.2,
+            -1,
+            -30
+          ],
+          "position": [
+            49.2,
+            -1,
+            -30
+          ],
+          "carrier": "舰体支承",
+          "operation": "B-07 已合拢 · 结构继承",
+          "truck": [
+            -227,
+            4.6,
+            100
+          ],
+          "lift": 0,
+          "attached": false,
+          "installed": true,
+          "hook": [
+            -25,
+            56,
+            -30
+          ]
+        },
+        "island": {
+          "position": [
+            82,
+            15.8,
+            15
+          ],
+          "attached": false,
+          "installed": true,
+          "hook": [
+            -18,
+            56,
+            -110
+          ]
+        },
+        "water": -1.0148148148148124,
+        "gate": 0,
+        "ship": {
+          "x": 60,
+          "y": 1.9851851851851876,
+          "z": -15,
+          "heading": 0
+        },
+        "location": "dock",
+        "towLines": false,
+        "mooring": false,
+        "speed": 0,
+        "hullCount": 16,
+        "deck": 1,
+        "fittings": 0,
+        "gangway": false,
+        "scaffold": false,
+        "workersAtSeam": false,
+        "dockMooring": false,
+        "delivered": false,
+        "shift": {
+          "name": "日班施工",
+          "mode": "work",
+          "work": true
+        }
+      },
+      "mode": "orbit",
+      "view": "overview",
+      "cutaway": false,
+      "follow": false,
+      "fps": 2,
+      "drawCalls": 223,
+      "triangles": 87150,
+      "voxel": 0.2,
+      "moduleCount": 1,
+      "walkPosition": [
+        -424.9999999999999,
+        355.0000000000001,
+        469.9999999999999
+      ],
+      "cameraTarget": [
+        -42.000000000000014,
+        2,
+        18.000000000000004
+      ],
+      "renderScale": 0.75,
+      "gpuName": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "softwareRenderer": true
+    },
+    {
+      "stage": 6,
+      "progress": 0.78,
+      "time": 10.524916666666677,
+      "elapsed": 1.4949999999999992,
+      "day": 1,
+      "auto": true,
+      "paused": true,
+      "waiting": false,
+      "world": {
+        "stage": 6,
+        "p": 0.78,
+        "module": {
+          "id": "B-07",
+          "target": [
+            49.2,
+            -1,
+            -30
+          ],
+          "position": [
+            49.2,
+            -1,
+            -30
+          ],
+          "carrier": "舰体支承",
+          "operation": "B-07 已合拢 · 结构继承",
+          "truck": [
+            -227,
+            4.6,
+            100
+          ],
+          "lift": 0,
+          "attached": false,
+          "installed": true,
+          "hook": [
+            -25,
+            56,
+            -30
+          ]
+        },
+        "island": {
+          "position": [
+            82,
+            15.8,
+            15
+          ],
+          "attached": false,
+          "installed": true,
+          "hook": [
+            -18,
+            56,
+            -110
+          ]
+        },
+        "water": 0,
+        "gate": 1,
+        "ship": {
+          "x": 220,
+          "y": 3,
+          "z": -35,
+          "heading": -3.141592653589793
+        },
+        "location": "berth",
+        "towLines": false,
+        "mooring": true,
+        "speed": 0,
+        "hullCount": 16,
+        "deck": 1,
+        "fittings": 0.78,
+        "gangway": true,
+        "scaffold": false,
+        "workersAtSeam": false,
+        "dockMooring": false,
+        "delivered": false,
+        "shift": {
+          "name": "日班施工",
+          "mode": "work",
+          "work": true
+        }
+      },
+      "mode": "orbit",
+      "view": "pier",
+      "cutaway": false,
+      "follow": false,
+      "fps": 6,
+      "drawCalls": 216,
+      "triangles": 91026,
+      "voxel": 0.2,
+      "moduleCount": 1,
+      "walkPosition": [
+        430,
+        160,
+        -254.99999999999997
+      ],
+      "cameraTarget": [
+        220,
+        8,
+        -35
+      ],
+      "renderScale": 0.75,
+      "gpuName": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "softwareRenderer": true
+    },
+    {
+      "stage": 7,
+      "progress": 0.48,
+      "time": 10.524916666666677,
+      "elapsed": 1.4949999999999992,
+      "day": 1,
+      "auto": true,
+      "paused": true,
+      "waiting": false,
+      "world": {
+        "stage": 7,
+        "p": 0.48,
+        "module": {
+          "id": "B-07",
+          "target": [
+            49.2,
+            -1,
+            -30
+          ],
+          "position": [
+            49.2,
+            -1,
+            -30
+          ],
+          "carrier": "舰体支承",
+          "operation": "B-07 已合拢 · 结构继承",
+          "truck": [
+            -227,
+            4.6,
+            100
+          ],
+          "lift": 0,
+          "attached": false,
+          "installed": true,
+          "hook": [
+            -25,
+            56,
+            -30
+          ]
+        },
+        "island": {
+          "position": [
+            82,
+            15.8,
+            15
+          ],
+          "attached": false,
+          "installed": true,
+          "hook": [
+            -18,
+            56,
+            -110
+          ]
+        },
+        "water": 0,
+        "gate": 1,
+        "ship": {
+          "x": -74.81481481481478,
+          "y": 3,
+          "z": -623.7037037037037,
+          "heading": 1.9399252401621523,
+          "pitch": -0.006421203282496812,
+          "roll": -1.5727412093168398e-18
+        },
+        "location": "sea",
+        "towLines": false,
+        "mooring": false,
+        "speed": 12.842406564993624,
+        "hullCount": 16,
+        "deck": 1,
+        "fittings": 1,
+        "gangway": false,
+        "scaffold": false,
+        "workersAtSeam": false,
+        "dockMooring": false,
+        "delivered": false,
+        "shift": {
+          "name": "日班施工",
+          "mode": "work",
+          "work": true
+        }
+      },
+      "mode": "orbit",
+      "view": "sea",
+      "cutaway": false,
+      "follow": false,
+      "fps": 7,
+      "drawCalls": 180,
+      "triangles": 89606,
+      "voxel": 0.2,
+      "moduleCount": 1,
+      "walkPosition": [
+        -284.8148148148149,
+        148.00000000000003,
+        -873.7037037037037
+      ],
+      "cameraTarget": [
+        -74.81481481481478,
+        11,
+        -623.7037037037037
+      ],
+      "renderScale": 0.75,
+      "gpuName": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "softwareRenderer": true
+    }
+  ],
+  "errors": []
+}

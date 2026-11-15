@@ -1,0 +1,12 @@
+{
+  "date": "2026-11-15",
+  "artifact": "钢潮入海.html",
+  "bytes": 807908,
+  "sha256": "ae0122c25d24186fc792c9df198a591c2c867605a6f8a5704fdabc3b82e477eb",
+  "engineTests": 23,
+  "browserChecks": 15,
+  "reviewRegressions": 4,
+  "externalAssets": [],
+  "sameAsDist": true,
+  "physicalExplorerDoubleClick": "unverified: Windows capture helper timed out"
+}

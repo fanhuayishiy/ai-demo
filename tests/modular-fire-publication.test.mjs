@@ -42,8 +42,10 @@ const basilicaPreview = 'sagrada-familia/index.html';
 const basilicaTitle = 'Sagrada Família · 圣家堂建造时间线';
 const townPreview = 'songfeng-town/dist/index.html';
 const townTitle = '松风镇 · 体素乡村漫步';
+const shipyardPreview = 'steel-tide-shipyard/dist/index.html';
+const shipyardTitle = '钢潮入海 · 航母建造体素船厂';
 // 新项目一律追加到末尾，所以这个列表只会在尾部增长。
-const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview, portPreview, keyboardPreview, rainPreview, basilicaPreview, townPreview];
+const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview, portPreview, keyboardPreview, rainPreview, basilicaPreview, townPreview, shipyardPreview];
 
 function* walk(node) {
   yield node;
@@ -72,9 +74,9 @@ test('collection appends new previews at the tail after the fourteen originals i
   assert.deepEqual(discoverPreviews(html), [...existingPreviews, ...appendedPreviews]);
 });
 
-test('homepage metadata advertises twenty-four runnable projects', () => {
+test('homepage metadata advertises twenty-five runnable projects', () => {
   const description = nodes.find(node => node.tagName === 'meta' && attribute(node, 'name') === 'description');
-  assert.match(attribute(description, 'content'), /24 个可运行项目/u);
+  assert.match(attribute(description, 'content'), /25 个可运行项目/u);
 });
 
 test('Roadster card presents an offline mini-game with preview and prompt links', () => {
@@ -108,22 +110,25 @@ test('FIRELINK card keeps its preview and reproduction prompt links', () => {
 test('the newest project sits last in the homepage grid without displacing its predecessor', () => {
   const cards = nodes.filter(node => hasClass(node, 'card'));
   const last = [...walk(cards.at(-1))];
-  assert.equal(text(last.find(node => node.tagName === 'h2')), townTitle);
-  assert.equal(coverHref(last), `./${townPreview}`);
+  assert.equal(text(last.find(node => node.tagName === 'h2')), shipyardTitle);
+  assert.equal(coverHref(last), `./${shipyardPreview}`);
 
   // 追加只能发生在末尾：上一个项目必须原封不动地留在倒数第二位。
   const previous = [...walk(cards.at(-2))];
-  assert.equal(text(previous.find(node => node.tagName === 'h2')), basilicaTitle);
-  assert.equal(coverHref(previous), `./${basilicaPreview}`);
-  const rain = [...walk(cards.at(-3))];
+  assert.equal(text(previous.find(node => node.tagName === 'h2')), townTitle);
+  assert.equal(coverHref(previous), `./${townPreview}`);
+  const basilica = [...walk(cards.at(-3))];
+  assert.equal(text(basilica.find(node => node.tagName === 'h2')), basilicaTitle);
+  assert.equal(coverHref(basilica), `./${basilicaPreview}`);
+  const rain = [...walk(cards.at(-4))];
   assert.equal(text(rain.find(node => node.tagName === 'h2')), rainTitle);
   assert.equal(coverHref(rain), `./${rainPreview}`);
-  const keyboard = [...walk(cards.at(-4))];
+  const keyboard = [...walk(cards.at(-5))];
   assert.equal(text(keyboard.find(node => node.tagName === 'h2')), keyboardTitle);
   assert.equal(coverHref(keyboard), `./${keyboardPreview}`);
 
   // 新卡片沿用全站统一的真实截图结构。
-  for (const [card, dir, label] of [[last, 'songfeng-town', '松风镇'], [previous, 'sagrada-familia', '圣家堂']]) {
+  for (const [card, dir, label] of [[last, 'steel-tide-shipyard', '钢潮入海'], [previous, 'songfeng-town', '松风镇'], [basilica, 'sagrada-familia', '圣家堂']]) {
   const shot = card.find(node => node.tagName === 'img' && hasClass(node, 'project-shot'));
   assert.equal(attribute(shot, 'src'), `./assets/project-thumbnails/${dir}.webp`);
   assert.equal(attribute(shot, 'width'), '640');
@@ -140,27 +145,43 @@ test('README lists the same projects in the same order, newest last', () => {
   const rows = readme.split(/\r?\n/u).filter(line => line.startsWith('|') && /\| [a-z][\w-]+ \|/u.test(line));
   const expectedProjects = [...existingPreviews, ...appendedPreviews].map(preview => preview.split('/')[0]);
   assert.deepEqual(rows.map(row => /\| ([a-z][\w-]+) \|/u.exec(row)[1]), expectedProjects);
-  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/songfeng-town/dist/)'));
-  assert.ok(rows.at(-1).includes('[README](./songfeng-town/README.md)'));
-  assert.ok(rows.at(-1).includes('./assets/project-thumbnails/songfeng-town.webp'));
-  assert.ok(rows.at(-2).includes('[在线](https://fanhuayishiy.github.io/ai-demo/sagrada-familia/)'));
-  assert.ok(rows.at(-2).includes('[README](./sagrada-familia/README.md)'));
-  assert.ok(rows.at(-2).includes('./assets/project-thumbnails/sagrada-familia.webp'));
-  assert.ok(rows.at(-3).includes('[在线](https://fanhuayishiy.github.io/ai-demo/cyber-rain-district/)'));
-  assert.ok(rows.at(-3).includes('[README](./cyber-rain-district/README.md)'));
-  assert.ok(rows.at(-3).includes('./assets/project-thumbnails/cyber-rain-district.webp'));
-  assert.ok(rows.at(-4).includes('[在线](https://fanhuayishiy.github.io/ai-demo/atelier-104/dist/)'));
-  assert.ok(rows.at(-4).includes('[README](./atelier-104/README.md)'));
+  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/steel-tide-shipyard/dist/)'));
+  assert.ok(rows.at(-1).includes('[README](./steel-tide-shipyard/README.md)'));
+  assert.ok(rows.at(-1).includes('./assets/project-thumbnails/steel-tide-shipyard.webp'));
+  assert.ok(rows.at(-2).includes('[在线](https://fanhuayishiy.github.io/ai-demo/songfeng-town/dist/)'));
+  assert.ok(rows.at(-2).includes('[README](./songfeng-town/README.md)'));
+  assert.ok(rows.at(-2).includes('./assets/project-thumbnails/songfeng-town.webp'));
+  assert.ok(rows.at(-3).includes('[在线](https://fanhuayishiy.github.io/ai-demo/sagrada-familia/)'));
+  assert.ok(rows.at(-3).includes('[README](./sagrada-familia/README.md)'));
+  assert.ok(rows.at(-3).includes('./assets/project-thumbnails/sagrada-familia.webp'));
+  assert.ok(rows.at(-4).includes('[在线](https://fanhuayishiy.github.io/ai-demo/cyber-rain-district/)'));
+  assert.ok(rows.at(-4).includes('[README](./cyber-rain-district/README.md)'));
+  assert.ok(rows.at(-4).includes('./assets/project-thumbnails/cyber-rain-district.webp'));
+  assert.ok(rows.at(-5).includes('[在线](https://fanhuayishiy.github.io/ai-demo/atelier-104/dist/)'));
+  assert.ok(rows.at(-5).includes('[README](./atelier-104/README.md)'));
 });
 
 test('README puts the newest overview immediately before the contribution instructions', () => {
   const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
   const contributionIndex = headings.indexOf('## 新增项目');
   assert.ok(contributionIndex > 0);
-  assert.ok(headings[contributionIndex - 1].startsWith('## songfeng-town '));
-  assert.ok(headings[contributionIndex - 2].startsWith('## sagrada-familia '));
-  const overviewStart = readme.indexOf('## songfeng-town ');
+  assert.ok(headings[contributionIndex - 1].startsWith('## steel-tide-shipyard '));
+  assert.ok(headings[contributionIndex - 2].startsWith('## songfeng-town '));
+  assert.ok(headings[contributionIndex - 3].startsWith('## sagrada-familia '));
+  const overviewStart = readme.indexOf('## steel-tide-shipyard ');
   const overview = readme.slice(overviewStart, readme.indexOf('## 新增项目', overviewStart));
+  for (const concept of ['B-07', '注水出坞', '昼夜循环', '离线']) assert.ok(overview.includes(concept));
+  assert.ok(overview.includes('[在线预览](https://fanhuayishiy.github.io/ai-demo/steel-tide-shipyard/dist/)'));
+  assert.ok(overview.includes('[README（含主生成提示原文）](./steel-tide-shipyard/README.md)'));
+});
+
+test('README retains the town overview directly before the shipyard', () => {
+  const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
+  const townIndex = headings.findIndex(heading => heading.startsWith('## songfeng-town '));
+  assert.ok(headings[townIndex + 1].startsWith('## steel-tide-shipyard '));
+  assert.ok(headings[townIndex - 1].startsWith('## sagrada-familia '));
+  const overviewStart = readme.indexOf('## songfeng-town ');
+  const overview = readme.slice(overviewStart, readme.indexOf('## steel-tide-shipyard ', overviewStart));
   assert.match(overview, /WASD/u);
   assert.match(overview, /按 E 互动/u);
   assert.match(overview, /模型全部程序生成/u);

@@ -38,6 +38,7 @@ AI 辅助生成的交互式前端作品合集，包含三维场景、数字孪�
 | <a href="./assets/project-thumbnails/cyber-rain-district.webp"><img src="./assets/project-thumbnails/cyber-rain-district.webp" width="160" height="90" alt="雨港 · 霓虹夜"></a> | cyber-rain-district | 单文件三维雨夜街区，霓虹在湿地与玻璃中映光，斜雨和薄雾构成夜间氛围。 | [在线](https://fanhuayishiy.github.io/ai-demo/cyber-rain-district/) | [README](./cyber-rain-district/README.md) |
 | <a href="./assets/project-thumbnails/sagrada-familia.webp"><img src="./assets/project-thumbnails/sagrada-familia.webp" width="160" height="90" alt="Sagrada Família · 圣家堂建造时间线"></a> | sagrada-familia | 默认蓝调夜景的圣家堂三维展示，支持 1882—2026 年建造时间线、18 塔规划全貌与环绕探索。 | [在线](https://fanhuayishiy.github.io/ai-demo/sagrada-familia/) | [README](./sagrada-familia/README.md) |
 | <a href="./assets/project-thumbnails/songfeng-town.webp"><img src="./assets/project-thumbnails/songfeng-town.webp" width="160" height="90" alt="松风镇 · 体素乡村漫步"></a> | songfeng-town | 暖色体素小镇，沿路探索小屋、菜园与树林，和村民聊天、采摘胡萝卜并穿过木桥 | [在线](https://fanhuayishiy.github.io/ai-demo/songfeng-town/dist/) | [README](./songfeng-town/README.md) |
+| <a href="./assets/project-thumbnails/steel-tide-shipyard.webp"><img src="./assets/project-thumbnails/steel-tide-shipyard.webp" width="160" height="90" alt="钢潮入海 · 航母建造体素船厂"></a> | steel-tide-shipyard | 同一艘航母从钢板到海试交付，八阶段建造、分段转运吊装、独立昼夜作息与近景游览。 | [在线](https://fanhuayishiy.github.io/ai-demo/steel-tide-shipyard/dist/) | [README](./steel-tide-shipyard/README.md) |
 
 ## 本地运行
 
@@ -196,6 +197,12 @@ Blender 程序化建模的双极空气开关，提供工程动画、可编辑模
 在斜俯视的松风镇里慢慢散步，探索三栋彩色小屋、中央广场、菜园和河对岸的树林。WASD 或方向键移动，靠近村民、告示牌与成熟作物按 E 互动，支持碰撞、平滑跟随镜头及轻微环境动画；模型全部程序生成。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/songfeng-town/dist/) · [README（含主生成提示原文）](./songfeng-town/README.md)
+
+## steel-tide-shipyard — 钢潮入海 · 航母建造体素船厂
+
+在临海船厂中跟随 B-07 分段经历组立、运输与吊装，观察航母合拢、注水出坞、码头舾装和海试返港。支持工程跳转、昼夜循环、步道游览与局部剖视，并附可离线打开的单文件版本。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/steel-tide-shipyard/dist/) · [README（含主生成提示原文）](./steel-tide-shipyard/README.md)
 
 ---
 

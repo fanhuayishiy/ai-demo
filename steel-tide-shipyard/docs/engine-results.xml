@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="八阶段可重建，主线分段编号与目标位置不变" time="0.002835" classname="test"/>
+	<testcase name="分段从支墩交给转运车，再交给接驳支座和吊机" time="0.000618" classname="test"/>
+	<testcase name="分段全流程没有位置跳跃，起吊全程挂索，落稳后解钩" time="0.006740" classname="test"/>
+	<testcase name="未落稳时装配工留在警戒线外" time="0.000182" classname="test"/>
+	<testcase name="挂索和解钩两端的吊具也连续，起升后吊具高于吊点" time="0.003935" classname="test"/>
+	<testcase name="坞门仅在水位齐平且舰体起浮后打开，出坞时始终挂拖缆" time="0.002250" classname="test"/>
+	<testcase name="完整移泊落在码头且系缆，跳回早期恢复干坞与关闭坞门" time="0.000255" classname="test"/>
+	<testcase name="岛体重吊连续，承重期间不解钩" time="0.000249" classname="test"/>
+	<testcase name="暂停冻结工程、时钟和动画累计时间，允许手动定位" time="0.000676" classname="test"/>
+	<testcase name="工程播放不依赖日内时钟自动推进" time="0.000374" classname="test"/>
+	<testcase name="夜间跳时把悬吊分段放回接驳支座，次日从该节点复工" time="0.000264" classname="test"/>
+	<testcase name="夜间跳时在途拖带抵达系泊节点，坞门水位舰位一致" time="0.000120" classname="test"/>
+	<testcase name="钢板吊运跳到夜间后落在切割台，空吊具撤回" time="0.000080" classname="test"/>
+	<testcase name="海试转向连续，离泊先低速倒出，回港面向泊位" time="0.004798" classname="test"/>
+	<testcase name="17点停止新任务，当前任务完成后停车；次日继续" time="0.000334" classname="test"/>
+	<testcase name="连续出坞任务在余下窗口不足时等待，次日开工" time="0.000109" classname="test"/>
+	<testcase name="顺播八阶段一次，最终交付返港；暂停后的重播必须显式触发" time="0.000317" classname="test"/>
+	<testcase name="24 小时跨日不重置已经建造的结构，次日准备期不派发任务" time="0.000105" classname="test"/>
+	<testcase name="起浮后夜间安全节点保留等水位、闭门和坞内系固" time="0.000113" classname="test"/>
+	<testcase name="手动选择的悬吊快照自动跨过 19 点，也要回到安全支座" time="0.000087" classname="test"/>
+	<testcase name="正起吊时手动跳到早班准备，不在 08 点以前继续吊装" time="0.000085" classname="test"/>
+	<testcase name="舰岛在 7.2 米支座上待吊，吊具和岛体全程连续" time="0.003417" classname="test"/>
+	<testcase name="两座升降平台均从甲板出发并回平，试验中有下降行程" time="0.000356" classname="test"/>
+	<!-- tests 23 -->
+	<!-- suites 0 -->
+	<!-- pass 23 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 155.9618 -->
+</testsuites>

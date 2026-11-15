@@ -1,0 +1,1 @@
+{"name":"steel-tide-shipyard","version":"1.0.0","private":true,"type":"module","description":"钢潮入海 · 可离线运行的体素船厂","scripts":{"dev":"node scripts/dev.mjs","build":"node scripts/build.mjs","test":"node --test tests/engine.test.mjs"},"dependencies":{"three":"0.180.0"},"devDependencies":{"esbuild":"0.25.12"}}

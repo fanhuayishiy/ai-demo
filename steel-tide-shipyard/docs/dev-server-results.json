@@ -1,0 +1,7 @@
+{
+  "date": "2026-11-15",
+  "status": 200,
+  "bytes": 807908,
+  "artifactSha256": "ae0122c25d24186fc792c9df198a591c2c867605a6f8a5704fdabc3b82e477eb",
+  "note": "以 PORT=5174 启动同一 dev.mjs，读取页面与离线 HTML 逐字节一致；测试结束后关闭子进程"
+}

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="一艘航母，一座船厂。从第一块钢板到第一次入海，可交互的三维体素建造纪事。">
+  <meta name="theme-color" content="#e7eeeb"><title>钢潮入海 · 一座船厂的建造纪事</title>
+  <!-- STYLES -->
+</head>
+<body>
+  <main id="world" aria-label="可交互的三维体素船厂"></main>
+  <div id="loading"><div class="loading-mark">钢潮入海</div><p>正在打开海岬船厂</p><span></span></div>
+  <header class="masthead panel">
+    <div class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><b></b></div>
+    <div><div class="eyebrow">HAIJIAO SHIPYARD · VOXEL CHRONICLE</div><h1>钢潮入海<span>一座船厂的建造纪事</span></h1></div>
+    <button id="help-toggle" class="icon-button" title="操作帮助 H" aria-label="打开操作帮助">?</button>
+  </header>
+  <div class="world-status"><span class="live-dot"></span><span id="shift-label">日班施工</span><i></i><span id="world-label">01 号船坞</span></div>
+  <section class="clock-panel panel" aria-label="独立的日内时钟">
+    <div class="clock-head"><span class="sun-icon" id="day-icon">☀</span><span class="clock-number" id="clock-text">10:30</span><span id="day-text">第 01 日</span><button id="pause" class="icon-button pause-button" title="暂停全部时间与动画 · 空格" aria-label="暂停全部">Ⅱ</button></div>
+    <label class="sr-only" for="daytime">日内时刻</label><input id="daytime" type="range" min="0" max="23.99" step=".01" value="10.5" aria-label="日内时刻">
+    <div class="clock-scale"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
+    <div class="clock-foot"><label><input id="clock-auto" type="checkbox" checked><span>昼夜循环</span></label><label>日速 <select id="clock-speed" aria-label="日内时钟倍速"><option value="1">1×</option><option value="8">8×</option><option value="32">32×</option><option value="96">96×</option></select></label></div>
+  </section>
+  <aside class="story panel" id="story">
+    <div class="story-top"><span class="eyebrow">建造手记 <b id="story-index">04 / 08</b></span><button id="story-toggle" class="icon-button" title="收起建造手记" aria-label="收起建造手记">−</button></div>
+    <div class="story-body"><h2 id="story-title">每一块，都有归处</h2><p id="story-detail"></p><div class="route-label"><span>工程路线</span><p id="story-route"></p></div><div class="ship-spec"><span>沧澜舰 <b>CV–08</b></span><span>常规动力 · 原创平甲板</span></div></div>
+  </aside>
+  <aside class="tracking panel" aria-label="主线分段">
+    <div class="tracking-top"><span class="module-tag">B–07</span><div><strong>一块钢板的旅程</strong><small id="carrier-text">当前承载：转运车</small></div><button id="follow" class="icon-button" title="跟随主线分段 F" aria-label="跟随 B-07 分段"><span data-icon="focus"></span></button></div>
+    <p id="operation-text">重载道运输 · 转弯减速</p><div class="chain"><span>放样</span><i></i><span>配套</span><i></i><span>组立</span><i></i><span>转运</span><i></i><span>合拢</span></div>
+  </aside>
+  <nav class="viewpoints panel" aria-label="快捷视点">
+    <div class="nav-caption">观察位置</div>
+    <button data-view="overview" class="active"><span data-icon="overview"></span><span>船厂总览</span><kbd>1</kbd></button>
+    <button data-view="workshop"><span data-icon="factory"></span><span>车间近看</span><kbd>2</kbd></button>
+    <button data-view="dock"><span data-icon="anchor"></span><span>坞壁平台</span><kbd>3</kbd></button>
+    <button data-view="gate"><span data-icon="gate"></span><span>坞口观潮</span><kbd>4</kbd></button>
+    <button data-view="pier"><span data-icon="ship"></span><span>舾装码头</span><kbd>5</kbd></button>
+    <button data-view="sea"><span data-icon="waves"></span><span>近海随航</span><kbd>6</kbd></button>
+  </nav>
+  <div class="view-tools panel"><button id="walk" title="切换地面步行 G"><span data-icon="walk"></span><span>地面游览</span></button><i></i><button id="cutaway" title="开合局部剖视 C" aria-pressed="false"><span data-icon="layers"></span><span>局部剖视</span></button><i></i><button id="deck" title="系泊后经舷梯进入甲板"><span data-icon="stairs"></span><span>登舰观察</span></button></div>
+  <div id="selection" class="selection panel" hidden><button id="selection-close" class="icon-button" aria-label="关闭构件信息">×</button><div class="eyebrow" id="selected-id"></div><strong id="selected-name"></strong><p id="selected-process"></p></div>
+  <div id="walk-hint" hidden>W A S D 行走 <span>·</span> 拖动转向 <span>·</span> Shift 加速 <span>·</span> G 返回全景</div>
+  <div id="scene-labels" aria-hidden="true"></div>
+  <div class="scene-meta"><span class="compass"><b>N</b><i>↑</i></span><span>海岬船厂 <b>·</b> 0.2 m / voxel<br><small>原创工程叙事 · 工艺过程示意</small></span></div>
+  <div id="toast" role="status"></div>
+  <section class="timeline panel" aria-label="工程时间轴">
+    <div class="timeline-head"><div class="timeline-title"><span class="eyebrow">工程时间轴</span><strong id="stage-title">干船坞合拢</strong><span id="progress-text">04 / 08</span></div><div class="timeline-controls"><button id="replay" title="从当前工序起点重新播放"><span data-icon="replay"></span><span>工序重播</span></button><label>工速 <select id="build-speed" aria-label="工程倍速"><option value="1">1×</option><option value="4">4×</option><option value="12">12×</option></select></label><button id="autoplay" class="primary" aria-pressed="true"><span data-icon="pause"></span><span>工程顺播中</span></button></div></div>
+    <div id="stage-buttons" class="stage-buttons"></div>
+    <div class="stage-scrub"><span id="stage-percent">22%</span><input id="progress" type="range" min="0" max="1" step=".001" value=".22" aria-label="当前工序进度"><span id="task-caption">转运 → 起吊 → 合拢</span></div>
+  </section>
+  <dialog id="help"><button class="dialog-close icon-button" id="help-close" aria-label="关闭帮助">×</button><div class="eyebrow">A YARD YOU CAN WALK THROUGH</div><h2>慢一点，看钢铁入海。</h2><p>工程进度与一天的时间彼此独立。点选底部阶段回看历史，拖动工序进度查看交接瞬间。</p><div class="help-grid"><span>旋转 / 平移 / 缩放</span><strong>左拖 / 右拖 / 滚轮</strong><span>全局暂停 / 继续</span><strong>空格</strong><span>地面步行 / 返回全景</span><strong>G · W A S D · Shift</strong><span>局部剖视 / 跟随 B-07</span><strong>C / F</strong><span>快捷观察位置</span><strong>数字 1 — 6</strong></div><p class="help-note">06:30 准备 · 08:00 开工 · 17:00 收尾 · 19:00 值守。连续出坞、海试会等待足够的作业窗口。手动跳至夜间时，货物和舰体恢复到安全支承或系泊节点。</p><button id="restart" class="primary">从第一块钢板开始</button><p class="help-note">沧澜舰为虚构设计。本作品展示简化的工艺关系，不是造船施工或流体力学仿真。</p></dialog>
+  <noscript>请使用支持 JavaScript 和 WebGL 2 的浏览器打开《钢潮入海》。</noscript>
+  <!-- SCRIPT -->
+</body></html>

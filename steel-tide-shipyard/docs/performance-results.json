@@ -1,0 +1,60 @@
+{
+  "date": "2026-11-15",
+  "artifactSha256": "ae0122c25d24186fc792c9df198a591c2c867605a6f8a5704fdabc3b82e477eb",
+  "browser": "157.0.8103.52",
+  "gpuName": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 (0x00002882) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "softwareRenderer": false,
+  "samples": [
+    {
+      "fps": 60,
+      "drawCalls": 185,
+      "triangles": 77884,
+      "stage": 3,
+      "progress": 0.2820939024390263,
+      "renderScale": 1
+    },
+    {
+      "fps": 60,
+      "drawCalls": 185,
+      "triangles": 77884,
+      "stage": 3,
+      "progress": 0.2957329268292707,
+      "renderScale": 1
+    },
+    {
+      "fps": 60,
+      "drawCalls": 185,
+      "triangles": 77884,
+      "stage": 3,
+      "progress": 0.3093695121951249,
+      "renderScale": 1
+    },
+    {
+      "fps": 60,
+      "drawCalls": 185,
+      "triangles": 77884,
+      "stage": 3,
+      "progress": 0.3229219512195156,
+      "renderScale": 1
+    },
+    {
+      "fps": 60,
+      "drawCalls": 185,
+      "triangles": 77884,
+      "stage": 3,
+      "progress": 0.3365585365853697,
+      "renderScale": 1
+    },
+    {
+      "fps": 60,
+      "drawCalls": 187,
+      "triangles": 81508,
+      "stage": 3,
+      "progress": 0.3501963414634189,
+      "renderScale": 1
+    }
+  ],
+  "errors": [],
+  "viewport": "1440x960",
+  "mode": "Chrome headless / ANGLE D3D11 / offline file://"
+}
