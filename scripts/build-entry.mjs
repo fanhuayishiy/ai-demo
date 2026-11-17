@@ -36,15 +36,17 @@ export async function buildEntry({sourceDir, template}) {
     if (!occurrences && !/\/\*\s*AI_DEMO_[A-Z_]+\s*\*\//u.test(template)) return template;
     throw new Error('Shared entry must have exactly one runtime placeholder and no unresolved placeholders');
   }
-  const [modules, canvasLibrary, qrLibrary, licenses] = await Promise.all([
+  const [modules, canvasLibrary, qrLibrary, licenses, communityQr] = await Promise.all([
     Promise.all(helpers.map(([name, file]) => scopedHelper(sourceDir, name, file))),
     inlineLibrary(sourceDir, 'html2canvas', 'dist/html2canvas.min.js', '1.4.1'),
     inlineLibrary(sourceDir, 'qrcode-generator', 'qrcode.js', '1.4.4'),
     readFile(path.join(sourceDir, 'shared', 'THIRD_PARTY.md'), 'utf8'),
+    readFile(path.join(sourceDir, 'assets', 'community', 'fenghua-ai-lab-wechat.jpg')),
   ]);
   const runtime = `/*\n${licenses.replace(/\*\//gu, '* /')}\n*/\n${modules.join('\n')}\nlet shareLibraries;\nfunction getShareLibraries() {\n`
     + `if (!shareLibraries) shareLibraries = {html2canvas:${canvasLibrary},qrcode:${qrLibrary}};\n`
-    + 'return shareLibraries;\n}';
+    + 'return shareLibraries;\n}'
+    + `\nconst communityQrData = ${JSON.stringify('data:image/jpeg;base64,' + communityQr.toString('base64'))};`;
   // Validate our restricted module assembly before touching a staged page.
   new Script(runtime, {filename:'ai-demo-shared-runtime.js'});
   const result = template.replace(marker, () => safeScript(runtime));

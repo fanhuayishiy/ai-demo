@@ -276,7 +276,7 @@ test('missing inline sharing dependencies fail before any staging files are copi
 test('the real shared template and pinned libraries are inlined into a newly discovered project', async t => {
   const {sourceDir,outputDir,put} = await fixture(t, ['./future-sixteenth/dist/index.html']);
   await put('future-sixteenth/dist/index.html', preview);
-  const files = ['shared/github-entry.html', 'shared/THIRD_PARTY.md', ...['share-card','share-capture','share-clipboard','share-ui','pageviews'].map(name => `shared/${name}.mjs`),
+  const files = ['shared/github-entry.html', 'shared/THIRD_PARTY.md', 'assets/community/fenghua-ai-lab-wechat.jpg', ...['share-card','share-capture','share-clipboard','share-ui','pageviews'].map(name => `shared/${name}.mjs`),
     'node_modules/html2canvas/package.json', 'node_modules/html2canvas/dist/html2canvas.min.js',
     'node_modules/qrcode-generator/package.json', 'node_modules/qrcode-generator/qrcode.js'];
   for (const file of files) await put(file, await readFile(new URL('../' + file, import.meta.url)));

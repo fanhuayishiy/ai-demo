@@ -63,9 +63,19 @@
           background: #2d3a40; color: #f7fafb; text-decoration: none; cursor: pointer; font: inherit; }
         .share-actions button:hover, .share-actions a:hover { background: #3c4b52; }
         dialog .privacy { color: #bdcbd0; font-size: 12px; margin-top: 16px; }
+        .entry .community-trigger { display: inline-flex; gap: 6px; width: auto; padding: 0 12px;
+          color: #c8ecd9; font: 600 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif; }
+        .community-dialog { width: min(400px, calc(100vw - 32px)); text-align: center; }
+        .community-dialog h2 { margin: 0 32px 12px; font-size: 24px; }
+        .community-eyebrow { color: #a7d8bf; font-size: 11px; letter-spacing: .12em; }
+        .community-intro, .community-hint { color: #bdcbd0; }
+        .community-qrcode { display: block; width: min(258px, 100%); height: auto; margin: 20px auto;
+          background: white; border-radius: 8px; }
+        .community-dialog .share-actions { justify-content: center; }
         @media (max-width: 600px) {
           .entry a { width: 44px; justify-content: center; padding: 0; }
           .label { display: none; }
+          .entry .community-trigger { width: 44px; justify-content: center; padding: 0; }
         }
         @media print { :host { display: none !important; } }
       </style>
@@ -80,6 +90,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-2a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
           <span class="pageview-count"></span>
         </span>
+        <button type="button" class="community-trigger" data-action="community" aria-label="关注微信公众号：风花AI实验室" aria-haspopup="dialog" aria-controls="community-dialog" title="公众号 · 风花AI实验室">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3C4.6 3 1 5.9 1 9.5c0 2 1.1 3.8 2.8 5l-.7 2.6 3-1.5c.9.3 1.9.4 2.9.4h.7a6.6 6.6 0 0 1-.5-2.5C9.2 9.9 12.6 7 16.8 7h.6C16.2 4.7 12.9 3 9 3zm-3 4a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm6 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm4.8 1.5c-3.5 0-6.3 2.2-6.3 5s2.8 5 6.3 5c.8 0 1.6-.1 2.3-.4l2.4 1.3-.5-2.1c1.3-.9 2-2.3 2-3.8 0-2.8-2.8-5-6.2-5zm-2 2.5a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6zm4.2 0a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6z"/></svg>
+          <span class="label">公众号</span>
+        </button>
         <button type="button" data-action="share" aria-label="分享当前预览（截图与二维码）" title="分享：截图与当前页面二维码">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16a3 3 0 0 0-2.4 1.2l-7-4.1a3.1 3.1 0 0 0 0-2.2l7-4.1A3 3 0 1 0 15 5c0 .2 0 .4.1.6l-7 4.1a3 3 0 1 0 0 4.6l7 4.1A3 3 0 1 0 18 16z"/></svg>
         </button>
@@ -97,7 +111,35 @@
           <button type="button" data-action="capture-tab" hidden>选择当前标签页截图</button>
         </div>
         <p class="privacy">截图和二维码仅在本机生成，不会上传。二维码包含当前完整网址，请勿分享敏感链接。<br>本页访问量由不蒜子提供，会接收 IP 和无参数的页面地址；开启隐私偏好或带查询参数时不统计。</p>
+      </dialog>
+      <dialog class="community-dialog" id="community-dialog" aria-labelledby="community-heading" aria-describedby="community-intro" aria-modal="true">
+        <button class="close-dialog" data-action="close-community" type="button" aria-label="关闭公众号窗口">×</button>
+        <p class="community-eyebrow">FENGHUA AI LAB / WECHAT</p>
+        <h2 id="community-heading">风花AI实验室</h2>
+        <p class="community-intro" id="community-intro">关注公众号「风花AI实验室」，一起探索 AI 创作、实用工具与有趣实验。获取项目更新与制作分享。</p>
+        <img class="community-qrcode" width="258" height="258" alt="风花AI实验室微信公众号二维码">
+        <p class="community-hint">微信扫码关注，或保存二维码后在微信中识别。</p>
+        <div class="share-actions"><a data-action="save-community" download="fenghua-ai-lab-wechat.jpg">保存公众号二维码 ↓</a></div>
       </dialog>`;
+    const community = shadow.querySelector('.community-dialog');
+    const communityTrigger = shadow.querySelector('[data-action="community"]');
+    communityTrigger.addEventListener('click', () => {
+      shadow.querySelector('.community-qrcode').src = communityQrData;
+      shadow.querySelector('[data-action="save-community"]').href = communityQrData;
+      if (community.showModal) community.showModal();
+      else community.setAttribute('open', '');
+    });
+    const closeCommunity = () => {
+      if (community.close) community.close();
+      else community.removeAttribute('open');
+      communityTrigger.focus();
+    };
+    shadow.querySelector('[data-action="close-community"]').addEventListener('click', closeCommunity);
+    community.addEventListener('cancel', event => { event.preventDefault(); closeCommunity(); });
+    community.addEventListener('click', event => {
+      const box = community.getBoundingClientRect();
+      if (event.target === community && (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom)) closeCommunity();
+    });
     // Only events originating in this entry are stopped; the scene stays interactive.
     for (const event of ['pointerdown', 'pointerup', 'click', 'dblclick', 'wheel', 'keydown', 'keyup']) {
       host.addEventListener(event, e => e.stopPropagation());

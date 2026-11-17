@@ -74,13 +74,13 @@ for (const [name, body] of [
 
 test('patches a head CSP without changing the body CSP in the same document', () => {
   const html = `<!doctype html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'"></head><body>${bodyCsp}</body>`;
-  const expected = `<!doctype html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${provider}; frame-src 'self'; media-src blob:"></head><body>${bodyCsp}</body>`;
+  const expected = `<!doctype html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${provider}; frame-src 'self'; media-src blob:; img-src data:"></head><body>${bodyCsp}</body>`;
   assert.equal(patch(html), expected);
 });
 
 test('patches an enforcing CSP in an implicit head without adding head markup', () => {
   const html = '<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;"><main>Keep</main>';
-  const expected = `<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${provider}; frame-src 'self'; media-src blob:"><main>Keep</main>`;
+  const expected = `<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${provider}; frame-src 'self'; media-src blob:; img-src data:"><main>Keep</main>`;
   assert.equal(patch(html), expected);
 });
 
@@ -148,7 +148,7 @@ test('already patched CSP is byte-for-byte idempotent', () => {
 });
 
 test('does not duplicate preexisting allowed sources', () => {
-  const original = page(`default-src 'none'; script-src ${provider}; script-src-elem ${provider}; frame-src 'self'; media-src blob:`);
+  const original = page(`default-src 'none'; script-src ${provider}; script-src-elem ${provider}; frame-src 'self'; media-src blob:; img-src data:`);
   assert.equal(patch(original), original);
 });
 
@@ -165,7 +165,7 @@ test('patches every actual enforcing CSP meta independently', () => {
 
 test('supports case-insensitive attributes and directive names without reserializing the page', () => {
   const html = `<HTML><HEAD><META DATA-x='keep' CONTENT = "DeFaUlT-SrC 'none'; SCRIPT-SRC 'unsafe-inline'" HTTP-EQUIV='content-security-policy'></HEAD><BODY>Keep\r\n</BODY></HTML>`;
-  const expected = `<HTML><HEAD><META DATA-x='keep' CONTENT = "DeFaUlT-SrC 'none'; SCRIPT-SRC 'unsafe-inline' ${provider}; frame-src 'self'; media-src blob:" HTTP-EQUIV='content-security-policy'></HEAD><BODY>Keep\r\n</BODY></HTML>`;
+  const expected = `<HTML><HEAD><META DATA-x='keep' CONTENT = "DeFaUlT-SrC 'none'; SCRIPT-SRC 'unsafe-inline' ${provider}; frame-src 'self'; media-src blob:; img-src data:" HTTP-EQUIV='content-security-policy'></HEAD><BODY>Keep\r\n</BODY></HTML>`;
   assert.equal(patch(html), expected);
 });
 
@@ -201,4 +201,14 @@ test('duplicate directives retain first-wins semantics and ignored duplicates re
   assert.deepEqual(result.get('frame-src'), ["'self'"]);
   assert.ok(output.includes('; script-src https://ignored.example.test;'));
   assert.ok(output.includes('; frame-src https://ignored-frame.example.test;'));
+});
+
+
+test('permits the embedded official account image under an explicit image restriction', () => {
+  const original = page("default-src 'none'; img-src 'none'; connect-src 'none'");
+  const policy = directives(contents(patch(original))[0]);
+  assert.deepEqual(policy.get('img-src'), ['data:']);
+  assert.deepEqual(policy.get('connect-src'), ["'none'"]);
+  assert.deepEqual(policy.get('default-src'), ["'none'"]);
+  assert.equal(patch(patch(original)), patch(original));
 });

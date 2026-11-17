@@ -139,3 +139,35 @@ test('measured placement respects device safe-area edges', async () => {
     assert.ok(y >= 44 && y + 46 <= 768 - 34);
   } finally { dom.window.close(); }
 });
+
+
+test('official account dialog works on nested previews and saves the exact original QR image', async () => {
+  const dom = await mount();
+  try {
+    const shadow = dom.window.document.querySelector('ai-demo-github').shadowRoot;
+    const trigger = shadow.querySelector('[data-action="community"]');
+    const dialog = shadow.querySelector('.community-dialog');
+    const image = shadow.querySelector('.community-qrcode');
+    const save = shadow.querySelector('[data-action="save-community"]');
+    assert.equal(dialog.hasAttribute('open'), false, 'promotion must not open on entry');
+    assert.equal(trigger.getAttribute('aria-controls'), dialog.id);
+    trigger.click();
+    assert.equal(dialog.hasAttribute('open'), true);
+    assert.match(dialog.textContent, /风花AI实验室/);
+    assert.match(image.src, /^data:image\/jpeg;base64,/);
+    const original = readFileSync(new URL('../assets/community/fenghua-ai-lab-wechat.jpg', import.meta.url));
+    assert.deepEqual(Buffer.from(image.src.split(',')[1], 'base64'), original);
+    assert.equal(save.href, image.src);
+    assert.equal(save.download, 'fenghua-ai-lab-wechat.jpg');
+    assert.equal(shadow.querySelector('dialog[aria-labelledby="share-heading"]').open, false);
+    shadow.querySelector('[data-action="close-community"]').click();
+    assert.equal(dialog.hasAttribute('open'), false);
+    assert.equal(shadow.activeElement, trigger);
+    trigger.click();
+    dialog.dispatchEvent(new dom.window.Event('cancel', {cancelable:true}));
+    assert.equal(dialog.hasAttribute('open'), false, 'Escape closes only the official account dialog');
+    trigger.click();
+    dialog.dispatchEvent(new dom.window.MouseEvent('click', {clientX:-1,clientY:-1,bubbles:true}));
+    assert.equal(dialog.hasAttribute('open'), false, 'backdrop closes the dialog');
+  } finally {dom.window.close();}
+});

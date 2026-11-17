@@ -107,3 +107,9 @@ python -m http.server 5185 --directory _site
 `_site` 是临时发布目录，不提交。脚本拒绝覆盖已有非空目录；重新打包时先将上一次 `_site` 移出仓库保存或明确清理它，再执行构建。GitHub Actions 每次使用干净检出，无需这一步。组件修改随下一次成功发布同步到全部已列出的项目。
 
 若运行环境禁止 Node 测试子进程，可改用 `node --test --experimental-test-isolation=none tests/*.test.mjs`。依赖版本及许可证见 [`shared/THIRD_PARTY.md`](../shared/THIRD_PARTY.md)。
+
+### 微信公众号入口
+
+README 与所有正式预览统一展示「风花AI实验室」微信公众号，二维码原图位于 `assets/community/fenghua-ai-lab-wechat.jpg`，复用自 `ai-crew-pass`。共享入口的「公众号」按钮打开独立弹窗，可扫码、保存原图，支持关闭按钮、Esc 和点击遮罩关闭。弹窗不会自动出现。
+
+`build-entry.mjs` 在打包时内嵌二维码原图，深层项目地址、本地 HTTP 预览均无需另拼图片路径或请求外部图片。分享功能继续生成当前页面网址的二维码。更新公众号二维码时替换这张图片并重新执行 `npm test` 与 `npm run build:pages`。

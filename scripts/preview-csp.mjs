@@ -53,6 +53,7 @@ function extendPolicy(policy) {
   permit('script-src-elem', provider);
   permit('frame-src', "'self'", ['child-src', 'default-src']);
   permit('media-src', 'blob:', ['default-src']);
+  permit('img-src', 'data:', ['default-src']);
   const amended = segments.join(';');
   if (!additions.length) return amended;
   const separator = /;[\t\n\f\r ]*$/u.test(amended) ? ' ' : '; ';
