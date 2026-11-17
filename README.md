@@ -40,6 +40,7 @@ AI 辅助生成的交互式前端作品合集，包含三维场景、数字孪�
 | <a href="./assets/project-thumbnails/songfeng-town.webp"><img src="./assets/project-thumbnails/songfeng-town.webp" width="160" height="90" alt="松风镇 · 体素乡村漫步"></a> | songfeng-town | 暖色体素小镇，沿路探索小屋、菜园与树林，和村民聊天、采摘胡萝卜并穿过木桥 | [在线](https://fanhuayishiy.github.io/ai-demo/songfeng-town/dist/) | [README](./songfeng-town/README.md) |
 | <a href="./assets/project-thumbnails/steel-tide-shipyard.webp"><img src="./assets/project-thumbnails/steel-tide-shipyard.webp" width="160" height="90" alt="钢潮入海 · 航母建造体素船厂"></a> | steel-tide-shipyard | 同一艘航母从钢板到海试交付，八阶段建造、分段转运吊装、独立昼夜作息与近景游览。 | [在线](https://fanhuayishiy.github.io/ai-demo/steel-tide-shipyard/dist/) | [README](./steel-tide-shipyard/README.md) |
 | <a href="./assets/project-thumbnails/largo-piano.webp"><img src="./assets/project-thumbnails/largo-piano.webp" width="160" height="90" alt="LARGO · 看键跟弹"></a> | largo-piano | 单文件三角钢琴教学演示，88 键跟弹、提前看谱与实时进度。 | [在线](https://fanhuayishiy.github.io/ai-demo/largo-piano/) | [README](./largo-piano/README.md) |
+| <a href="./assets/project-thumbnails/smart-traffic-intersection.webp"><img src="./assets/project-thumbnails/smart-traffic-intersection.webp" width="160" height="90" alt="路序 · 智能交通路口"></a> | smart-traffic-intersection | 可交互的交通数字孪生：自适应配时、行人优先与无冲突车流并行通行。 | [在线](https://fanhuayishiy.github.io/ai-demo/smart-traffic-intersection/dist/) | [README](./smart-traffic-intersection/README.md) |
 
 ## 本地运行
 
@@ -210,6 +211,12 @@ Blender 程序化建模的双极空气开关，提供工程动画、可编辑模
 LARGO 是一个可旋转视角的 88 键三角钢琴练习室，提供《小星星》和《欢乐颂》两首简化练习曲。完整乐谱提前展示，自动演奏时同步高亮当前音符、下落提示和全曲进度；也可切换等待跟弹、变速、分段循环或手动试弹。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/largo-piano/) · [README（含主生成提示原文）](./largo-piano/README.md)
+
+## smart-traffic-intersection — 路序 · 智能交通路口
+
+在可旋转缩放的微缩城市中观察车辆排队、行人过街、摄像头与雷达感知。信号按实时车流调整绿灯，按斑马线方向安排人车并行，并通过独立倒计时、决策日志与自动演示展示控制过程。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/smart-traffic-intersection/dist/) · [README（含主生成提示原文）](./smart-traffic-intersection/README.md)
 
 ---
 
