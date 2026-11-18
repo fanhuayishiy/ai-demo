@@ -50,8 +50,10 @@ const trafficPreview = 'smart-traffic-intersection/dist/index.html';
 const trafficTitle = '路序 · 智能交通路口';
 const spiderPreview = 'spider-teardown/dist/index.html';
 const spiderTitle = '机器人蜘蛛 · 八足拆解实验室';
+const rexPreview = 'tyrant-rex/dist/index.html';
+const rexTitle = 'TYRANT RX-01 · 机械霸王龙拆解档案';
 // 新项目一律追加到末尾，所以这个列表只会在尾部增长。
-const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview, portPreview, keyboardPreview, rainPreview, basilicaPreview, townPreview, shipyardPreview, pianoPreview, trafficPreview, spiderPreview];
+const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview, portPreview, keyboardPreview, rainPreview, basilicaPreview, townPreview, shipyardPreview, pianoPreview, trafficPreview, spiderPreview, rexPreview];
 
 function* walk(node) {
   yield node;
@@ -80,9 +82,9 @@ test('collection appends new previews at the tail after the fourteen originals i
   assert.deepEqual(discoverPreviews(html), [...existingPreviews, ...appendedPreviews]);
 });
 
-test('homepage metadata advertises twenty-eight runnable projects', () => {
+test('homepage metadata advertises twenty-nine runnable projects', () => {
   const description = nodes.find(node => node.tagName === 'meta' && attribute(node, 'name') === 'description');
-  assert.match(attribute(description, 'content'), /28 个可运行项目/u);
+  assert.match(attribute(description, 'content'), /29 个可运行项目/u);
 });
 
 test('Roadster card presents an offline mini-game with preview and prompt links', () => {
@@ -115,35 +117,37 @@ test('FIRELINK card keeps its preview and reproduction prompt links', () => {
 
 test('the newest project sits last in the homepage grid without displacing its predecessor', () => {
   const cards = nodes.filter(node => hasClass(node, 'card'));
-  const spider = [...walk(cards.at(-1))];
+  const rex = [...walk(cards.at(-1))];
+  assert.equal(text(rex.find(node => node.tagName === 'h2')), rexTitle);
+  assert.equal(coverHref(rex), `./${rexPreview}`);
+  const spider = [...walk(cards.at(-2))];
   assert.equal(text(spider.find(node => node.tagName === 'h2')), spiderTitle);
   assert.equal(coverHref(spider), `./${spiderPreview}`);
-  const traffic = [...walk(cards.at(-2))];
+  const traffic = [...walk(cards.at(-3))];
   assert.equal(text(traffic.find(node => node.tagName === 'h2')), trafficTitle);
   assert.equal(coverHref(traffic), `./${trafficPreview}`);
-  const last = [...walk(cards.at(-3))];
+  const last = [...walk(cards.at(-4))];
   assert.equal(text(last.find(node => node.tagName === 'h2')), pianoTitle);
   assert.equal(coverHref(last), `./${pianoPreview}`);
 
-  // 追加只能发生在末尾：上一个项目必须原封不动地留在倒数第二位。
-  const previous = [...walk(cards.at(-4))];
+  const previous = [...walk(cards.at(-5))];
   assert.equal(text(previous.find(node => node.tagName === 'h2')), shipyardTitle);
   assert.equal(coverHref(previous), `./${shipyardPreview}`);
-  const town = [...walk(cards.at(-5))];
+  const town = [...walk(cards.at(-6))];
   assert.equal(text(town.find(node => node.tagName === 'h2')), townTitle);
   assert.equal(coverHref(town), `./${townPreview}`);
-  const basilica = [...walk(cards.at(-6))];
+  const basilica = [...walk(cards.at(-7))];
   assert.equal(text(basilica.find(node => node.tagName === 'h2')), basilicaTitle);
   assert.equal(coverHref(basilica), `./${basilicaPreview}`);
-  const rain = [...walk(cards.at(-7))];
+  const rain = [...walk(cards.at(-8))];
   assert.equal(text(rain.find(node => node.tagName === 'h2')), rainTitle);
   assert.equal(coverHref(rain), `./${rainPreview}`);
-  const keyboard = [...walk(cards.at(-8))];
+  const keyboard = [...walk(cards.at(-9))];
   assert.equal(text(keyboard.find(node => node.tagName === 'h2')), keyboardTitle);
   assert.equal(coverHref(keyboard), `./${keyboardPreview}`);
 
   // 新卡片沿用全站统一的真实截图结构。
-  for (const [card, dir, label] of [[spider, 'spider-teardown', '机器人蜘蛛'], [traffic, 'smart-traffic-intersection', '路序'], [last, 'largo-piano', 'LARGO'], [previous, 'steel-tide-shipyard', '钢潮入海'], [town, 'songfeng-town', '松风镇']]) {
+  for (const [card, dir, label] of [[rex, 'tyrant-rex', '机械霸王龙'], [spider, 'spider-teardown', '机器人蜘蛛'], [traffic, 'smart-traffic-intersection', '路序'], [last, 'largo-piano', 'LARGO'], [previous, 'steel-tide-shipyard', '钢潮入海'], [town, 'songfeng-town', '松风镇']]) {
   const shot = card.find(node => node.tagName === 'img' && hasClass(node, 'project-shot'));
   assert.equal(attribute(shot, 'src'), `./assets/project-thumbnails/${dir}.webp`);
   assert.equal(attribute(shot, 'width'), '640');
@@ -160,41 +164,32 @@ test('README lists the same projects in the same order, newest last', () => {
   const rows = readme.split(/\r?\n/u).filter(line => line.startsWith('|') && /\| [a-z][\w-]+ \|/u.test(line));
   const expectedProjects = [...existingPreviews, ...appendedPreviews].map(preview => preview.split('/')[0]);
   assert.deepEqual(rows.map(row => /\| ([a-z][\w-]+) \|/u.exec(row)[1]), expectedProjects);
-  assert.ok(rows.at(-1).includes('[在线](https://fanhuayishiy.github.io/ai-demo/spider-teardown/dist/)'));
-  assert.ok(rows.at(-1).includes('[README](./spider-teardown/README.md)'));
-  assert.ok(rows.at(-1).includes('./assets/project-thumbnails/spider-teardown.webp'));
-  assert.ok(rows.at(-2).includes('[在线](https://fanhuayishiy.github.io/ai-demo/smart-traffic-intersection/dist/)'));
-  assert.ok(rows.at(-2).includes('[README](./smart-traffic-intersection/README.md)'));
-  assert.ok(rows.at(-2).includes('./assets/project-thumbnails/smart-traffic-intersection.webp'));
-  assert.ok(rows.at(-3).includes('[在线](https://fanhuayishiy.github.io/ai-demo/largo-piano/)'));
-  assert.ok(rows.at(-3).includes('[README](./largo-piano/README.md)'));
-  assert.ok(rows.at(-3).includes('./assets/project-thumbnails/largo-piano.webp'));
-  assert.ok(rows.at(-4).includes('[在线](https://fanhuayishiy.github.io/ai-demo/steel-tide-shipyard/dist/)'));
-  assert.ok(rows.at(-4).includes('[README](./steel-tide-shipyard/README.md)'));
-  assert.ok(rows.at(-4).includes('./assets/project-thumbnails/steel-tide-shipyard.webp'));
-  assert.ok(rows.at(-5).includes('[在线](https://fanhuayishiy.github.io/ai-demo/songfeng-town/dist/)'));
-  assert.ok(rows.at(-5).includes('[README](./songfeng-town/README.md)'));
-  assert.ok(rows.at(-5).includes('./assets/project-thumbnails/songfeng-town.webp'));
-  assert.ok(rows.at(-6).includes('[在线](https://fanhuayishiy.github.io/ai-demo/sagrada-familia/)'));
-  assert.ok(rows.at(-6).includes('[README](./sagrada-familia/README.md)'));
-  assert.ok(rows.at(-6).includes('./assets/project-thumbnails/sagrada-familia.webp'));
-  assert.ok(rows.at(-7).includes('[在线](https://fanhuayishiy.github.io/ai-demo/cyber-rain-district/)'));
-  assert.ok(rows.at(-7).includes('[README](./cyber-rain-district/README.md)'));
-  assert.ok(rows.at(-7).includes('./assets/project-thumbnails/cyber-rain-district.webp'));
-  assert.ok(rows.at(-8).includes('[在线](https://fanhuayishiy.github.io/ai-demo/atelier-104/dist/)'));
-  assert.ok(rows.at(-8).includes('[README](./atelier-104/README.md)'));
+  const trailingPreviews = [rexPreview, spiderPreview, trafficPreview, pianoPreview, shipyardPreview, townPreview, basilicaPreview, rainPreview, keyboardPreview];
+  for (const [index, preview] of trailingPreviews.entries()) {
+    const project = preview.split('/')[0];
+    const row = rows.at(-1 - index);
+    const livePath = preview.replace(/index\.html$/u, '');
+    assert.ok(row.includes(`[在线](https://fanhuayishiy.github.io/ai-demo/${livePath})`));
+    assert.ok(row.includes(`[README](./${project}/README.md)`));
+    assert.ok(row.includes(`./assets/project-thumbnails/${project}.webp`));
+  }
 });
 
 test('README puts the newest overview immediately before the contribution instructions', () => {
   const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
   const contributionIndex = headings.indexOf('## 新增项目');
   assert.ok(contributionIndex > 0);
-  assert.ok(headings[contributionIndex - 1].startsWith('## spider-teardown '));
-  assert.ok(headings[contributionIndex - 2].startsWith('## smart-traffic-intersection '));
-  assert.ok(headings[contributionIndex - 3].startsWith('## largo-piano '));
-  assert.ok(headings[contributionIndex - 4].startsWith('## steel-tide-shipyard '));
+  assert.ok(headings[contributionIndex - 1].startsWith('## tyrant-rex '));
+  assert.ok(headings[contributionIndex - 2].startsWith('## spider-teardown '));
+  assert.ok(headings[contributionIndex - 3].startsWith('## smart-traffic-intersection '));
+  assert.ok(headings[contributionIndex - 4].startsWith('## largo-piano '));
+  assert.ok(headings[contributionIndex - 5].startsWith('## steel-tide-shipyard '));
+  const rexStart = readme.indexOf('## tyrant-rex ');
+  const rexOverview = readme.slice(rexStart, readme.indexOf('## 新增项目', rexStart));
+  assert.ok(rexOverview.includes('[在线预览](https://fanhuayishiy.github.io/ai-demo/tyrant-rex/dist/)'));
+  assert.ok(rexOverview.includes('[README（含主生成提示原文）](./tyrant-rex/README.md)'));
   const spiderStart = readme.indexOf('## spider-teardown ');
-  const spiderOverview = readme.slice(spiderStart, readme.indexOf('## 新增项目', spiderStart));
+  const spiderOverview = readme.slice(spiderStart, rexStart);
   for (const concept of ['八条尖足', '胫节', '爆炸拆解']) assert.ok(spiderOverview.includes(concept));
   assert.ok(spiderOverview.includes('[在线预览](https://fanhuayishiy.github.io/ai-demo/spider-teardown/dist/)'));
   assert.ok(spiderOverview.includes('[README（含主生成提示原文）](./spider-teardown/README.md)'));

@@ -50,6 +50,7 @@ AI 辅助生成的交互式前端作品合集，包含三维场景、数字孪�
 | <a href="./assets/project-thumbnails/largo-piano.webp"><img src="./assets/project-thumbnails/largo-piano.webp" width="160" height="90" alt="LARGO · 看键跟弹"></a> | largo-piano | 单文件三角钢琴教学演示，88 键跟弹、提前看谱与实时进度。 | [在线](https://fanhuayishiy.github.io/ai-demo/largo-piano/) | [README](./largo-piano/README.md) |
 | <a href="./assets/project-thumbnails/smart-traffic-intersection.webp"><img src="./assets/project-thumbnails/smart-traffic-intersection.webp" width="160" height="90" alt="路序 · 智能交通路口"></a> | smart-traffic-intersection | 可交互的交通数字孪生：自适应配时、行人优先与无冲突车流并行通行。 | [在线](https://fanhuayishiy.github.io/ai-demo/smart-traffic-intersection/dist/) | [README](./smart-traffic-intersection/README.md) |
 | <a href="./assets/project-thumbnails/spider-teardown.webp"><img src="./assets/project-thumbnails/spider-teardown.webp" width="160" height="90" alt="机器人蜘蛛 · 八足拆解实验室"></a> | spider-teardown | 精细八足机器人拆解模型：尖足行走、内部结构展示与单腿检修。 | [在线](https://fanhuayishiy.github.io/ai-demo/spider-teardown/dist/) | [README](./spider-teardown/README.md) |
+| <a href="./assets/project-thumbnails/tyrant-rex.webp"><img src="./assets/project-thumbnails/tyrant-rex.webp" width="160" height="90" alt="TYRANT RX-01 · 机械霸王龙拆解档案"></a> | tyrant-rex | 会行走、眨眼并转头怒吼的机械霸王龙，支持三维爆炸拆解和动力核心检视。 | [在线](https://fanhuayishiy.github.io/ai-demo/tyrant-rex/dist/) | [README](./tyrant-rex/README.md) |
 
 ## 本地运行
 
@@ -232,6 +233,12 @@ LARGO 是一个可旋转视角的 88 键三角钢琴练习室，提供《小星�
 八眼机器人蜘蛛原地行走，八条尖足随胫节转动并对应步态落点。切换爆炸拆解、透视外壳和单腿检修，查看二十四个运动关节、主控板、电池与分瓣外壳。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/spider-teardown/dist/) · [README（含主生成提示原文）](./spider-teardown/README.md)
+
+## tyrant-rex — TYRANT RX-01 · 机械霸王龙拆解档案
+
+霸王龙沿检修台往返，停稳后转头张嘴怒吼，声音与下颌同步。可分解颅骨、装甲和后肢，从胸甲检视窗观察旋转飞轮。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/tyrant-rex/dist/) · [README（含主生成提示原文）](./tyrant-rex/README.md)
 
 ---
 

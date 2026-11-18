@@ -1,0 +1,13 @@
+{
+  "name": "tyrant-rex",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TYRANT RX-01 · 机械霸王龙拆解档案",
+  "scripts": {
+    "build": "node build.mjs",
+    "preview": "node serve.mjs",
+    "test": "node --test tests/kinematics.test.mjs && node tests/model-runner.mjs",
+    "test:browser": "node tests/browser.mjs"
+  }
+}
