@@ -71,13 +71,15 @@ button:focus-visible,input:focus-visible { outline:2px solid var(--cyan); outlin
 .panel-heading h2 { margin:0; font-size:16px; letter-spacing:.6px; display:flex; align-items:center; gap:9px; white-space:nowrap; font-weight:620; }
 .panel-heading h2::before { content:""; display:block; width:3px; height:13px; background:var(--cyan); border-radius:2px; }
 .panel-heading span { font:11px var(--mono); color:var(--muted); white-space:nowrap; }
-.zone-list { display:grid; gap:9px; }
-.zone-row { padding:9px 10px 7px; border:1px solid #1b3343; border-radius:5px; background:#0a1824; }
+.zone-list { display:grid; gap:7px; }
+.zone-row { padding:6px 10px; border:1px solid #1b3343; border-radius:5px; background:#0a1824; }
 .zone-top { display:flex; align-items:center; gap:8px; font-size:12px; }
 .zone-id { display:grid; place-items:center; width:22px; height:20px; font:12px var(--mono); border:1px solid #28536a; color:var(--cyan); border-radius:3px; }
 .zone-count { font-size:10px; color:var(--muted); margin-left:auto; }
 .zone-val { font:600 13px var(--mono); min-width:68px; text-align:right; color:var(--ice); }
-.zone-meter { margin-top:7px; display:grid; grid-template-columns:repeat(var(--zone-size),1fr); gap:2px; }
+.zone-optics { display:flex; align-items:baseline; justify-content:space-between; gap:6px; margin-top:4px; color:var(--muted); font-size:11px; }
+.zone-optics output { color:var(--ice); font:11px var(--mono); }
+.zone-meter { margin-top:5px; display:grid; grid-template-columns:repeat(var(--zone-size),1fr); gap:2px; }
 .zone-meter i { height:4px; border-radius:2px; background:var(--chip); transition:background-color .55s; }
 .alert-list { display:grid; gap:8px; }
 .alert-item { display:grid; grid-template-columns:3px 1fr auto; gap:9px; padding:10px 8px; border-bottom:1px solid #172a38; color:var(--text); }
@@ -95,6 +97,8 @@ button:focus-visible,input:focus-visible { outline:2px solid var(--cyan); outlin
 .detail-values div,.electric-values div { display:flex; align-items:center; justify-content:space-between; gap:8px; border-bottom:1px solid #162938; min-height:28px; }
 .detail-values dt,.electric-values dt { color:var(--muted); font-size:12px; }
 .detail-values dd,.electric-values dd { margin:0; font:13px var(--mono); color:#d6ebf3; white-space:nowrap; }
+.detail-values div { min-height:26px; }
+.detail-values dd.optical-value { color:var(--cyan); }
 .small-action { margin-top:10px; padding:6px 10px; width:100%; border-color:#23475a; text-align:left; color:var(--cyan); font-size:12px; }
 .small-action span { float:right; }
 .electrical-hub { display:flex; align-items:center; gap:7px; font-size:12px; padding:8px; margin-bottom:6px; background:#0e2431; border:1px solid #214051; color:var(--ice); border-radius:4px; }
@@ -714,8 +718,8 @@ button:focus-visible,input:focus-visible { outline:2px solid var(--cyan); outlin
     <article class="kpi"><div class="kpi-label">冷盐罐温度</div><div class="kpi-value"><span id="kpi-cold"></span><small>°C</small></div><div class="kpi-note">低温回盐回路</div></article>
     <article class="kpi"><div class="kpi-label">定日镜在线</div><div class="kpi-value"><span id="kpi-online"></span><small>面</small></div><div id="zone-count-note" class="kpi-note"></div></article>
     <article class="kpi" style="--metric-color:#64e4f7"><div class="kpi-label">镜场总电流</div><div class="kpi-value"><span id="kpi-current"></span><small>A</small></div><div id="drive-count-note" class="kpi-note"></div></article>
-    <article class="kpi"><div class="kpi-label">平均驱动负载</div><div class="kpi-value"><span id="kpi-load"></span><small>%</small></div><div class="kpi-note">定日镜跟踪驱动</div></article>
-    <article class="kpi" style="--metric-color:#4fddb6"><div class="kpi-label">塔顶聚光指数</div><div class="kpi-value"><span id="kpi-flux"></span><small>%</small></div><div class="kpi-note">按入射角和太阳高度估算</div></article>
+    <article class="kpi"><div class="kpi-label">镜场平均聚光负载</div><div class="kpi-value"><span id="kpi-load"></span><small>%</small></div><div class="kpi-note">按单镜额定光功率折算</div></article>
+    <article class="kpi" style="--metric-color:#4fddb6"><div class="kpi-label">镜场反射光功率</div><div class="kpi-value"><span id="kpi-optical-power"></span><small>kW</small></div><div class="kpi-note">汇入塔顶吸热器</div></article>
   </section>
 
   <div class="main">
@@ -787,6 +791,8 @@ button:focus-visible,input:focus-visible { outline:2px solid var(--cyan); outlin
         </div>
         <dl class="detail-values">
           <div><dt>镜面反射率</dt><dd id="detail-reflect"></dd></div>
+          <div><dt>反射光功率</dt><dd id="detail-optical-power" class="optical-value"></dd></div>
+          <div><dt title="相对镜面法线的入射角">入射角 / 聚光负载</dt><dd id="detail-optical-load"></dd></div>
           <div><dt>跟踪精度</dt><dd id="detail-precision"></dd></div>
           <div><dt>电机电流</dt><dd id="detail-current"></dd></div>
           <div><dt>驱动功率</dt><dd id="detail-power"></dd></div>
@@ -819,8 +825,8 @@ button:focus-visible,input:focus-visible { outline:2px solid var(--cyan); outlin
       <canvas id="plot-current" role="img" aria-label="最近 60 分钟镜场总电流趋势"></canvas>
     </article>
     <article class="panel chart">
-      <div class="panel-heading"><h2>各镜场分区负载</h2><output>平均负载 / %</output></div>
-      <canvas id="plot-load" role="img" aria-label="四个镜场分区平均负载柱状图"></canvas>
+      <div class="panel-heading"><h2>各镜场分区负载</h2><output>聚光负载 / %</output></div>
+      <canvas id="plot-load" role="img" aria-label="四个镜场分区聚光负载和反射光功率"></canvas>
     </article>
   </section>
   <footer class="footer">
@@ -1577,7 +1583,7 @@ function renderEquipment(container, { view, mirror, device, metrics }) {
     current: pretty(current, 2),
     power: pretty(power, 0),
     temperature: pretty(isInternal ? intake : temperature),
-    secondary: isInternal ? pretty(exhaust) : pretty(Number(metrics.load), 0),
+    secondary: isInternal ? pretty(exhaust) : pretty(Number(metrics.driveLoad), 0),
     encoder: `${pretty(yaw)}° / ${pretty(pitch)}°`,
     deviation: `${pretty(Number(metrics.error), 2)}°`,
     limitLabel: (yawLimit || pitchLimit) ? "触发" : "未触发"
@@ -1741,7 +1747,7 @@ function createPlantEffects(canvas) {
 
   function drawBeam(mirror, origin, receiver, options) {
     const { primary, seconds, index, strength } = options;
-    const energy = Math.min(1, Math.max(0, Number(mirror.shine) || 0));
+    const energy = mirror.load / 100;
     const opacity = (primary ? 0.86 : 0.068) * (0.25 + energy * 0.75) * strength;
     line(origin, receiver, 'rgba(67,226,247,' + opacity + ')', primary ? 1.35 : 0.8);
 
@@ -1887,7 +1893,7 @@ function createPlantEffects(canvas) {
       const primary = selected?.id === mirror.id;
       const distance = (receiverPosition.y - center.y) / mirror.reflection.y;
       const hit = primary || !receiver ? projectRay(center,mirror.reflection,distance,project) : receiver;
-      energy += mirror.shine;
+      energy += mirror.load / 100;
       if (primary) {
         const incident = sunScreen || projectRay(center,sun,sunDistance,project);
         selectedBeam = {mirror,origin,hit,incident,index};
@@ -2049,7 +2055,8 @@ const drawPlantCharts = (() => {
   function drawLoads(zones) {
     if (!zones.length) return;
     const zoneNames = zones.map(({ id }) => id.includes('区') ? id : id + ' 区');
-    const summary = zones.map(({ load }, i) => zoneNames[i] + ' ' + Math.round(load) + '%').join('，');
+    const summary = zones.map(({ load, opticalPower }, i) =>
+      `${zoneNames[i]} ${load.toFixed(1)}% / ${opticalPower.toFixed(1)} kW`).join('，');
     const plot = prepare('plot-load', '各镜场分区负载，' + summary);
     const { context, left, right, top, bottom } = plot;
     drawHorizontalScale(plot, 4, 0, 100, '%');
@@ -2113,6 +2120,7 @@ const receiverPosition = {x:0,y:-264,z:0};
 const mirrorPivotY = -46;
 const mirrorSurfaceDepth = 2.6;
 const solarSceneRadius = 960;
+const ratedMirrorPower = 36; // kW at the illustrative reference irradiance and aperture.
 const innerAngles = [15,45,75];
 const outerAngles = [9,27,45,63,81];
 const mirrorRings = [
@@ -2159,7 +2167,7 @@ const scales = {
     labels:["<440","440–<500","500–<535","535–565",">565"], names:["凉","正常","偏热","注意","高温"],
   },
   load: {
-    title:"跟踪驱动负载 / %", limits:[40,60,75,90], colors:["#5a88c9","#21bed8","#58e0bd","#ecd77b","#ff9b62"],
+    title:"单镜聚光负载 / %", limits:[40,60,75,90], colors:["#5a88c9","#21bed8","#58e0bd","#ecd77b","#ff9b62"],
     labels:["<40%","40–<60%","60–<75%","75–90%",">90%"], names:["低负载","轻载","常规","高负载","峰值"],
   },
   current: {
@@ -2466,6 +2474,8 @@ function updateTrackers(now) {
   const source = solar.point;
   const targetSource = solar.duration ? solarPosition(solar.requestedAzimuth,solar.requestedAltitude) : source;
   const light = -source.y / solarSceneRadius;
+  // Approximate clear-sky transmission using relative air mass at the current elevation.
+  const transmission = Math.exp(-.16 * (1 / Math.max(.01,light) - 1));
   const seconds = now / 1000;
   for (const mirror of mirrors) {
     if (mirror.opticsSource !== source) {
@@ -2473,6 +2483,9 @@ function updateTrackers(now) {
       mirror.optics = solveMirror(mirror,source);
       const {normal,sun} = mirror.optics;
       mirror.shine = clamp(dot(sun,normal),0,1);
+      mirror.incidenceAngle = Math.acos(mirror.shine) / radians;
+      mirror.opticalPower = ratedMirrorPower * transmission * mirror.shine * mirror.reflectance;
+      mirror.load = 100 * mirror.opticalPower / ratedMirrorPower;
       mirror.reflection = {
         x:2*mirror.shine*normal.x - sun.x,
         y:2*mirror.shine*normal.y - sun.y,
@@ -2486,16 +2499,15 @@ function updateTrackers(now) {
     const pitch = Math.asin(-normal.y) / radians;
     let yaw = rawYaw;
     if (mirror.cssYaw !== undefined) yaw += 360 * Math.round((mirror.cssYaw - yaw) / 360);
-    const incidence = mirror.shine;
     mirror.actualYaw = (180 - rawYaw + 360) % 360;
     mirror.actualPitch = pitch;
     mirror.precision = .018 + (mirror.offset % 9) * .004 + mirror.zoneIndex * .003;
     mirror.error = Math.hypot(Math.acos(clamp(dot(targetNormal,normal),-1,1)) / radians, mirror.precision);
-    mirror.load = clamp(mirror.baseLoad + 3 * Math.sin(seconds*.35+mirror.offset) + (1-incidence)*4, 0, 100);
-    mirror.current = 1.05 + .058 * mirror.load;
+    mirror.driveLoad = clamp(mirror.baseLoad * .48 + 27 * -normal.y + 3 * Math.sin(seconds*.35+mirror.offset),0,100);
+    mirror.current = 1.05 + .058 * mirror.driveLoad;
     mirror.power = 48 * mirror.current;
-    mirror.heat = mirror.baseHeat + (incidence - .8) * 27 + (light - .82) * 27 + 2.5 * Math.sin(seconds*.17+mirror.offset);
-    mirror.temperature = 30 + mirror.load * .25 + light * 3;
+    mirror.heat = mirror.baseHeat + (mirror.load / 100 - .75) * 55 + 2.5 * Math.sin(seconds*.17+mirror.offset);
+    mirror.temperature = 30 + mirror.driveLoad * .25 + transmission * 3;
     mirror.status = mirror.heat > 565 ? "温度告警" : mirror.heat >= 535 ? "温度偏高" : "运行中";
     if (mirror.cssYaw !== yaw || mirror.cssPitch !== pitch) {
       mirror.cssYaw = yaw;
@@ -2504,15 +2516,18 @@ function updateTrackers(now) {
     }
     if (mirror === state.mirror && state.view === 3) mirror.setCablePose?.(yaw,pitch);
   }
-  const flux = mirrors.reduce((sum,mirror) => sum + mirror.shine * mirror.reflectance,0) / mirrors.length * (.36 + .64 * light);
   const zones = zoneDefinitions.map((zone) => {
     const members = mirrorsByZone.get(zone.id);
-    return { ...zone, members, heat:mean(members,"heat"), load:mean(members,"load") };
+    const opticalPower = members.reduce((sum,mirror) => sum + mirror.opticalPower,0);
+    const load = 100 * opticalPower / (members.length * ratedMirrorPower);
+    return { ...zone, members, heat:mean(members,"heat"), load, opticalPower };
   });
+  const opticalPower = zones.reduce((sum,zone) => sum + zone.opticalPower,0);
+  const flux = opticalPower / (mirrors.length * ratedMirrorPower);
   const current = mirrors.reduce((sum,mirror) => sum + mirror.current,0);
   const temperature = 408 + 218 * flux;
   totals = {
-    zones, flux, current, temperature, load:mean(mirrors,"load"),
+    zones, flux, current, temperature, opticalPower, load:flux * 100,
     hot: Math.min(temperature - 4, 552 + 5 * flux), cold:289 + 4 * flux,
   };
   applyColors();
@@ -2522,7 +2537,7 @@ function applyColors() {
   for (const mirror of mirrors) {
     const value = state.mode === "temperature" ? mirror.heat : mirror[state.mode];
     const tint = state.mode === "flow" ? "#369cae" : colorFor(value,state.mode);
-    const shine = (Math.round(mirror.shine * 18) / 18).toFixed(2);
+    const shine = (Math.round((.2 + .8 * mirror.load / 100) * 18) / 18).toFixed(2);
     if (mirror.renderedTint !== tint) {
       mirror.root.style.setProperty("--tint",tint);
       mirror.renderedTint = tint;
@@ -2557,6 +2572,7 @@ zoneList.style.setProperty("--zone-size",zoneSize);
 zoneList.innerHTML = zoneDefinitions.map((zone) => `
   <div class="zone-row" id="zone-${zone.id}">
     <div class="zone-top"><b class="zone-id">${zone.id}</b><span>${zone.name}</span><span class="zone-count">${zoneSize} 面</span><b class="zone-val"></b></div>
+    <div class="zone-optics"><span>聚光负载</span><output id="zone-${zone.id}-load"></output><output id="zone-${zone.id}-power"></output></div>
     <div class="zone-meter">${"<i></i>".repeat(zoneSize)}</div>
   </div>`).join("");
 const zoneRows = Array.from(zoneList.children, (row) => ({
@@ -2615,6 +2631,8 @@ function paintSelection() {
   show("selection-state",mirror.status);
   $("selection-status").classList.toggle("watch",mirror.status !== "运行中");
   show("detail-reflect",`${fixed(mirror.reflectance*100)}%`);
+  show("detail-optical-power",`${fixed(mirror.opticalPower,2)} kW`);
+  show("detail-optical-load",`${fixed(mirror.incidenceAngle)}° / ${fixed(mirror.load)}%`);
   show("detail-precision",`±${fixed(mirror.precision,3)}°`);
   show("detail-current",`${fixed(mirror.current,2)} A`);
   show("detail-power",`${fixed(mirror.power,0)} W`);
@@ -2625,7 +2643,7 @@ function paintSelection() {
 }
 
 function paintTelemetry() {
-  const {zones,temperature,hot,cold,current,load,flux} = totals;
+  const {zones,temperature,hot,cold,current,load,opticalPower} = totals;
   show("kpi-temp",fixed(temperature));
   show("receiver-label",`吸热器 ${fixed(temperature)} °C`);
   show("kpi-hot",fixed(hot));
@@ -2633,7 +2651,7 @@ function paintTelemetry() {
   show("kpi-online",`${mirrors.length} / ${mirrors.length}`);
   show("kpi-current",fixed(current));
   show("kpi-load",fixed(load));
-  show("kpi-flux",fixed(flux*100,0));
+  show("kpi-optical-power",fixed(opticalPower));
   show("grid-current",`${fixed(current)} A`);
   show("grid-power",`${fixed(current*48/1000,2)} kW`);
   show("grid-feeds",`${mirrors.length} / ${mirrors.length}`);
@@ -2641,6 +2659,8 @@ function paintTelemetry() {
   zones.forEach((zone,index) => {
     const row = zoneRows[index];
     row.value.textContent = `${fixed(zone.heat)}°`;
+    show(`zone-${zone.id}-load`,`${fixed(zone.load)}%`);
+    show(`zone-${zone.id}-power`,`${fixed(zone.opticalPower)} kW`);
     zone.members.forEach((mirror,i) => {
       row.units[i].style.setProperty("--chip",colorFor(mirror.heat,"temperature"));
       row.units[i].title = `${mirror.id} · ${fixed(mirror.heat)} °C`;
@@ -2648,7 +2668,7 @@ function paintTelemetry() {
   });
   for (const mirror of mirrors) {
     const value = state.mode === "current" ? `${fixed(mirror.current,2)} A` :
-      state.mode === "load" ? `${fixed(mirror.load,0)}%` :
+      state.mode === "load" ? `${fixed(mirror.load)}% · ${fixed(mirror.opticalPower,2)} kW` :
       state.mode === "temperature" ? `${fixed(mirror.heat)} °C` : "";
     const title = value ? `${mirror.id} · ${value}` : mirror.id;
     if (mirror.surface.title !== title) mirror.surface.title = title;
