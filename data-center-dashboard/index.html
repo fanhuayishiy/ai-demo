@@ -444,7 +444,17 @@ kbd { font: 10px var(--mono); color: #a7c4d3; text-align: center; min-width: 14p
   background: var(--signal);
   opacity: .8;
 }
-.dc-room-rack-bottom { background: #102025; }
+.dc-room-rack-rear {
+  background:
+    linear-gradient(90deg, #293e46 0 7%, transparent 7% 93%, #263940 93%),
+    linear-gradient(180deg, #263c43 0 11%, #1b2e35 11% 94%, #14232a 94%);
+}
+.dc-room-rack-rear::before {
+  inset: 22px 8px 13px;
+  border: 1px solid #4a626b;
+  background: repeating-linear-gradient(180deg, #13242b 0 1.5px, #2a4048 1.5px 3.5px);
+}
+.dc-room-rack-rear .dc-room-rack-code { color: #b6c8d0; }
 .dc-room-rack-door {
   transform-origin: 0 50%;
   transform: translate(-50%, -50%) translate3d(0, 0, var(--door-z)) rotateY(0deg);
@@ -494,7 +504,7 @@ kbd { font: 10px var(--mono); color: #a7c4d3; text-align: center; min-width: 14p
     radial-gradient(circle, #001218bc .6px, #5376814a .85px, transparent 1.2px) 0 0/2.7px 2.7px,
     linear-gradient(0deg, #1c373dc7, #36525b83);
 }
-.dc-room-open .dc-room-rack-code { visibility: hidden; }
+.dc-room-open .dc-room-rack-door .dc-room-rack-code { visibility: hidden; }
 .dc-room-interior {
   display: none;
   overflow: hidden;
@@ -1383,13 +1393,15 @@ function createRoom(host, { onRack, onDevice }) {
     const amp = label(topCode, 'dc-room-amp', '');
     const left = plane(r, 'dc-room-rack-face dc-room-rack-side', depth, height, -width / 2, 0, 0, 'rotateY(-90deg)', 'button');
     const right = plane(r, 'dc-room-rack-face dc-room-rack-side', depth, height, width / 2, 0, 0, 'rotateY(90deg)', 'button');
-    const bottom = plane(r, 'dc-room-rack-face dc-room-rack-bottom', width, depth, 0, height / 2, 0, 'rotateX(-90deg)');
+    // The cabinet base rests on the room floor. Use the fifth plane for the visible rear.
+    const rear = plane(r, 'dc-room-rack-face dc-room-rack-rear', width, height, 0, 0, -depth / 2, 'rotateY(180deg)', 'button');
+    label(rear, 'dc-room-rack-code', record.id);
     const inside = plane(r, 'dc-room-interior', layoutWidth, layoutHeight, 0, 0, depth / 2 - 2, `scale(${1 / detailScale})`);
     const door = plane(r, 'dc-room-rack-face dc-room-rack-door', width, height, 0, 0, depth / 2, '', 'button');
     door.style.removeProperty('transform');
     label(door, 'dc-room-rack-code', record.id);
-    const faces = [lid, left, right, bottom, door];
-    for (const face of [lid, left, right, door]) {
+    const faces = [lid, door, left, right, rear];
+    for (const face of faces) {
       face.setAttribute('aria-label', `机柜 ${record.id}`);
       face.title = `查看机柜 ${record.id}`;
       face.tabIndex = face === lid ? 0 : -1;
@@ -1659,13 +1671,13 @@ function createRoom(host, { onRack, onDevice }) {
       cabinet.element.classList.toggle('dc-room-current', state.mode === 'current');
       cabinet.element.classList.toggle('dc-room-active', isSelected);
       cabinet.element.classList.toggle('dc-room-open', isOpen);
-      const [lid, left, right, , door] = cabinet.faces;
+      const [lid, door] = cabinet.faces;
       lid.tabIndex = state.view === 1 ? 0 : -1;
       door.tabIndex = state.view === 2 ? 0 : -1;
       const ampReading = `${Number(record.amps || 0).toFixed(1)} A`;
       if (state.mode === 'current') cabinet.amp.textContent = ampReading;
       const detail = state.mode === 'current' ? ampReading : record.toneLabel;
-      for (const face of [lid, left, right, door]) {
+      for (const face of cabinet.faces) {
         face.title = detail ? `查看 ${record.id} · ${detail}` : `查看 ${record.id}`;
       }
       if (isOpen) {
