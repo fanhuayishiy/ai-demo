@@ -52,6 +52,7 @@ AI 辅助生成的交互式前端作品合集，包含三维场景、数字孪�
 | <a href="./assets/project-thumbnails/spider-teardown.webp"><img src="./assets/project-thumbnails/spider-teardown.webp" width="160" height="90" alt="机器人蜘蛛 · 八足拆解实验室"></a> | spider-teardown | 精细八足机器人拆解模型：尖足行走、内部结构展示与单腿检修。 | [在线](https://fanhuayishiy.github.io/ai-demo/spider-teardown/dist/) | [README](./spider-teardown/README.md) |
 | <a href="./assets/project-thumbnails/tyrant-rex.webp"><img src="./assets/project-thumbnails/tyrant-rex.webp" width="160" height="90" alt="TYRANT RX-01 · 机械霸王龙拆解档案"></a> | tyrant-rex | 会行走、眨眼并转头怒吼的机械霸王龙，支持三维爆炸拆解和动力核心检视。 | [在线](https://fanhuayishiy.github.io/ai-demo/tyrant-rex/dist/) | [README](./tyrant-rex/README.md) |
 | <a href="./assets/project-thumbnails/starship-atlas.webp"><img src="./assets/project-thumbnails/starship-atlas.webp" width="160" height="90" alt="星舰档案 · 第十五次飞行"></a> | starship-atlas | 跟随星舰从发射飞到塔架捕获，定格飞行姿势，放大拆解飞船、助推器和回收塔。 | [在线](https://fanhuayishiy.github.io/ai-demo/starship-atlas/dist/) | [README](./starship-atlas/README.md) |
+| <a href="./assets/project-thumbnails/data-center-dashboard.webp"><img src="./assets/project-thumbnails/data-center-dashboard.webp" width="160" height="90" alt="DC-01 · 机房运行态势"></a> | data-center-dashboard | 24 台机柜的五层联动巡检，从机房总览、冷通道和单柜深入到设备面板及机箱内部。 | [在线](https://fanhuayishiy.github.io/ai-demo/data-center-dashboard/) | [README](./data-center-dashboard/README.md) |
 
 ## 本地运行
 
@@ -246,6 +247,12 @@ LARGO 是一个可旋转视角的 88 键三角钢琴练习室，提供《小星�
 回放 Ship 42 从发射到塔架捕获的八个飞行阶段。定格任一姿势，点选飞行器或塔臂，可以旋转、放大并展开部件。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/starship-atlas/dist/) · [README（含主生成提示原文）](./starship-atlas/README.md)
+
+## data-center-dashboard — DC-01 · 机房运行态势
+
+在温度、负载、电流和数据流之间切换，查看 24 台机柜及其配电、告警与趋势。前三层以 CSS 3D 镜头浏览，后两层以 2D 示意图查看所选设备。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/data-center-dashboard/) · [README（含主生成提示原文）](./data-center-dashboard/README.md)
 
 ---
 
