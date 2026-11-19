@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b111a">
+  <meta name="description" content="探索星舰第十五次飞行。旋转 Three.js 模型，切换静态姿势，放大并拆解飞行器，重看 Ship 42 塔架捕获。">
+  <link rel="icon" href="./mark.svg" type="image/svg+xml">
+  <title>星舰档案 · 第十五次飞行</title>
+  <script type="module" crossorigin src="./assets/index-CxcO9FEF.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-Cubg5G5x.css">
+</head>
+<body>
+  <div class="workbench">
+    <header class="masthead">
+      <div class="brand"><img src="./mark.svg" width="36" height="36" alt=""><div>星舰档案<small>STARSHIP ATLAS</small></div></div>
+      <div class="workspace-name"><i data-icon="cube"></i>三维工作台</div>
+      <div class="mission-meta">STARBASE, TEXAS <span>/</span> 2026.11.13–14</div>
+      <button id="sources" class="source-button" title="任务资料" aria-label="任务资料"><i data-icon="book"></i><span>任务资料</span></button>
+    </header>
+    <main aria-label="第十五次飞行三维工作台">
+      <div class="space-backdrop" aria-hidden="true"></div>
+      <div class="space-grain" aria-hidden="true"></div>
+      <div class="topbar">
+        <div class="view-state"><span></span><b id="render-state">三维视图</b></div>
+        <div class="selectors">
+          <label class="field"><i data-icon="orbit"></i><span class="field-label">静态姿势</span><span class="select-text" id="pose-text">整箭构型</span><i class="caret" data-icon="chevron"></i><select id="pose" aria-label="静态姿势"></select></label>
+          <label class="field"><i data-icon="cube"></i><span class="field-label">观察部件</span><span class="select-text" id="part-text">整体</span><i class="caret" data-icon="chevron"></i><select id="part" aria-label="观察部件"></select></label>
+        </div>
+      </div>
+      <div class="stage">
+        <section class="caption" aria-labelledby="subject">
+          <div class="flight-id"><span></span> FLIGHT 15 <b>/</b> STARBASE</div>
+          <h1>STARSHIP</h1>
+          <div class="caption-content"><div id="subject-en" class="subject-en"></div><h2 id="subject"></h2><p id="description"></p></div>
+          <div class="actions"><button id="play" class="primary"><i data-icon="play-fill"></i><span>播放飞行</span></button><button id="shortcut" class="shortcut"><span>查看塔架捕获</span><i data-icon="arrow-up-right"></i></button></div>
+        </section>
+        <div class="figure">
+          <div class="chart" aria-hidden="true"><div class="ring a"></div><div class="ring b"></div><div class="ring c"></div></div>
+          <div id="viewport" role="group" aria-label="星舰交互三维模型"><img id="poster" src="./media/overview.webp" alt="星舰整箭构型"></div>
+          <div id="anchors"><svg aria-hidden="true"><g data-line="ship"></g><g data-line="booster"></g></svg><button data-pick="ship"><small>SHIP 42</small><b>星舰上面级</b></button><button data-pick="booster"><small>BOOSTER 22</small><b>超重型助推器</b></button></div>
+          <div class="figure-hint" id="gesture"><i data-icon="drag"></i><span>拖动旋转 · 点击部件</span></div>
+        </div>
+      </div>
+      <div class="console">
+        <div class="tools-top">
+          <div class="assembly-controls">
+            <button id="explode" title="切换拆解与复原"><i data-icon="layers"></i><span>拆解模型</span></button>
+            <input id="spread" type="range" min="0" max="100" value="0" step="1" aria-label="拆解程度"><output id="amount" for="spread">0%</output>
+          </div>
+          <div class="view-controls"><button id="out" class="icon-btn" aria-label="缩小" title="缩小"><i data-icon="minus"></i></button><span id="zoom-word">缩放</span><button id="in" class="icon-btn" aria-label="放大" title="放大"><i data-icon="plus"></i></button><span class="divider"></span><button id="reset" class="reset-button" title="复位视角"><i data-icon="reset"></i><span>复位视角</span></button></div>
+        </div>
+        <div id="transport" hidden><span class="transport-label"><i data-icon="orbit"></i>飞行回放</span><input id="position" type="range" aria-label="飞行回放进度" min="0" max="8" step="0.005" value="0"><span id="time"></span><button id="speed" title="切换回放倍速">1×</button></div>
+      </div>
+    </main>
+  </div>
+  <dialog id="sources-dialog" aria-labelledby="sources-title"><div class="dialog-head"><h2 id="sources-title">任务资料</h2><button class="icon-btn" id="close" aria-label="关闭资料"><i data-icon="close"></i></button></div><div id="source-content"></div></dialog>
+</body>
+</html>
