@@ -2942,6 +2942,7 @@ updateTrackers(performance.now());
 setSelection(state.mirror);
 setView(1,true);
 applyCamera();
+toggleAuto(true);
 requestAnimationFrame(() => requestAnimationFrame(() => world.classList.remove("initializing")));
 requestAnimationFrame(frame);
 
