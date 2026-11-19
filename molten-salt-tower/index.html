@@ -1,0 +1,2930 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>熔盐塔式发电站 · 124 面定日镜</title>
+<style>
+
+:root {
+  color-scheme: dark;
+  --bg:#04080f;
+  --panel:#08121c;
+  --line:#1b3141;
+  --cyan:#22d3ee;
+  --ice:#b8e8ef;
+  --muted:#87a4b6;
+  --text:#e3f0f5;
+  --amber:#ffb868;
+  --green:#4fddb6;
+  --mono:"Cascadia Mono","Consolas",monospace;
+  font-family:"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+}
+* { box-sizing:border-box; }
+body { margin:0; overflow:hidden; background:var(--bg); color:var(--text); }
+button,input { font:inherit; }
+button { cursor:pointer; }
+button:focus-visible,input:focus-visible { outline:2px solid var(--cyan); outline-offset:3px; }
+[hidden] { display:none !important; }
+#board {
+  position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+  transform:translate(-50%,-50%) scale(var(--fit,1));
+  padding:15px 28px;
+  display:grid; grid-template-rows:76px 92px 622px 192px 20px; gap:12px;
+  background:radial-gradient(ellipse at 50% -25%,#102636 0%,transparent 62%),var(--bg);
+}
+.header { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:34px; border-bottom:1px solid var(--line); }
+.identity { display:flex; gap:16px; align-items:center; min-width:0; }
+.emblem { display:grid; place-items:center; width:49px; height:49px; border:1px solid #275062; background:#0b1e2b; border-radius:12px; color:var(--cyan); position:relative; }
+.emblem::before { content:""; width:25px; height:25px; border:1px solid currentColor; border-radius:50%; box-shadow:inset 0 0 10px #22d3ee32; }
+.emblem::after { content:""; position:absolute; width:11px; height:11px; background:currentColor; clip-path:polygon(43% 0,57% 0,57% 43%,100% 43%,100% 57%,57% 57%,57% 100%,43% 100%,43% 57%,0 57%,0 43%,43% 43%); }
+.identity h1 { margin:0; font-size:27px; line-height:1.2; font-weight:680; letter-spacing:1.5px; }
+.identity p { margin:5px 0 0; color:var(--muted); font:11px var(--mono); letter-spacing:2.1px; }
+.mode-picker { display:flex; align-items:center; padding:4px; gap:4px; border:1px solid var(--line); background:#060e17; border-radius:7px; }
+.mode-picker button,.view-button,.small-action,.solar-auto,.rail-mirror,.scene-tag {
+  color:var(--muted); background:transparent; border:1px solid transparent; border-radius:4px; transition:background .22s,color .22s,border-color .22s;
+}
+.mode-picker button { min-width:100px; padding:9px 13px; font-size:14px; }
+.mode-picker button::before { content:""; display:inline-block; width:7px; height:7px; margin-right:8px; border:1px solid currentColor; vertical-align:2px; transform:rotate(45deg); }
+.mode-picker button:hover,.view-button:hover,.small-action:hover,.rail-mirror:hover,.scene-tag:hover { color:var(--text); background:#122639; }
+.mode-picker [aria-pressed="true"],.view-button[aria-pressed="true"] { color:var(--cyan); background:#103143; border-color:#286378; }
+.mode-picker [aria-pressed="true"]::before { background:currentColor; box-shadow:0 0 12px #22d3ee65; }
+.header-meta { justify-self:end; display:flex; gap:23px; align-items:center; }
+.simulation { display:inline-flex; align-items:center; gap:7px; font-size:12px; color:var(--green); white-space:nowrap; }
+.status-dot { width:7px; height:7px; border-radius:50%; display:inline-block; background:currentColor; box-shadow:0 0 9px currentColor; }
+.header-clock { color:#d0dee4; border-left:1px solid var(--line); padding-left:21px; white-space:nowrap; font:14px var(--mono); }
+.kpis { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; }
+.kpi,.panel,.stage { border:1px solid var(--line); background:linear-gradient(145deg,#0b1723,var(--panel) 61%); border-radius:7px; min-width:0; }
+.kpi { padding:10px 14px; position:relative; overflow:hidden; }
+.kpi::after { content:""; position:absolute; bottom:0; left:14px; width:30px; height:2px; background:var(--metric-color,var(--cyan)); opacity:.68; }
+.kpi-label { font-size:13px; color:var(--muted); }
+.kpi-value { margin:2px 0 1px; font:600 29px/1.17 var(--mono); color:var(--metric-color,var(--text)); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.kpi-value small { font:12px var(--mono); color:var(--muted); margin-left:6px; }
+.kpi-note { color:#8aa6b5; font-size:11px; letter-spacing:.3px; }
+.main { display:grid; grid-template-columns:282px minmax(0,1fr) 302px; gap:12px; min-height:0; }
+.side { display:grid; gap:12px; min-height:0; }
+.side-left { grid-template-rows:326px minmax(0,1fr); }
+.side-right { grid-template-rows:401px minmax(0,1fr); }
+.panel { padding:15px; overflow:hidden; }
+.panel-heading { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:14px; }
+.panel-heading h2 { margin:0; font-size:16px; letter-spacing:.6px; display:flex; align-items:center; gap:9px; white-space:nowrap; font-weight:620; }
+.panel-heading h2::before { content:""; display:block; width:3px; height:13px; background:var(--cyan); border-radius:2px; }
+.panel-heading span { font:11px var(--mono); color:var(--muted); white-space:nowrap; }
+.zone-list { display:grid; gap:9px; }
+.zone-row { padding:9px 10px 7px; border:1px solid #1b3343; border-radius:5px; background:#0a1824; }
+.zone-top { display:flex; align-items:center; gap:8px; font-size:12px; }
+.zone-id { display:grid; place-items:center; width:22px; height:20px; font:12px var(--mono); border:1px solid #28536a; color:var(--cyan); border-radius:3px; }
+.zone-count { font-size:10px; color:var(--muted); margin-left:auto; }
+.zone-val { font:600 13px var(--mono); min-width:68px; text-align:right; color:var(--ice); }
+.zone-meter { margin-top:7px; display:grid; grid-template-columns:repeat(var(--zone-size),1fr); gap:2px; }
+.zone-meter i { height:4px; border-radius:2px; background:var(--chip); transition:background-color .55s; }
+.alert-list { display:grid; gap:8px; }
+.alert-item { display:grid; grid-template-columns:3px 1fr auto; gap:9px; padding:10px 8px; border-bottom:1px solid #172a38; color:var(--text); }
+.alert-item::before { content:""; width:3px; height:24px; background:var(--severity); border-radius:3px; margin-top:2px; }
+.alert-title { font-size:12px; }
+.alert-desc { margin-top:5px; color:var(--muted); font-size:11px; }
+.alert-item time { font:10px var(--mono); color:var(--muted); margin-top:1px; }
+.selection-title { display:flex; align-items:center; justify-content:space-between; padding:0 0 12px; margin-bottom:1px; border-bottom:1px solid var(--line); }
+.selection-title b { font:600 19px var(--mono); letter-spacing:.8px; color:#d4f1f5; }
+.selection-title p { margin:4px 0 0; color:var(--muted); font-size:12px; }
+.status-pill { color:var(--green); background:#10332f; display:flex; align-items:center; gap:6px; padding:5px 7px; border-radius:3px; white-space:nowrap; font-size:11px; }
+.status-pill .status-dot { width:5px; height:5px; }
+.status-pill.watch { color:var(--amber); background:#39291c; }
+.detail-values,.electric-values { margin:0; }
+.detail-values div,.electric-values div { display:flex; align-items:center; justify-content:space-between; gap:8px; border-bottom:1px solid #162938; min-height:28px; }
+.detail-values dt,.electric-values dt { color:var(--muted); font-size:12px; }
+.detail-values dd,.electric-values dd { margin:0; font:13px var(--mono); color:#d6ebf3; white-space:nowrap; }
+.small-action { margin-top:10px; padding:6px 10px; width:100%; border-color:#23475a; text-align:left; color:var(--cyan); font-size:12px; }
+.small-action span { float:right; }
+.electrical-hub { display:flex; align-items:center; gap:7px; font-size:12px; padding:8px; margin-bottom:6px; background:#0e2431; border:1px solid #214051; color:var(--ice); border-radius:4px; }
+.electrical-hub strong { margin-left:auto; font:12px var(--mono); color:var(--green); }
+.stage {
+  background:radial-gradient(ellipse at 50% 52%,#153849 0%,#0b1b2a 48%,#071019 83%);
+  position:relative; overflow:hidden; isolation:isolate;
+}
+#camera-space { pointer-events:none; position:absolute; inset:0; perspective:1180px; perspective-origin:50% 50%; transform-style:preserve-3d; }
+#world { position:absolute; left:50%; top:50%; width:0; height:0; transform-origin:0 0 0; transform-style:preserve-3d; }
+#effects,#scene-shade,#callouts { width:100%; height:100%; position:absolute; inset:0; pointer-events:none; }
+#effects { z-index:2; }
+#callouts { z-index:3; }
+#scene-shade { z-index:4; background:#030a12; opacity:0; transition:opacity .75s ease; }
+.stage[data-view="4"] #scene-shade,.stage[data-view="5"] #scene-shade { opacity:.82; pointer-events:auto; }
+.stage:focus-visible { outline:1px solid var(--cyan); outline-offset:1px; }
+.stage[data-view="1"],.stage[data-view="2"],.stage[data-view="3"] { cursor:grab; }
+.stage.is-dragging,.stage.is-dragging * { cursor:grabbing!important; user-select:none; }
+.stage { touch-action:none; }
+.stage-nav-meta { display:flex; align-items:center; gap:11px; }
+#camera-reset { font-size:11px; padding:3px 6px; }
+.stage-top { position:absolute; inset:0 0 auto; display:flex; justify-content:space-between; align-items:flex-start; gap:16px; padding:15px 17px 10px; z-index:6; background:linear-gradient(#06111de8,#06111d80 68%,transparent); pointer-events:none; }
+.stage-top > div { pointer-events:auto; }
+.stage-caption small { color:#8fb2c4; font:10px var(--mono); letter-spacing:1.6px; }
+.stage-caption h2 { color:#e0f1f7; font-size:20px; letter-spacing:1.2px; margin:4px 0; }
+.optical-key { display:flex; gap:10px; margin-top:6px; color:#a1bcc9; font-size:10px; }
+.optical-key span::before { display:inline-block; content:""; width:13px; height:2px; vertical-align:3px; margin-right:4px; background:var(--ray); }
+.stage-caption h2 span { margin-left:8px; padding-left:10px; border-left:1px solid #315567; color:#96b8c9; font:12px "Microsoft YaHei",sans-serif; letter-spacing:.4px; }
+.stage-nav { display:grid; justify-items:end; gap:7px; }
+.view-rail { display:flex; gap:4px; }
+.view-button { padding:6px 8px; background:#081725; border-color:#254154; font-size:12px; line-height:16px; }
+.view-button kbd { font:11px var(--mono); padding:1px 3px; color:inherit; background:#23405470; margin-right:5px; border-radius:2px; }
+#solar-reading { font:11px var(--mono); color:var(--amber); }
+.stage-bottom { position:absolute; left:14px; right:14px; bottom:14px; display:flex; align-items:end; justify-content:space-between; gap:13px; z-index:6; pointer-events:none; }
+.stage-bottom > * { pointer-events:auto; }
+.legend,.solar-control {
+  border:1px solid #234253; border-radius:5px; background:#07131def;
+}
+.legend { width:425px; padding:9px 10px; }
+.legend-heading { display:flex; justify-content:space-between; color:#c6dfe9; font-size:11px; }
+.legend-heading span { color:var(--muted); }
+.legend-scale { display:grid; grid-auto-flow:column; grid-auto-columns:1fr; gap:6px; margin-top:7px; }
+.legend-item { font:10px var(--mono); color:#9db7c6; display:grid; gap:3px; }
+.legend-item i { height:3px; border-radius:2px; background:var(--chip); }
+.legend-item b { color:#d7e9ef; font:11px "Microsoft YaHei",sans-serif; white-space:nowrap; }
+.solar-control { display:grid; grid-template-columns:95px 1fr 1fr 93px; gap:11px; align-items:center; width:590px; padding:10px; }
+.solar-title { font-size:12px; padding-left:4px; color:#e5c090; }
+.solar-title strong { display:block; margin-top:2px; font:10px var(--mono); color:var(--muted); }
+.solar-control label { display:grid; grid-template-columns:1fr auto; gap:1px 8px; color:#a9bdc9; font-size:11px; }
+.solar-control output { color:var(--amber); font:12px var(--mono); }
+.solar-control input { grid-column:1/-1; width:100%; margin:4px 0 0; accent-color:var(--amber); cursor:ew-resize; height:12px; }
+.solar-auto { border-color:#604631; color:#ebc99a; padding:6px; min-height:33px; background:#312619; font-size:11px; }
+.solar-auto:hover,.solar-auto[aria-pressed="true"] { background:#674728; color:#fff0d9; border-color:#aa7948; }
+.scene-tag { position:absolute; display:flex; gap:5px; align-items:center; padding:4px 6px; pointer-events:auto; color:#d0f5ff; border-color:#3c778d; font:11px var(--mono); backdrop-filter:blur(5px); background:#082432d9; white-space:nowrap; }
+.scene-tag::before { content:""; width:5px; height:5px; border-radius:1px; background:var(--cyan); }
+.receiver-tag { pointer-events:none; color:#ffe3b9; background:#251d19e3; border-color:#836140; }
+.receiver-tag::before { background:var(--amber); }
+#mirror-ruler { position:absolute; z-index:5; top:103px; left:18px; display:grid; gap:4px; padding:8px; border:1px solid #2c5266; border-radius:4px; background:#07141ee8; }
+#mirror-ruler { max-height:395px; overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:#3b6b84 #091627; }
+#mirror-ruler strong { position:sticky; top:0; padding:4px 5px; color:#9dbccd; background:#0a1b29; font-size:11px; }
+.rail-mirror { padding:4px 8px; border-left:1px solid #345264; border-radius:0; text-align:left; font:12px var(--mono); }
+.rail-mirror[aria-pressed="true"] { border-left:2px solid var(--cyan); color:var(--cyan); background:#113245; }
+#mirror-tools { position:absolute; z-index:5; right:18px; top:108px; padding:9px; display:grid; gap:5px; border:1px solid #2c5266; border-radius:4px; background:#07141ee8; }
+#mirror-tools strong { color:#9dbccd; font-size:11px; padding:1px 4px; }
+#mirror-tools button { padding:5px 9px; text-align:left; font-size:12px; border-color:#233e50; }
+#equipment-panel { position:absolute; z-index:5; inset:76px 24px 91px; animation:panel-arrive .65s both; }
+@keyframes panel-arrive { from { opacity:0; transform:translateY(7px); } to { opacity:1; transform:none; } }
+.charts { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+.chart { padding:12px 14px 9px; display:grid; grid-template-rows:27px minmax(0,1fr); }
+.chart .panel-heading { margin:0; }
+.chart output { color:var(--plot,#b7e9f0); font:13px var(--mono); white-space:nowrap; }
+.chart canvas { width:100%; height:100%; min-height:0; display:block; }
+.footer { display:flex; justify-content:space-between; align-items:center; color:#7b9aac; font-size:11px; letter-spacing:.4px; }
+.footer kbd { font:11px var(--mono); color:#acdbe3; }
+@media(prefers-reduced-motion:reduce) { *,*::after,*::before { animation-duration:.01ms!important; transition-duration:.01ms!important; } }
+
+
+
+#world.initializing .plant-mirror-rotor,
+#world.initializing .plant-mirror-surface,
+#world.initializing .plant-receiver-fin,
+#world.initializing .plant-receiver-cap { transition:none; }
+.current-badge {
+  position:absolute; display:block; padding:2px 4px; border:1px solid #416775;
+  border-radius:3px; background:#05202de8; color:#d9f9ff;
+  white-space:nowrap; font:10px var(--mono);
+}
+#mirror-tools [aria-pressed="true"] { color:var(--cyan); background:#103143; border-color:#286378; }
+
+
+
+/* Optical field geometry. All dimensions are in CSS world units. */
+@property --plant-tint {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #22d3ee;
+}
+@property --plant-shine {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: .72;
+}
+.plant-origin, .plant-piece {
+  position: absolute;
+  transform-style: preserve-3d;
+}
+.plant-origin {
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.plant-piece {
+  box-sizing: border-box;
+  backface-visibility: hidden;
+  pointer-events: none;
+}
+.plant-floor {
+  display: block;
+  border: 1px solid #467083;
+  box-shadow: 0 0 0 1px #061017, 0 0 18px #3da6ba33;
+}
+.plant-rim {
+  background: repeating-linear-gradient(90deg,#304b59 0 1px,transparent 1px 26px),
+    linear-gradient(180deg,#547885 0 1px,#263b48 1px 4px,#111d28 4px 9px,#0a141f 9px);
+}
+.plant-slab {
+  background: linear-gradient(145deg,#597281,#3c5462 43%,#243b4a);
+  border-top: 1px solid #82a7b5;
+  border-bottom: 1px solid #0f2531;
+}
+.plant-tower-body {
+  --shade: rgba(2,13,21,.08);
+  background:
+    repeating-linear-gradient(180deg,transparent 0 23px,#13283699 24px,#b7d1d25c 25px,transparent 26px),
+    linear-gradient(var(--shade),var(--shade)),
+    linear-gradient(90deg,#537280,#8da8af 42%,#55717f);
+  border-right: 1px solid #92acb180;
+  border-left: 1px solid #233947b0;
+}
+.plant-tower-rail {
+  background: repeating-linear-gradient(180deg,#102b36 0 1px,#7ca9b3 1px 2px,transparent 3px 8px);
+  border-inline: 1px solid #7399a7;
+}
+.plant-terrace {
+  background: repeating-linear-gradient(90deg,#5d8c9b 0 1px,#243c49 1px 4px);
+  border-block: 1px solid #92bdc3;
+}
+.plant-receiver {
+  --tint: #22d3ee;
+  --shine: .76;
+}
+.plant-receiver-fin, .plant-receiver-cap {
+  --plant-tint: var(--tint, #22d3ee);
+  --plant-shine: var(--shine, .72);
+  transition: --plant-tint .5s, --plant-shine .45s;
+  color: color-mix(in srgb,var(--plant-tint),#fff 30%);
+  box-shadow: inset 0 0 6px color-mix(in srgb,var(--plant-tint) 74%,transparent),
+    0 0 calc(10px * var(--plant-shine)) color-mix(in srgb,var(--plant-tint) 75%,transparent);
+}
+.plant-receiver-fin {
+  border-block: 2px solid currentColor;
+  background: linear-gradient(90deg,#12232d99,transparent 22% 78%,#07121aaa),
+    repeating-linear-gradient(90deg,#071723aa 0 1px,transparent 1px 3px),
+    linear-gradient(180deg,color-mix(in srgb,var(--plant-tint),#efffff 58%) 0%,
+      color-mix(in srgb,var(--plant-tint) calc(28% + 54% * var(--plant-shine)),#04131d) 40%,
+      color-mix(in srgb,var(--plant-tint),#081824 36%) 76%,#14232c 100%);
+  border-inline: 1px solid #c2ffff30;
+}
+.plant-receiver-cap {
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  background: radial-gradient(circle,#082435 0 23%,#204655 24% 34%,currentColor 36% 38%,
+    color-mix(in srgb,var(--plant-tint) 78%,#121f2b) 39% 56%,#305260 60% 67%,currentColor 69% 100%);
+}
+.plant-receiver-beacon {
+  background: color-mix(in srgb,var(--tint,#22d3ee),white 50%);
+  border-radius: 1px;
+  box-shadow: 0 0 7px var(--tint,#22d3ee);
+  animation: plant-receiver-pulse 1.8s ease-in-out infinite;
+}
+@keyframes plant-receiver-pulse {
+  50% { opacity: clamp(.55,var(--shine,.72),.95); box-shadow: 0 0 15px var(--tint,#22d3ee); }
+}
+.plant-tank-facet {
+  background: repeating-linear-gradient(180deg,transparent 0 15px,#061b2b81 15px 16px,#dbf0f43d 16px 17px),
+    linear-gradient(var(--shade,#173a4200),var(--shade,#173a4200)),
+    linear-gradient(180deg,var(--paint-hi) 0%,var(--paint-lo) 30%,var(--paint-lo) 74%,#1b2635 100%);
+  border-top: 1px solid var(--paint-hi);
+  border-bottom: 1px solid #091723;
+}
+.plant-tank-head {
+  background: repeating-radial-gradient(circle,transparent 0 6px,#06182b58 6px 7px,transparent 7px 11px),
+    radial-gradient(circle at 35% 20%,var(--paint-hi),var(--paint-lo) 66%,#102538);
+  border: 1px solid var(--paint-hi);
+  border-radius: 50%;
+}
+.plant-tank-ring {
+  border-block: 1px solid var(--paint-hi);
+  background: linear-gradient(180deg,#b4cfd144,#13222e45);
+}
+.plant-housing {
+  background: repeating-linear-gradient(90deg,#3d5d6e55 0 1px,transparent 1px 12px),
+    linear-gradient(180deg,#476577,#243e50 45%,#193142);
+  border: 1px solid #6990a4;
+}
+.plant-roof {
+  background: repeating-linear-gradient(90deg,#17273780 0 1px,transparent 1px 8px),
+    linear-gradient(115deg,#8c9e9f,#496477 70%,#283e50);
+  border: 1px solid #7896a4;
+}
+.plant-station-wall {
+  background: repeating-linear-gradient(90deg,#091521cc 0 2px,#28404d44 2px 5px,transparent 5px 48px),
+    repeating-linear-gradient(180deg,transparent 0 24px,#142937 24px 25px),
+    linear-gradient(180deg,#1a2d3c,#294252 46%,#122231 90%);
+  border: 1px solid #38576a;
+  border-top: 2px solid #597485;
+}
+.plant-wall-plinth {
+  background: linear-gradient(180deg,#304b58,#141f2a);
+  border-top: 1px solid #506b7a;
+}
+.plant-door-frame {
+  background: linear-gradient(90deg,#243b4d,#4c6473 50%,#263b4d);
+  border: 1px solid #557588;
+}
+.plant-rollup-door {
+  background: repeating-linear-gradient(180deg,#1d303f 0 1px,#5975888a 1px 2px,transparent 2px 4px),
+    linear-gradient(90deg,#1e3445,#36596a 50%,#172e3f);
+  border: 1px solid #7699a4;
+  box-shadow: inset 0 0 4px #0d1a28;
+}
+.plant-hazard {
+  background: repeating-linear-gradient(130deg,#e2a44b 0 2px,#433328 2px 5px);
+}
+.plant-sign, .plant-device-text {
+  color: #c5e5ed;
+  font-family: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  line-height: 1.05;
+  padding-inline: 2px;
+  display: flex;
+  place-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  background: #152d38;
+  border: 1px solid #6a91a2;
+}
+.plant-sign--roof {
+  color: #d1f4f4;
+  border: 1px solid #7399a4;
+  background: #1b3542;
+}
+.plant-metal, .plant-platform {
+  border: 1px solid #627f8c;
+  background: linear-gradient(135deg,#6c8b97,#374f5b 50%,#152a38);
+}
+.plant-metal-dark {
+  border: 1px solid #3d5564;
+  background: linear-gradient(135deg,#435c6b,#223a48 65%,#15232e);
+}
+.plant-cabinet {
+  background: linear-gradient(90deg,#516a6f,#263f4c 72%,#1c303e);
+  border: 1px solid #637f86;
+}
+.plant-cabinet-door {
+  background: linear-gradient(135deg,#708e94,#395460 55%,#28424f);
+  border: 1px solid #86a0a2;
+  box-shadow: inset 0 0 2px #051825a8;
+}
+.plant-cabinet-vents {
+  background: repeating-linear-gradient(180deg,#132831 0 1px,#738d93 1px 2px,transparent 2px 3px);
+}
+.plant-cabinet-display {
+  background: linear-gradient(90deg,#133039 0 26%,#64f4cc 28% 43%,#10272e 44% 52%,
+    #6dfed6 54% 68%,#10292e 72%);
+  box-shadow: 0 0 3px #44e6b052;
+  border: 1px solid #0c1d2b;
+}
+.plant-lightbar {
+  border-top: 1px solid #d9fbfc;
+  background: repeating-linear-gradient(90deg,#53d5e6 0 6px,#87f0f8 6px 11px,#4fb4cb 11px 14px);
+  box-shadow: 0 0 7px #27bedb90;
+}
+.plant-gantry-side {
+  border: 1px solid #527986;
+  background: repeating-linear-gradient(125deg,#5b7d86 0 1px,#172c3866 1px 5px,transparent 5px 7px);
+}
+.plant-gantry-wire {
+  background: repeating-linear-gradient(180deg,#35434a 0 1px,#7da5ac 1px 2px,#213945 2px 3px);
+}
+.plant-pipe {
+  background: linear-gradient(180deg,#071925 0%,var(--pipe-color) 24%,#d2e0dd 44%,var(--pipe-color) 61%,#1c2d39 100%);
+}
+.plant-shadow {
+  background: radial-gradient(ellipse,#020b14b8 9%,#04111a82 46%,transparent 73%);
+}
+.plant-mirror {
+  --tint: #22d3ee;
+  --shine: .72;
+}
+.plant-mirror-rotor { transform-origin:0 0 0; }
+.plant-mirror-surface {
+  --plant-tint: var(--tint, #22d3ee);
+  --plant-shine: var(--shine, .72);
+  --mirror-light: color-mix(in srgb,var(--plant-tint) calc(32% + var(--plant-shine) * 52%),#152d3b);
+  transition: --plant-tint .45s ease, --plant-shine .25s ease, box-shadow .2s, outline-color .2s;
+  cursor: pointer;
+  pointer-events: auto;
+  border: 1px solid color-mix(in srgb,var(--plant-tint) 54%,#b3c2c4);
+  outline: 1px solid transparent;
+  outline-offset: 2px;
+  box-shadow: inset 0 0 0 1px #101e246e, 0 0 7px #071824b2;
+  background:
+    repeating-linear-gradient(90deg,transparent 0 calc(25% - 1px),#122e3ed9 calc(25% - 1px) 25%),
+    linear-gradient(180deg,transparent 0 calc(50% - .5px),#0a283cbf 50% calc(50% + .7px),transparent calc(50% + .7px)),
+    repeating-linear-gradient(127deg,#ecfcfd00 0 18px,#e3fcff2c 18px 21px,#c8f4fe10 21px 27px,#ebffff00 27px 40px),
+    linear-gradient(160deg,#d0f0f34d,#17485807 35%,#001e3938 64%,#e0f7ff3b 75%,#051a3455),
+    var(--mirror-light);
+}
+.plant-mirror-surface::before {
+  position: absolute;
+  inset: 2px;
+  content: "";
+  pointer-events: none;
+  border: 1px solid #d3f4fa30;
+}
+.plant-mirror-surface::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  background: #0b2939d9;
+  color: #e6f4f6;
+  font: 600 4.4px/1 "Consolas",monospace;
+  padding: .6px 1px;
+  pointer-events: none;
+}
+.plant-mirror-back {
+  cursor: pointer;
+  pointer-events: auto;
+  border: 1px solid #6f8d9b;
+  outline: 1px solid transparent;
+  outline-offset: 1px;
+  background:
+    repeating-linear-gradient(90deg,transparent 0 13px,#142935 14px 15px,#6b85904a 16px 17px),
+    linear-gradient(140deg,#657883,#2c414e 45%,#182c3a);
+  box-shadow: inset 0 0 0 2px #263f4e;
+}
+.plant-mirror:hover .plant-mirror-back,
+.plant-mirror.is-selected .plant-mirror-back {
+  outline-color: #90e9f4;
+}
+.plant-mirror.is-selected .plant-mirror-edge { border-color: #90e9f4; }
+.plant-mirror-edge {
+  backface-visibility:visible;
+  cursor: pointer;
+  pointer-events: auto;
+  background: linear-gradient(180deg,#b5d4d9,#344e5c 44%,#192d3b 100%);
+  border: 1px solid #486673;
+}
+.plant-mirror-base {
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: 50%;
+  border: 1px dashed #5f92a7;
+  background: radial-gradient(circle,#32566a82 0 19%,#2b49595e 21% 40%,#10283688 42% 61%,#2c536580 65% 70%,#17374454);
+}
+.plant-mirror-base::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: 1px;
+  left: 33%;
+  right: 33%;
+  display: grid;
+  place-items: center;
+  color: #bde2e9;
+  font: 600 4px/1 "Consolas",monospace;
+}
+.plant-mirror:hover .plant-mirror-surface,
+.plant-mirror:focus-within .plant-mirror-surface,
+.plant-mirror.is-selected .plant-mirror-surface {
+  outline-color: #abf7ff;
+  box-shadow: 0 0 10px #56e9fa82;
+}
+.plant-mirror.is-selected .plant-mirror-base {
+  border-color: #8cf5ff;
+  border-style: solid;
+  box-shadow: 0 0 10px #35c7e457, inset 0 0 9px #4ddbeb42;
+}
+.plant-device-face {
+  pointer-events: auto;
+  cursor: pointer;
+}
+.plant-device:hover .plant-device-face,
+.plant-device:focus-visible .plant-device-face,
+.plant-device.is-selected .plant-device-face {
+  outline: 1px solid #a8f5fe;
+  outline-offset: .65px;
+  box-shadow: 0 0 5px #38daed94;
+}
+.plant-device-motor {
+  background: repeating-linear-gradient(90deg,#23383eaa 0 1px,transparent 1px 3px),
+    linear-gradient(180deg,#b0a27a,#676048 36%,#614f31 70%,#352f2c);
+  border: 1px solid #b3a579;
+}
+.plant-device-motor-head {
+  background: radial-gradient(circle,#526977 0 13%,#bedad9 15% 23%,#273c47 25% 43%,
+    #b7aa81 46% 60%,#675c43 63% 71%,transparent 73%);
+  border-radius: 50%;
+}
+.plant-device-controller {
+  background: linear-gradient(130deg,#759399,#2c4756 56%,#163040);
+  border: 1px solid #7a9ba0;
+}
+.plant-device-tracker {
+  background: linear-gradient(140deg,#8cabb2,#385569 45%,#112e3b);
+  border: 1px solid #7394a4;
+}
+.plant-local-cable {
+  background: repeating-linear-gradient(180deg,#131c22 0 .65px,#b6ac80 .65px 1.25px,#46bac8 1.25px 1.8px);
+  opacity: 0;
+  transition: opacity .2s;
+}
+.plant-local-lead {
+  transition: transform .22s ease-out, width .22s ease-out, left .22s ease-out, opacity .2s;
+}
+.plant-local-hardware {
+  opacity: 0;
+  transition: opacity .2s;
+}
+.plant-mirror.is-selected .plant-local-hardware,
+.plant-mirror.is-selected .plant-local-cable {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .plant-mirror-rotor, .plant-local-lead { transition-duration: 0ms; }
+  .plant-receiver-beacon { animation: none; }
+}
+
+
+.equipment-shell {
+  --equipment-bg: #07111b;
+  --equipment-border: #233a4a;
+  --equipment-dim: #91a9b9;
+  --equipment-text: #e2f0f7;
+  --equipment-accent: #22d3ee;
+  --equipment-mono: "Cascadia Code", Consolas, monospace;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border: 1px solid var(--equipment-border);
+  color: var(--equipment-text);
+  background: linear-gradient(166deg, #101c28 0, var(--equipment-bg) 39%);
+  box-shadow: 0 28px 70px #000a, inset 0 1px #42617450;
+}
+.equipment-head {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--equipment-border);
+}
+.equipment-head h2 { font-size: 21px; margin: 3px 0 0; line-height: 1.2; font-weight: 650; white-space: nowrap; }
+.equipment-path { display: block; color: var(--equipment-dim); line-height: 1; font: 11px var(--equipment-mono); }
+.equipment-nav, .equipment-select { display: flex; align-items: center; gap: 4px; }
+.equipment-nav { margin-left: auto; }
+.equipment-shell button {
+  appearance: none;
+  background: #0b1823;
+  border: 1px solid #273d4b;
+  color: #a8bdcc;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color .2s, background .2s, border-color .2s;
+}
+.equipment-shell button:hover, .equipment-shell button:focus-visible { color: #ecfcff; border-color: #4bd3e5; }
+.equipment-shell button:focus-visible { outline: 1px solid #4bd3e5; outline-offset: 2px; }
+.equipment-shell button[aria-pressed="true"] {
+  color: #9aefff;
+  border-color: #3595a7;
+  background: #0b2a35;
+}
+.equipment-content {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) 287px;
+}
+.equipment-diagram {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  background:
+    radial-gradient(ellipse at 50% 44%, #13324655, transparent 70%),
+    linear-gradient(#31516732 1px, transparent 1px),
+    linear-gradient(90deg, #31516732 1px, transparent 1px),
+    #08131e;
+  background-size: auto, 22px 22px, 22px 22px, auto;
+}
+.equipment-diagram canvas { width: 100%; height: 100%; min-height: 0; object-fit: contain; display: block; }
+.equipment-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  align-items: center;
+  color: #91a9b9;
+  background: #07111bec;
+  padding: 8px 13px;
+  border-top: 1px solid #213341;
+  font-size: 11px;
+}
+.equipment-caption span:first-child { color: #b1d7e1; }
+.equipment-caption span:first-child::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border: 1px solid #48d5e4;
+  box-shadow: inset 0 0 5px #22d3ee70;
+}
+.equipment-readout {
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 13px;
+  border-left: 1px solid var(--equipment-border);
+  background: #09141f;
+  scrollbar-color: #345362 #09141f;
+}
+.equipment-readout h3 { margin: 0; font-size: 13px; font-weight: 650; line-height: 1.2; }
+.equipment-readout-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
+.equipment-status { color: #6ce8bd; white-space: nowrap; display: flex; align-items: center; gap: 5px; font-size: 11px; }
+.equipment-status[data-state="warning"] { color: #ffc078; }
+.equipment-status[data-state="stopped"] { color: #a6bac7; }
+.equipment-status::before {
+  content: "";
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor; box-shadow: 0 0 9px currentColor;
+}
+.equipment-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.equipment-gauge { background: #111f2b; padding: 6px 7px; min-width: 0; border: 1px solid #233846; }
+.equipment-gauge span { color: var(--equipment-dim); display: block; font-size: 10px; margin-bottom: 2px; }
+.equipment-gauge b { font: 600 16px/1.1 var(--equipment-mono); color: #c9f4fa; white-space: nowrap; }
+.equipment-gauge small { color: #9dbac9; font: 9px var(--equipment-mono); margin-left: 3px; }
+.equipment-rows { margin: 6px 0 0; padding: 0; }
+.equipment-rows div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 5px 1px;
+  gap: 8px;
+  border-bottom: 1px solid #243947;
+  font-size: 11px;
+}
+.equipment-rows dt { color: var(--equipment-dim); }
+.equipment-rows dd { margin: 0; text-align: right; color: #cde5f4; }
+.equipment-rows .equipment-number { font-family: var(--equipment-mono); font-size: 11px; }
+.equipment-limit-indicators, .equipment-leds { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+.equipment-leds i, .equipment-limit-indicators i {
+  border-radius: 50%; display: inline-block;
+  vertical-align: 1px; width: 5px; height: 5px; margin-right: 3px;
+  background: #596a79; box-shadow: 0 0 0 1px #ffffff16;
+}
+.equipment-leds .is-powered { background: #6ce8bd; box-shadow: 0 0 6px #6ce8bd80; }
+.equipment-leds .is-communicating { background: #22d3ee; box-shadow: 0 0 6px #22d3ee80; }
+.equipment-leds .is-fault, .equipment-limit-indicators [data-engaged="true"] {
+  background: #f8a464; box-shadow: 0 0 6px #f8a46480;
+}
+
+/* Stand silhouettes keep full field rendering light. */
+.plant-piece { transform-style:flat; }
+.plant-mirror-stand {
+  backface-visibility:visible;
+  pointer-events:auto;
+  cursor:pointer;
+  background:
+    linear-gradient(90deg,#69858f,#839ba4 45%,#355361) 50% 100% / 5px 35px,
+    linear-gradient(135deg,#9fb0b2 0%,#6d838a 55%,#233f4d 100%) 50% 0 / 20px 8px,
+    linear-gradient(145deg,#a8956c 0%,#6a5b42 55%,#27353a 100%) 100% 2px / 10px 5px,
+    linear-gradient(145deg,#607d88 0%,#2d4b58 100%) 15% 55% / 8px 10px,
+    linear-gradient(90deg,#365260,#67848d 55%,#2e4b5b) 50% 100% / 14px 3px;
+  background-repeat:no-repeat;
+}
+.plant-mirror-detailed > .plant-mirror-stand { display:none; }
+.plant-mirror:not(.is-selected):not(:hover) .plant-mirror-surface { box-shadow:none; }
+</style>
+</head>
+<body>
+<main id="board" aria-label="熔盐塔式发电站演示监控台">
+  <header class="header">
+    <div class="identity">
+      <div class="emblem" aria-hidden="true"></div>
+      <div><h1>熔盐塔式发电站</h1><p>集中式光热发电监控台 · <span id="identity-mirror-count">124</span> 面定日镜</p></div>
+    </div>
+    <div class="mode-picker" role="group" aria-label="数据模式">
+      <button type="button" data-mode="temperature" aria-pressed="true">温度</button>
+      <button type="button" data-mode="load" aria-pressed="false">负载</button>
+      <button type="button" data-mode="current" aria-pressed="false">电流</button>
+      <button type="button" data-mode="flow" aria-pressed="false">数据流</button>
+    </div>
+    <div class="header-meta">
+      <span class="simulation"><i class="status-dot"></i>演示运行</span>
+      <time class="header-clock" id="clock">00:00:00</time>
+    </div>
+  </header>
+  <section class="kpis" aria-label="运行指标">
+    <article class="kpi" style="--metric-color:#ffb868"><div class="kpi-label">吸热器出口温度</div><div class="kpi-value"><span id="kpi-temp"></span><small>°C</small></div><div class="kpi-note">高温阈值 565 °C</div></article>
+    <article class="kpi"><div class="kpi-label">热盐罐温度</div><div class="kpi-value"><span id="kpi-hot"></span><small>°C</small></div><div class="kpi-note">高温储盐回路</div></article>
+    <article class="kpi"><div class="kpi-label">冷盐罐温度</div><div class="kpi-value"><span id="kpi-cold"></span><small>°C</small></div><div class="kpi-note">低温回盐回路</div></article>
+    <article class="kpi"><div class="kpi-label">定日镜在线</div><div class="kpi-value"><span id="kpi-online"></span><small>面</small></div><div id="zone-count-note" class="kpi-note"></div></article>
+    <article class="kpi" style="--metric-color:#64e4f7"><div class="kpi-label">镜场总电流</div><div class="kpi-value"><span id="kpi-current"></span><small>A</small></div><div id="drive-count-note" class="kpi-note"></div></article>
+    <article class="kpi"><div class="kpi-label">平均驱动负载</div><div class="kpi-value"><span id="kpi-load"></span><small>%</small></div><div class="kpi-note">定日镜跟踪驱动</div></article>
+    <article class="kpi" style="--metric-color:#4fddb6"><div class="kpi-label">塔顶聚光指数</div><div class="kpi-value"><span id="kpi-flux"></span><small>%</small></div><div class="kpi-note">按入射角和太阳高度估算</div></article>
+  </section>
+
+  <div class="main">
+    <aside class="side side-left" aria-label="镜场温度和告警">
+      <section class="panel">
+        <div class="panel-heading"><h2>分区温度</h2><span>均值 / °C</span></div>
+        <div class="zone-list" id="zone-list"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-heading"><h2>实时告警</h2><span id="alert-count"></span></div>
+        <div class="alert-list" id="alert-list"></div>
+      </section>
+    </aside>
+
+    <section class="stage" id="stage" tabindex="0" aria-label="发电站三维视口，可拖动改变视角" data-view="1">
+      <div id="camera-space"><div id="world" class="initializing"></div></div>
+      <canvas id="effects" aria-hidden="true"></canvas>
+      <div id="callouts">
+        <div id="current-badges" hidden></div>
+        <span id="receiver-label" class="scene-tag receiver-tag" aria-hidden="true"></span>
+        <button type="button" id="mirror-label" class="scene-tag" hidden></button>
+      </div>
+      <div id="scene-shade"></div>
+      <div id="mirror-ruler" role="group" aria-label="镜场编号刻度尺" hidden></div>
+      <div id="mirror-tools" role="group" aria-label="定日镜设备" hidden>
+        <strong>定日镜设备</strong>
+        <button type="button" class="view-button" data-device-choice="tracker">跟踪器　↗</button>
+        <button type="button" class="view-button" data-device-choice="motor">驱动电机　↗</button>
+        <button type="button" class="view-button" data-device-choice="controller">控制箱　↗</button>
+      </div>
+      <section id="equipment-panel" aria-label="设备检视面板" hidden></section>
+      <div class="stage-top">
+        <div class="stage-caption">
+          <small id="view-code">PLANT OVERVIEW</small>
+          <h2>发电站视口<span id="view-subtitle"></span></h2>
+          <div id="optical-key" class="optical-key" aria-label="选中定日镜光路"><span style="--ray:#ffcb80">太阳入射</span><span style="--ray:#5cedfa">反射至吸热器</span></div>
+        </div>
+        <div class="stage-nav">
+          <div class="view-rail" role="group" aria-label="五层视角">
+            <button class="view-button" type="button" data-view="1" aria-pressed="true"><kbd>1</kbd>上帝视角</button>
+            <button class="view-button" type="button" data-view="2" aria-pressed="false"><kbd>2</kbd>第一视角</button>
+            <button class="view-button" type="button" data-view="3" aria-pressed="false"><kbd>3</kbd>单镜视角</button>
+            <button class="view-button" type="button" data-view="4" aria-pressed="false"><kbd>4</kbd>单机视角</button>
+            <button class="view-button" type="button" data-view="5" aria-pressed="false"><kbd>5</kbd>机内视角</button>
+          </div>
+          <div class="stage-nav-meta">
+            <span id="solar-reading"></span>
+            <button class="view-button" id="camera-reset" type="button" title="恢复当前视角的默认机位（Home）">↺ 复位视角</button>
+          </div>
+        </div>
+      </div>
+      <div class="stage-bottom">
+        <div id="legend" class="legend" aria-label="数据图例"></div>
+        <div class="solar-control" role="group" aria-label="太阳角度">
+          <div class="solar-title">太阳角度<strong>东 → 西</strong></div>
+          <label>方位角 <output id="azimuth-value" for="azimuth"></output><input id="azimuth" type="range" min="60" max="300" value="162"></label>
+          <label>高度角 <output id="altitude-value" for="altitude"></output><input id="altitude" type="range" min="5" max="75" value="59"></label>
+          <button type="button" class="solar-auto" id="solar-auto" aria-pressed="false">▷ 自动轨迹</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side side-right" aria-label="设备详情和供配电">
+      <section class="panel">
+        <div class="panel-heading"><h2>选中设备</h2><span>实时跟踪</span></div>
+        <div class="selection-title">
+          <div><b id="selection-id"></b><p id="selection-name"></p></div>
+          <div class="status-pill" id="selection-status"><i class="status-dot"></i><span id="selection-state"></span></div>
+        </div>
+        <dl class="detail-values">
+          <div><dt>镜面反射率</dt><dd id="detail-reflect"></dd></div>
+          <div><dt>跟踪精度</dt><dd id="detail-precision"></dd></div>
+          <div><dt>电机电流</dt><dd id="detail-current"></dd></div>
+          <div><dt>驱动功率</dt><dd id="detail-power"></dd></div>
+          <div><dt>镜面温度指数</dt><dd id="detail-temp"></dd></div>
+          <div><dt title="方位角 / 俯仰角">当前跟踪角</dt><dd id="detail-angles"></dd></div>
+          <div><dt>目标角偏差</dt><dd id="detail-error"></dd></div>
+        </dl>
+        <button class="small-action" id="detail-action" type="button">查看定日镜结构 <span>↗</span></button>
+      </section>
+      <section class="panel">
+        <div class="panel-heading"><h2>供配电</h2><span>驱动回路</span></div>
+        <div class="electrical-hub"><i class="status-dot"></i>直流母线<strong>在线</strong></div>
+        <dl class="electric-values">
+          <div><dt>母线电压</dt><dd>48.0 V</dd></div>
+          <div><dt>输出电流</dt><dd id="grid-current"></dd></div>
+          <div><dt>镜场驱动功率</dt><dd id="grid-power"></dd></div>
+          <div><dt>在线支路</dt><dd id="grid-feeds"></dd></div>
+        </dl>
+      </section>
+    </aside>
+  </div>
+
+  <section class="charts" aria-label="运行趋势图表">
+    <article class="panel chart" style="--plot:#ffb868">
+      <div class="panel-heading"><h2>吸热器出口温度趋势</h2><output id="plot-temp-now"></output></div>
+      <canvas id="plot-temp" role="img" aria-label="最近 60 分钟吸热器出口温度趋势，含 565 摄氏度阈值"></canvas>
+    </article>
+    <article class="panel chart" style="--plot:#64e4f7">
+      <div class="panel-heading"><h2>镜场总电流</h2><output id="plot-current-now"></output></div>
+      <canvas id="plot-current" role="img" aria-label="最近 60 分钟镜场总电流趋势"></canvas>
+    </article>
+    <article class="panel chart">
+      <div class="panel-heading"><h2>各镜场分区负载</h2><output>平均负载 / %</output></div>
+      <canvas id="plot-load" role="img" aria-label="四个镜场分区平均负载柱状图"></canvas>
+    </article>
+  </section>
+  <footer class="footer">
+    <span>光热发电原理演示 · 页面数据均为模拟值</span>
+    <span>拖动旋转　·　右键或 Shift 拖动平移　·　滚轮缩放　·　<kbd>1–5</kbd> 切换视角</span>
+  </footer>
+</main>
+<script>
+"use strict";
+
+function buildPlant(world, mirrors) {
+  const px = value => value + 'px';
+  const radians = Math.PI / 180;
+  const at = (x, y, z) => ({x, y, z});
+  const translate = (x, y, z) => 'translate3d(' + [x, y, z].map(px).join(',') + ')';
+  const attach = (parent, className, tag = 'div') => {
+    const child = document.createElement(tag);
+    child.className = className;
+    parent.appendChild(child);
+    return child;
+  };
+  const origin = (parent, className, x, y, z) => {
+    const node = attach(parent, 'plant-origin ' + className);
+    node.style.transform = translate(x, y, z);
+    return node;
+  };
+  const place = (node, width, height, x, y, z, angles = '') => {
+    Object.assign(node.style, {
+      width: px(width), height: px(height), left: px(-width / 2), top: px(-height / 2),
+      transform: translate(x, y, z) + (angles ? ' ' + angles : '')
+    });
+    return node;
+  };
+  const face = (parent, className, width, height, x, y, z, angles = '') =>
+    place(attach(parent, 'plant-piece ' + className), width, height, x, y, z, angles);
+  const slab = (parent, style, width, height, x, y, z) =>
+    face(parent, style, width, height, x, y, z, 'rotateX(90deg)');
+  const sign = (parent, text, width, height, x, y, z, angles = '') => {
+    const node = face(parent, 'plant-sign', width, height, x, y, z, angles);
+    node.textContent = text;
+    return node;
+  };
+  const box = (parent, style, width, height, depth, x, y, z, roof = style) => {
+    const body = origin(parent, '', x, y, z);
+    face(body, style, width, height, 0, 0, depth / 2);
+    face(body, style, width, height, 0, 0, -depth / 2, 'rotateY(180deg)');
+    face(body, style, depth, height, width / 2, 0, 0, 'rotateY(90deg)');
+    face(body, style, depth, height, -width / 2, 0, 0, 'rotateY(-90deg)');
+    slab(body, roof, width, depth, 0, -height / 2, 0);
+    return body;
+  };
+  const facets = (parent, style, radius, height, y, count = 12) => {
+    const step = 360 / count;
+    const width = 2 * radius * Math.tan(step * radians / 2) + .22;
+    for (let i = 0; i < count; i++) {
+      const angle = i * step;
+      const part = face(parent, style, width, height, radius * Math.sin(angle * radians), y,
+        radius * Math.cos(angle * radians), 'rotateY(' + angle + 'deg)');
+      part.style.setProperty('--shade', 'rgba(3,15,26,' + (.03 + (1 - Math.cos((angle - 312) * radians)) * .17) + ')');
+    }
+  };
+  const shapeSegment = (node, a, b, thickness, roll = 0) => {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const dz = b.z - a.z;
+    const horizontal = Math.hypot(dx, dz);
+    const yaw = Math.atan2(-dz, dx) / radians;
+    const bank = Math.atan2(dy, horizontal) / radians;
+    const angles = 'rotateY(' + yaw + 'deg) rotateZ(' + bank + 'deg) rotateX(' + roll + 'deg)';
+    return place(node, Math.hypot(horizontal, dy) + .8, thickness, (a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2, angles);
+  };
+  const pipes = (parent, points, color, thickness = 4) => {
+    for (let i = 1; i < points.length; i++) {
+      for (const roll of [0, 90]) {
+        const part = attach(parent, 'plant-piece plant-pipe');
+        part.style.backfaceVisibility = 'visible';
+        part.style.setProperty('--pipe-color', color);
+        shapeSegment(part, points[i - 1], points[i], thickness, roll);
+      }
+    }
+  };
+  const tray = (parent, a, b, lighting = true) => {
+    const side = attach(parent, 'plant-piece plant-gantry-side');
+    const back = attach(parent, 'plant-piece plant-gantry-side');
+    for (const [rail, offset] of [[side, 4], [back, -4]]) {
+      rail.style.backfaceVisibility = 'visible';
+      shapeSegment(rail, at(a.x + offset, a.y, a.z + offset), at(b.x + offset, b.y, b.z + offset), 8);
+    }
+    const cables = attach(parent, 'plant-piece plant-gantry-wire');
+    cables.style.backfaceVisibility = 'visible';
+    shapeSegment(cables, a, b, 5, 90);
+    if (lighting) {
+      const light = attach(parent, 'plant-piece plant-lightbar');
+      light.style.backfaceVisibility = 'visible';
+      shapeSegment(light, at(a.x, a.y + 4.6, a.z + 5), at(b.x, b.y + 4.6, b.z + 5), 1.6);
+    }
+  };
+  const floorLeft = -870;
+  const floorRight = 1070;
+  const floorNorth = -895;
+  const floorSouth = 870;
+  const floorWidth = floorRight - floorLeft;
+  const floorDepth = floorSouth - floorNorth;
+  const fieldEdge = 840;
+  const yardOffset = 570;
+  const loop = radius => {
+    const sections = Math.ceil(radius / 8) + 48;
+    return Array.from({length:sections + 1}, (_,index) => {
+      const angle = index * 2 * Math.PI / sections;
+      return at(Math.sin(angle) * radius, -.45, Math.cos(angle) * radius);
+    });
+  };
+  const groundRoutes = [
+    ...[109,211,322.5,427.5,532.5,637.5,742.5,fieldEdge].map(loop),
+    [at(-857,-.45,0), at(-109,-.45,0)],
+    [at(109,-.45,0), at(850,-.45,0), at(878,-.45,-28), at(878,-.45,-241)],
+    [at(0,-.45,109), at(0,-.45,855)],
+    [at(0,-.45,-109), at(0,-.45,-884)]
+  ];
+
+  const floor = attach(world, 'plant-piece plant-floor', 'canvas');
+  const textureScale = 1.5;
+  floor.width = Math.round(floorWidth * textureScale);
+  floor.height = Math.round(floorDepth * textureScale);
+  const floorX = (floorRight + floorLeft) / 2;
+  const floorZ = (floorSouth + floorNorth) / 2;
+  place(floor, floorWidth, floorDepth, floorX, .5, floorZ, 'rotateX(90deg)');
+  const ctx = floor.getContext('2d');
+  ctx.scale(floor.width / floorWidth, floor.height / floorDepth);
+  ctx.translate(-floorLeft, -floorNorth);
+  const surface = ctx.createLinearGradient(floorLeft,floorSouth,floorRight,floorNorth);
+  surface.addColorStop(0, '#122633');
+  surface.addColorStop(.48, '#142e3b');
+  surface.addColorStop(1, '#0e202e');
+  ctx.fillStyle = surface;
+  ctx.fillRect(floorLeft,floorNorth,floorWidth,floorDepth);
+  const ambient = ctx.createRadialGradient(-58,10,45,-58,10,970);
+  ambient.addColorStop(0, '#3e60706e');
+  ambient.addColorStop(.66, '#25465628');
+  ambient.addColorStop(1, '#060e1873');
+  ctx.fillStyle = ambient;
+  ctx.fillRect(floorLeft,floorNorth,floorWidth,floorDepth);
+  const path = (points, width, color, dash = []) => {
+    ctx.beginPath();
+    for (const [i, point] of points.entries()) {
+      if (i === 0) ctx.moveTo(point.x, point.z);
+      else ctx.lineTo(point.x, point.z);
+    }
+    ctx.lineWidth = width;
+    ctx.strokeStyle = color;
+    ctx.setLineDash(dash);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  };
+  const field = [
+    [0,89,'#23434d','#436a76'], [90,179,'#203a46','#355664'],
+    [180,269,'#22394b','#426172'], [270,359,'#24434e','#446a73']
+  ];
+  for (const [start, end, fill, stroke] of field) {
+    ctx.beginPath();
+    ctx.arc(0, 0, fieldEdge - 3, start * radians, end * radians);
+    ctx.arc(0, 0, 112, end * radians, start * radians, true);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = .85;
+    ctx.stroke();
+  }
+  for (let x = floorLeft + 20; x < floorRight - 15; x += 36) {
+    path([at(x,0,floorNorth+14),at(x,0,floorSouth-12)], .65, '#82b0ba24');
+  }
+  for (let z = floorNorth + 19; z < floorSouth - 15; z += 36) {
+    path([at(floorLeft+12,0,z),at(floorRight-14,0,z)], .65, '#82b0ba24');
+  }
+  for (const route of groundRoutes) {
+    path(route, 16, '#13242e');
+    path(route, 14.4, '#50768352');
+    path(route, 12, '#172d38');
+    path(route, 1, '#94b9bf85', [8,8]);
+  }
+  const west = floorLeft + 13, east = floorRight - 13;
+  const north = floorNorth + 15, south = floorSouth - 13;
+  path([at(west,0,north),at(east,0,north),at(east,0,south),at(west,0,south),at(west,0,north)],
+    1.4, '#78abba99', [30,7,3,7]);
+  ctx.fillStyle = '#6ca0aa';
+  ctx.font = '700 15px Consolas, monospace';
+  ctx.textAlign = 'center';
+  for (const [x,z,tag] of [[-820,-820,'NW'],[805,-820,'NE'],[-820,812,'SW'],[805,812,'SE']]) {
+    ctx.fillText(tag, x, z);
+    path([at(x-12,0,z+5),at(x+12,0,z+5)],.9,'#6ca0aa');
+  }
+  const zoneLabels = new Map();
+  for (const m of mirrors) {
+    const key = String(m.zone ?? m.id[0]).replace(/[^A-Z0-9]/gi, '');
+    const center = zoneLabels.get(key) || {x:0,z:0};
+    center.x += m.x;
+    center.z += m.z;
+    zoneLabels.set(key,center);
+    ctx.fillStyle = '#7aabad63';
+    for (const [dx,dz] of [[-24,-21],[24,-21],[-24,21],[24,21]]) {
+      ctx.fillRect(m.x + dx - 1,m.z + dz - 1,2,2);
+    }
+  }
+  for (const [label,center] of zoneLabels) {
+    const length = Math.hypot(center.x, center.z) || 1;
+    const x = center.x * 816 / length;
+    const z = center.z * 816 / length;
+    ctx.fillStyle = '#142836';
+    ctx.fillRect(x-13,z-13,26,26);
+    ctx.strokeStyle = '#64939c99';
+    ctx.strokeRect(x-13,z-13,26,26);
+    ctx.fillStyle = '#d3e7e9';
+    ctx.font = '700 17px Consolas, monospace';
+    ctx.fillText(label,x,z+5);
+  }
+  face(world,'plant-rim',floorWidth,12,floorX,6,floorSouth);
+  face(world,'plant-rim',floorWidth,12,floorX,6,floorNorth,'rotateY(180deg)');
+  face(world,'plant-rim',floorDepth,12,floorLeft,6,floorZ,'rotateY(-90deg)');
+  face(world,'plant-rim',floorDepth,12,floorRight,6,floorZ,'rotateY(90deg)');
+
+  // Receiver tower, service floors, and hot/cold salt risers.
+  slab(world, 'plant-shadow', 125, 115, 5, -.22, 4);
+  box(world,'plant-slab',88,6,90,0,-3,0);
+  box(world,'plant-slab',61,7,61,0,-8,0);
+  const tower = origin(world,'plant-tower',0,0,0);
+  for (let side = 0; side < 8; side++) {
+    const angle = side * 45 + 22.5;
+    const wall = face(tower, 'plant-tower-body', 23, 226, 23 * Math.sin(angle * radians), -125,
+      23 * Math.cos(angle * radians), 'rotateY(' + angle + 'deg) rotateX(2deg)');
+    wall.style.clipPath = 'polygon(15% 0,85% 0,99% 100%,1% 100%)';
+    wall.style.setProperty('--shade','rgba(4,14,20,' + (.1 + side % 4 * .09) + ')');
+  }
+  face(tower,'plant-tower-rail',7,215,-11,-126,25.8);
+  sign(tower,'T-01',18,8,0,-26,27);
+  for (const height of [-59, -119, -175, -226, -239]) {
+    const width = 51 + (height < -210 ? 11 : 0);
+    const floor = box(tower,'plant-platform',width,3,width,0,height,0);
+    for (const yaw of [0,90,180,270]) {
+      const rail = face(floor,'plant-terrace',width,4,Math.sin(yaw * radians) * width / 2,-3.5,
+        Math.cos(yaw * radians) * width / 2,'rotateY(' + yaw + 'deg)');
+      rail.style.opacity = '.94';
+    }
+    const glow = height <= -226 ? 'plant-lightbar' : 'plant-metal-dark';
+    face(floor,glow,width - 12,1.4,0,.7,width / 2 + .1);
+  }
+  const receiver = origin(tower,'plant-receiver',0,-264,0);
+  facets(receiver,'plant-receiver-fin',23,42,0);
+  slab(receiver,'plant-receiver-cap',48,48,0,-21,0);
+  box(receiver,'plant-metal',13,4,13,0,-22.5,0);
+  box(receiver,'plant-metal-dark',2.5,9,2.5,0,-28,0);
+  face(receiver,'plant-receiver-beacon',3,3,0,-33,0);
+  const roofRing = slab(receiver,'plant-shadow',44,44,0,21.2,0);
+  roofRing.style.borderRadius = '50%';
+
+  // Fence/wall beyond the field, including a service door and its bridge tray.
+  const wallZ = -882;
+  face(world,'plant-station-wall',floorWidth - 12,87,floorX,-42,wallZ);
+  face(world,'plant-wall-plinth',floorWidth - 12,7,floorX,-3.6,wallZ+1);
+  face(world,'plant-lightbar',floorWidth - 42,2,floorX,-78,wallZ+1);
+  for (let x = floorLeft + 12; x < floorRight - 8; x += 121) {
+    box(world,'plant-metal-dark',4,91,10,x,-45,wallZ+1);
+  }
+  const door = origin(world,'',-96,0,wallZ+6.7);
+  face(door,'plant-door-frame',51,56,0,-28,0);
+  face(door,'plant-rollup-door',43,46,0,-23.5,.4);
+  face(door,'plant-hazard',49,2.3,0,-49,1);
+  face(door,'plant-lightbar',25,1.4,0,-54,1);
+  sign(door,'检修通道',27,6,0,-61,0);
+  const bridgeY = -101;
+  const bridgeZ = -857;
+  const bridgeX = 1030;
+  tray(world,at(floorLeft+23,bridgeY,bridgeZ),at(bridgeX,bridgeY,bridgeZ));
+  tray(world,at(bridgeX,bridgeY,bridgeZ),at(bridgeX,bridgeY,-36));
+  tray(world,at(bridgeX,bridgeY,-257),at(866,bridgeY,-257));
+  for (const [x,z] of [[-844,bridgeZ],[-595,bridgeZ],[-300,bridgeZ],[0,bridgeZ],
+    [318,bridgeZ],[658,bridgeZ],[bridgeX,bridgeZ],[bridgeX,-672],[bridgeX,-465],
+    [bridgeX,-257],[bridgeX,-36],[866,-257]]) {
+    box(world,'plant-metal-dark',5,101,5,x,-50.5,z);
+    box(world,'plant-metal',10,3,10,x,-1.5,z);
+  }
+
+  const yard = origin(world,'plant-utility-yard',yardOffset,0,0);
+  function tank(x, z, hot) {
+    const vessel = origin(yard,'plant-tank',x,0,z);
+    vessel.style.setProperty('--paint-hi',hot ? '#bf956a' : '#79b3c2');
+    vessel.style.setProperty('--paint-lo',hot ? '#6b5047' : '#3e6779');
+    slab(vessel,'plant-shadow',80,65,4,-.1,4);
+    slab(vessel,'plant-platform plant-tank-head',64,64,0,-1,0);
+    facets(vessel,'plant-tank-facet',27,49,-26,10);
+    facets(vessel,'plant-tank-ring',27.65,5,-42,10);
+    facets(vessel,'plant-tank-ring',27.65,5,-11,10);
+    slab(vessel,'plant-tank-head',57,57,0,-51,0);
+    box(vessel,'plant-metal',15,3,11,0,-52.5,-3);
+    slab(vessel,'plant-tank-head',14,14,9,-54.5,5);
+    face(vessel,'plant-tower-rail',5,49,-13,-25,25.5);
+    sign(vessel, hot ? '热盐罐' : '冷盐罐',25,8,0,-31,28);
+    const label = sign(vessel, hot ? '热盐罐' : '冷盐罐',24,8,0,-51.3,13,'rotateX(90deg)');
+    label.classList.add('plant-sign--roof');
+  }
+  tank(328,-144,false);
+  tank(391,-144,true);
+  slab(yard,'plant-shadow',132,100,352,-.17,-251);
+  box(yard,'plant-slab',119,4,79,352,-2,-254);
+  box(yard,'plant-housing',110,57,68,352,-32.5,-254,'plant-roof');
+  face(yard,'plant-rollup-door',25,37,361,-23,-219.5);
+  face(yard,'plant-hazard',27,2.5,361,-43,-219.1);
+  face(yard,'plant-lightbar',81,1.4,350,-55,-219.1);
+  face(yard,'plant-wall-plinth',108,4,352,-5.2,-219.4);
+  sign(yard,'蒸汽发生器',54,9,350,-47,-219);
+  sign(yard,'蒸汽发生器',58,11,351,-62,-249,'rotateX(90deg)').classList.add('plant-sign--roof');
+  for (const x of [318,333]) {
+    box(yard,'plant-metal',10,8,18,x,-64,-265,'plant-roof');
+    face(yard,'plant-cabinet-vents',8,5,x,-63,-255.8);
+  }
+
+  slab(yard,'plant-slab',88,36,350,-1.7,-62);
+  for (const x of [321,342,363,384]) {
+    box(yard,'plant-cabinet',18,26,14,x,-15,-63,'plant-metal');
+    face(yard,'plant-cabinet-door',16,22,x,-15,-55.8);
+    face(yard,'plant-cabinet-display',12,3,x,-20,-55.4);
+    face(yard,'plant-cabinet-vents',11,6,x,-10,-55.4);
+  }
+  sign(yard,'供配电',32,8,353,-29,-60,'rotateX(90deg)').classList.add('plant-sign--roof');
+
+  const yardPoint = (x,y,z) => at(x+yardOffset,y,z);
+  const pipeRoutes = [
+    [yardPoint(328,-30,-135),yardPoint(307,-7,-128),at(855,-7,-118),at(855,-7,9),
+      at(6,-7,9),at(5,-24,27),at(5,-246,27)],
+    [at(15,-246,25),at(15,-26,28),at(26,-10,-10),at(865,-10,-10),at(865,-10,-118),
+      yardPoint(370,-10,-118),yardPoint(391,-33,-136)],
+    [yardPoint(391,-41,-149),yardPoint(391,-36,-179),yardPoint(391,-14,-193),yardPoint(391,-14,-218)],
+    [yardPoint(328,-16,-219),yardPoint(328,-16,-172),yardPoint(328,-40,-151)]
+  ];
+  pipeRoutes.forEach((route,i) => pipes(world,route,i % 3 ? '#ae7950' : '#5096ae',i < 2 ? 4 : 3));
+
+  const makeDevice = (parent, device, label, x, y, z) => {
+    const node = origin(parent, 'plant-device', x,y,z);
+    node.dataset.device = device;
+    node.setAttribute('aria-label', label);
+    return node;
+  };
+  let activeRouting = null;
+  function showMirrorDetails(mirror) {
+    if (activeRouting?.mirror === mirror) return;
+    if (activeRouting) {
+      activeRouting.mirror.root.classList.remove('plant-mirror-detailed');
+      activeRouting.details.remove();
+      activeRouting = null;
+    }
+    if (!mirror) return;
+
+    const model = origin(mirror.root,'plant-mirror-equipment',0,0,0);
+    mirror.root.classList.add('plant-mirror-detailed');
+    box(model,'plant-metal-dark',15,3.5,15,0,-2,0);
+    box(model,'plant-metal',7.5,35,7.5,0,-19.5,0);
+    face(model,'plant-hazard',5,6,0,-9,3.82);
+
+    const tracker = makeDevice(model,'tracker','跟踪器',0,-36,0);
+    box(tracker,'plant-device-face plant-device-tracker',21,9,12,0,0,0);
+    const stalk = face(tracker,'plant-device-face plant-device-tracker',8,9,0,-3,4);
+    stalk.style.transform += ' rotateZ(16deg)';
+    sign(tracker,'TRK',13,4.2,0,0,6.2).classList.add('plant-device-face');
+
+    const motor = makeDevice(model,'motor','驱动电机',15,-34,4);
+    box(motor,'plant-device-face plant-metal-dark',14,6,11,0,2,0);
+    box(motor,'plant-device-face plant-device-motor',14,8.6,9,1,-1,2);
+    face(motor,'plant-device-face plant-device-motor-head',10,10,8.05,-1,2,'rotateY(90deg)');
+    sign(motor,'M',5.2,4.9,1,-1,6.6).classList.add('plant-device-face');
+
+    const controller = makeDevice(model,'controller','控制箱',-13,-19,5);
+    box(controller,'plant-device-face plant-device-controller',13.5,17,9,0,0,0);
+    face(controller,'plant-device-face plant-cabinet-display',9,2.9,0,-4,4.65);
+    face(controller,'plant-device-face plant-cabinet-vents',9,4.5,0,3,4.65);
+    const group = origin(model,'plant-local-routing',0,0,0);
+    const lead = attach(group,'plant-piece plant-local-cable plant-local-lead');
+    lead.style.backfaceVisibility = 'visible';
+    const junction = at(28,-19,10);
+    box(group,'plant-metal-dark plant-local-hardware',3.5,79,4,35.8,-39.5,12.8);
+    box(group,'plant-metal plant-local-hardware',9,2.4,8,35,-1.2,13);
+    for (const z of [11.8,16.2]) {
+      face(group,'plant-gantry-side plant-local-hardware',33.9,4,51,-78,z)
+        .style.backfaceVisibility = 'visible';
+    }
+    slab(group,'plant-gantry-wire plant-local-hardware',34,4.5,51,-76,14);
+    const localRoute = [junction,at(34,-19,14),at(34,-78,14),at(68,-78,14)];
+    for (let i = 1; i < localRoute.length; i++) {
+      const cable = attach(group,'plant-piece plant-local-cable');
+      cable.style.backfaceVisibility = 'visible';
+      shapeSegment(cable,localRoute[i-1],localRoute[i],i === 3 ? 3.2 : 2.4);
+    }
+    activeRouting = {mirror,details:model,lead,junction};
+    mirror.setCablePose(mirror.cssYaw ?? 0,mirror.cssPitch ?? 0);
+  }
+
+  for (const mirror of mirrors) {
+    const model = origin(world,'plant-mirror',mirror.x,0,mirror.z);
+    model.dataset.mirror = mirror.id;
+    const pad = slab(model,'plant-mirror-base',31,31,0,-.75,0);
+    pad.dataset.label = mirror.id;
+    face(model,'plant-mirror-stand',24,43,0,-22,0);
+    face(model,'plant-mirror-stand',24,43,0,-22,0,'rotateY(90deg)');
+    const rotor = origin(model,'plant-mirror-rotor',0,mirrorPivotY,0);
+    const surface = face(rotor,'plant-mirror-surface',68,39,0,0,mirrorSurfaceDepth);
+    surface.dataset.label = mirror.id;
+    face(rotor,'plant-mirror-back',68,39,0,0,-mirrorSurfaceDepth,'rotateY(180deg)');
+    face(rotor,'plant-mirror-edge',5.2,39,-34,0,0,'rotateY(-90deg)');
+    face(rotor,'plant-mirror-edge',5.2,39,34,0,0,'rotateY(90deg)');
+    face(rotor,'plant-mirror-edge',68,5.2,0,19.5,0,'rotateX(-90deg)');
+
+    mirror.setCablePose = (yawDegrees,pitchDegrees) => {
+      if (activeRouting?.mirror !== mirror) return;
+      if (activeRouting.yaw === yawDegrees && activeRouting.pitch === pitchDegrees) return;
+      activeRouting.yaw = yawDegrees;
+      activeRouting.pitch = pitchDegrees;
+      const yaw = yawDegrees * radians;
+      const pitch = pitchDegrees * radians;
+      const cableAnchor = at(32,16,-2.2);
+      const y = cableAnchor.y * Math.cos(pitch) - cableAnchor.z * Math.sin(pitch);
+      const z = cableAnchor.y * Math.sin(pitch) + cableAnchor.z * Math.cos(pitch);
+      const x = cableAnchor.x;
+      const outlet = at(x * Math.cos(yaw) + z * Math.sin(yaw), y-46, -x * Math.sin(yaw) + z * Math.cos(yaw));
+      shapeSegment(activeRouting.lead,outlet,activeRouting.junction,1.65);
+    };
+    Object.assign(mirror,{root:model,rotor,surface});
+  }
+  return {receiver,groundRoutes,pipeRoutes,showMirrorDetails};
+}
+
+
+const equipmentDeviceNames = {
+  tracker: "跟踪器",
+  motor: "驱动电机",
+  controller: "控制箱"
+};
+
+function drawEquipmentDiagram(canvas, { view, device }) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.setTransform(2, 0, 0, 2, 0, 0);
+  ctx.clearRect(0, 0, 720, 334);
+
+  function box(x, y, w, h, fill, stroke, radius = 4) {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, radius);
+    if (fill) {
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
+    if (stroke) {
+      ctx.strokeStyle = stroke;
+      ctx.stroke();
+    }
+  }
+
+  function line(points, color, width = 1, closed = false, fill) {
+    ctx.beginPath();
+    ctx.moveTo(...points[0]);
+    points.slice(1).forEach(point => ctx.lineTo(...point));
+    if (closed) ctx.closePath();
+    if (fill) {
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
+    ctx.lineWidth = width;
+    ctx.strokeStyle = color;
+    ctx.stroke();
+    ctx.lineWidth = 1;
+  }
+
+  function circle(x, y, r, fill, stroke) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    if (stroke) {
+      ctx.strokeStyle = stroke;
+      ctx.stroke();
+    }
+  }
+
+  function metal(y, height, light, dark, middle) {
+    const gradient = ctx.createLinearGradient(0, y, 0, y + height);
+    gradient.addColorStop(0, light);
+    gradient.addColorStop(.42, middle);
+    gradient.addColorStop(1, dark);
+    return gradient;
+  }
+
+  function bolt(x, y) {
+    circle(x, y, 3, "#0a1926", "#788d9a");
+    line([[x - 1.5, y + .8], [x + 1.5, y - .8]], "#8ba2ae");
+  }
+
+  function coolingArrows(x, y, direction, color) {
+    for (let index = 0; index < 3; index += 1) {
+      const offset = x + direction * index * 10;
+      line([[offset, y - 4], [offset + direction * 4, y], [offset, y + 4]], color);
+    }
+  }
+
+  function highlight(x, y, w, h) {
+    ctx.save();
+    ctx.shadowColor = "#22d3ee";
+    ctx.shadowBlur = 11;
+    ctx.lineWidth = 1.3;
+    box(x, y, w, h, "#22d3ee0b", "#61e5f5", 5);
+    ctx.restore();
+  }
+
+  function annotation(label, sublabel, pin, anchor, selected) {
+    const direction = pin[0] > anchor[0] ? 1 : -1;
+    const elbow = [anchor[0] + direction * 113, anchor[1] + 6];
+    const color = selected ? "#62e6f4" : "#698a9f";
+    line([anchor, [elbow[0], anchor[1]], elbow, pin], color);
+    circle(...pin, 3, selected ? "#baf9ff" : "#8cacbe", "#152a39");
+    ctx.fillStyle = selected ? "#a1eff8" : "#e2f0f7";
+    ctx.font = '600 14px "Microsoft YaHei UI", "Microsoft YaHei", sans-serif';
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(label, anchor[0], anchor[1] - 7);
+    ctx.font = '10px "Cascadia Code", Consolas, "Microsoft YaHei UI", sans-serif';
+    ctx.fillStyle = "#94adbc";
+    ctx.fillText(sublabel, anchor[0], anchor[1] + 15);
+  }
+
+  function drawMotor(x, y) {
+    box(x - 21, y + 14, 24, 15, metal(y + 14, 15, "#516c7d", "#101b26", "#294454"), "#708896");
+    box(x + 72, y + 6, 17, 32, metal(y + 6, 32, "#466779", "#12212c", "#254a59"), "#7192a1", 5);
+    box(x, y, 74, 44, metal(y, 44, "#ac7448", "#34261e", "#644a38"), "#e0a371", 7);
+    box(x + 8, y + 6, 56, 33, null, "#1b1a1c", 3);
+    for (let index = 0; index < 5; index += 1) {
+      const stripe = y + 7 + index * 7;
+      line([[x + 9, stripe], [x + 62, stripe]], "#c99a6f", 2);
+      line([[x + 9, stripe + 2], [x + 62, stripe + 2]], "#171720");
+    }
+    circle(x + 5, y + 6, 2, "#bb996e");
+    circle(x + 69, y + 38, 2, "#bb996e");
+  }
+
+  function gear(x, y, radius, teeth) {
+    const vertices = [];
+    for (let index = 0; index < teeth * 4; index += 1) {
+      const angle = index * Math.PI / (teeth * 2);
+      const toothRadius = (index % 4 < 2) ? radius : radius - 4;
+      vertices.push([x + Math.cos(angle) * toothRadius, y + Math.sin(angle) * toothRadius]);
+    }
+    line(vertices, "#9eb3bb", 1, true, metal(y - radius, radius * 2, "#6e8488", "#293e43", "#475d65"));
+    circle(x, y, radius * .48, "#1b2b37", "#7da2b0");
+    circle(x, y, radius * .22, "#8aabba", "#adc7d2");
+  }
+
+  const isInternal = view === 5;
+  const bodyShadow = ctx.createRadialGradient(361, 282, 30, 361, 282, 235);
+  bodyShadow.addColorStop(0, "#010609c9");
+  bodyShadow.addColorStop(1, "#01060900");
+  ctx.fillStyle = bodyShadow;
+  ctx.fillRect(120, 256, 472, 65);
+
+  // Oblique outer enclosure and machined mounting rail.
+  line([[177, 91], [204, 70], [528, 70], [540, 91]], "#506d7a", 1, true, "#314a5a");
+  for (let x = 210; x < 526; x += 15) {
+    line([[x, 73], [x - 13, 85]], "#68849350");
+  }
+  line([[537, 91], [548, 80], [548, 243], [537, 266]], "#516e7e", 1, true, "#172f3d");
+  box(174, 89, 365, 176, metal(89, 176, "#4b697a", "#183040", "#293f50"), "#8098a5", 8);
+  box(184, 100, 344, 154, "#122635", "#4b6879", 6);
+  box(151, 262, 410, 12, metal(262, 12, "#4f6873", "#182b34", "#324a57"), "#718994", 2);
+  box(170, 274, 370, 4, "#14252f", "#385261", 1);
+  [[181, 96], [532, 96], [181, 257], [531, 257], [172, 268], [536, 268]].forEach(point => bolt(...point));
+
+  if (isInternal) {
+    box(188, 105, 336, 144, "#0c1b26", "#547585");
+    box(195, 111, 322, 130, "#111f2b", "#2a4452");
+    for (let x = 209; x < 515; x += 24) {
+      line([[x, 113], [x, 238]], "#334f5a56");
+    }
+
+    line([[301, 129], [330, 129], [331, 212], [365, 212], [387, 234], [472, 234], [472, 152]], "#df945e80", 3);
+    line([[309, 231], [310, 239], [471, 239], [481, 228], [481, 151]], "#35c8dbaa", 2);
+    line([[244, 152], [214, 152], [205, 164], [205, 227], [277, 233]], "#acdbe56b", 2);
+    line([[375, 154], [395, 154], [404, 128], [461, 128]], "#3da6be91", 2);
+
+    drawMotor(223, 126);
+    drawMotor(223, 187);
+    gear(340, 167, 25, 14);
+    gear(363, 196, 17, 11);
+
+    box(391, 173, 31, 28, metal(173, 28, "#708b9c", "#16242e", "#354d5a"), "#94adb6");
+    circle(407, 187, 9, "#132e3a", "#32daeb");
+    circle(407, 187, 4, "#742e27", "#f9aa75");
+
+    [160, 216].forEach(y => {
+      box(383, y, 25, 8, "#496674", "#8fb2bf", 2);
+      box(389, y + 2, 15, 3, "#182934", null, 0);
+      line([[403, y + 1], [418, y - 6]], "#e5ad78", 2);
+    });
+
+    box(442, 116, 68, 40, "#4a5862", "#829aab");
+    for (let x = 447; x < 504; x += 10) {
+      box(x, 121, 8, 29, "#172733", "#688999", 1);
+      circle(x + 4, 131, 2.3, "#bfab6b");
+      circle(x + 4, 143, 1.8, "#1e6c71");
+    }
+
+    box(435, 164, 74, 65, "#144450", "#288e98");
+    box(454, 179, 24, 23, "#101d28", "#78a4a6", 2);
+    for (let index = 0; index < 5; index += 1) {
+      const y = 183 + index * 3;
+      line([[441, y], [451, y], [454, y]], "#68a3a0");
+      line([[478, y], [488, y], [489, y + 4], [504, y + 4]], "#87ab82");
+      circle(442, y, 1.3, "#d6b16b");
+    }
+    [442, 453, 464].forEach((x, index) => circle(x, 216, 2.4, index === 2 ? "#678794" : "#5aebaa"));
+    [486, 494, 502].forEach(x => box(x, 212, 4, 10, "#7d8b64", "#c2b37c", 1));
+
+    if (device === "motor") highlight(215, 118, 101, 121);
+    if (device === "tracker") highlight(314, 153, 115, 77);
+    if (device === "controller") highlight(429, 112, 86, 122);
+
+    annotation("方位 / 俯仰电机", "驱动两条跟踪轴", [226, 155], [17, 95], device === "motor");
+    annotation("减速机构", "齿轮传动", [324, 179], [17, 170], device === "tracker");
+    annotation("机械限位开关", "独立行程检测", [391, 220], [17, 239], device === "tracker");
+    annotation("接线端子", "电源与反馈线束", [485, 124], [587, 100], device === "controller");
+    annotation("绝对值编码器", "角度闭环反馈", [415, 187], [587, 166], device === "tracker");
+    annotation("控制板", "驱动及总线接口", [490, 215], [587, 240], device === "controller");
+    coolingArrows(145, 288, 1, "#22d3ee");
+    coolingArrows(554, 288, 1, "#f8a464");
+    ctx.fillStyle = "#adc9d8";
+    ctx.font = '11px "Microsoft YaHei UI", sans-serif';
+    ctx.fillText("进风", 118, 305);
+    ctx.fillText("出风", 585, 292);
+  } else {
+    box(190, 107, 331, 139, metal(107, 139, "#354f61", "#0b1a28", "#203849"), "#668592");
+    box(202, 117, 94, 116, "#142635", "#5a7788");
+    box(309, 117, 96, 116, "#1b2d39", "#6c8592");
+    box(418, 117, 92, 116, "#152936", "#658391");
+    for (let index = 0; index < 7; index += 1) {
+      const stripe = 143 + index * 8;
+      line([[219, stripe], [279, stripe]], "#0c1925", 4);
+      line([[219, stripe - 2], [279, stripe - 2]], "#527385");
+    }
+    circle(357, 170, 36, metal(134, 72, "#758794", "#182a36", "#354d5b"), "#97aab4");
+    circle(357, 170, 25, "#10252f", "#3a7889");
+    circle(357, 170, 13, "#1d4552", "#71d8e4");
+    circle(357, 170, 6, "#17313e", "#9ec4d1");
+    [[357, 140], [327, 170], [387, 170], [357, 200]].forEach(point => bolt(...point));
+    box(428, 133, 71, 44, "#0b1b25", "#597886");
+    box(435, 140, 56, 18, "#103844", "#3b7887", 2);
+    line([[440, 153], [449, 150], [457, 152], [469, 145], [482, 148]], "#73e6f1");
+    [440, 456, 472].forEach((x, index) => circle(x, 167, 2.8, ["#6aecb0", "#22d3ee", "#586d7e"][index]));
+    box(448, 193, 33, 12, "#263b48", "#557584", 2);
+    for (let x = 433; x <= 493; x += 6) {
+      line([[x, 219], [x, 224]], "#80939d80");
+    }
+
+    [[208, 123], [287, 228], [315, 123], [399, 228], [423, 123], [504, 228]].forEach(point => bolt(...point));
+    [216, 239, 479, 501].forEach(x => box(x, 244, 9, 12, "#253d4b", "#728d99", 2));
+
+    if (device === "motor") highlight(199, 114, 100, 122);
+    if (device === "tracker") highlight(306, 114, 102, 122);
+    if (device === "controller") highlight(415, 114, 98, 122);
+
+    annotation("驱动电机", "48 V 直流供电", [223, 147], [17, 111], device === "motor");
+    annotation("线缆接头", "供电及反馈", [237, 253], [17, 235], device === "motor");
+    annotation("跟踪器输出轴", "两轴位置反馈", [380, 148], [587, 99], device === "tracker");
+    annotation("控制箱", "电源 / 通讯 / 故障", [478, 167], [587, 164], device === "controller");
+    annotation("检修门锁", "设备维护", [477, 198], [587, 236], device === "controller");
+  }
+
+  ctx.save();
+  ctx.setLineDash([3, 4]);
+  line([[174, 283], [174, 314], [539, 314], [539, 283]], "#547c8b");
+  ctx.restore();
+  ctx.textAlign = "center";
+  ctx.font = '10px "Cascadia Code", Consolas, "Microsoft YaHei UI", sans-serif';
+  ctx.fillStyle = "#99b5c4";
+  ctx.fillText("定日镜双轴驱动总成", 356, 328);
+}
+
+function renderEquipment(container, { view, mirror, device, metrics }) {
+  if (!container || !mirror || !metrics) return;
+  const layer = Number(view);
+  const name = equipmentDeviceNames[device] ?? equipmentDeviceNames.tracker;
+  const key = [layer, mirror.id, device].join("/");
+  const isInternal = layer === 5;
+
+  if (container.dataset.equipmentKey !== key || !container.firstElementChild) {
+    container.dataset.equipmentKey = key;
+    container.innerHTML = `
+      <section class="equipment-shell" aria-label="${isInternal ? "机内视角" : "单机视角"}">
+        <header class="equipment-head">
+          <div>
+            <small class="equipment-path"></small>
+            <h2>${name}${isInternal ? " · 机内" : " · 单机"}</h2>
+          </div>
+          <div class="equipment-select" role="group" aria-label="选择设备">
+            ${Object.entries(equipmentDeviceNames).map(([id, label]) =>
+              `<button type="button" data-device-choice="${id}" aria-pressed="${id === device}">${label}</button>`
+            ).join("")}
+          </div>
+          <div class="equipment-nav" role="group" aria-label="设备视角切换">
+            <button type="button" data-view="3">返回单镜</button>
+            <button type="button" data-view="4" aria-pressed="${!isInternal}">设备外壳</button>
+            <button type="button" data-view="5" aria-pressed="${isInternal}">打开外壳</button>
+          </div>
+        </header>
+        <div class="equipment-content">
+          <div class="equipment-diagram">
+            <canvas width="1440" height="668" role="img" aria-label="${isInternal ? "定日镜双轴驱动总成剖视图，包括双电机、减速机构、编码器、限位开关、接线端子和控制板" : "定日镜设备外观示意，包括驱动电机、跟踪器输出轴和控制箱"}"></canvas>
+            <div class="equipment-caption">
+              <span>选中部件 · ${name}</span><span>${isInternal ? "端子与线束 · 气流方向" : "驱动端 · 跟踪轴 · 控制端"}</span>
+            </div>
+          </div>
+          <section class="equipment-readout" aria-label="设备实时读数">
+            <div class="equipment-readout-head">
+              <h3>${isInternal ? "机内状态" : "设备参数"}</h3>
+              <span class="equipment-status"></span>
+            </div>
+            <div class="equipment-gauges">
+              <div class="equipment-gauge"><span>电机电流</span><b data-read="current"></b><small>A</small></div>
+              <div class="equipment-gauge"><span>有功功率</span><b data-read="power"></b><small>W</small></div>
+              <div class="equipment-gauge"><span>${isInternal ? "进风温度" : "壳体温度"}</span><b data-read="temperature"></b><small>°C</small></div>
+              <div class="equipment-gauge"><span>${isInternal ? "出风温度" : "驱动负载"}</span><b data-read="secondary"></b><small>${isInternal ? "°C" : "%"}</small></div>
+            </div>
+            <dl class="equipment-rows">
+              <div><dt>电机轴数 / 额定电压</dt><dd class="equipment-number">2 轴 / 48 VDC</dd></div>
+              <div><dt>编码器 · 方位 / 俯仰</dt><dd class="equipment-number" data-read="encoder"></dd></div>
+              <div><dt>目标角偏差</dt><dd class="equipment-number" data-read="deviation"></dd></div>
+              <div><dt>机械限位</dt><dd class="equipment-limit-indicators" data-read="limits"><span><i data-limit="yaw"></i>方位</span><span><i data-limit="pitch"></i>俯仰</span><span data-read="limitLabel"></span></dd></div>
+              <div><dt>状态灯</dt><dd class="equipment-leds"><span><i data-led="power"></i>电源</span><span><i data-led="comm"></i>通讯</span><span><i data-led="fault"></i>故障</span></dd></div>
+            </dl>
+          </section>
+        </div>
+      </section>`;
+    container.querySelector(".equipment-path").textContent = `${mirror.id} / 定日镜双轴驱动总成`;
+    drawEquipmentDiagram(container.querySelector("canvas"), { view: layer, device });
+  }
+
+  const current = Number(metrics.current);
+  const power = Number(metrics.power);
+  const temperature = Number(metrics.temperature);
+  const yaw = Number(metrics.actualYaw);
+  const pitch = Number(metrics.actualPitch);
+  const yawLimit = Math.abs((yaw + 180) % 360 - 180) >= 179.7;
+  const pitchLimit = Math.abs(pitch) >= 89.7;
+  const state = String(metrics.status ?? "运行中");
+  const isStopped = /离线|停机|检修|故障/i.test(state);
+  const isFault = /故障|离线/i.test(state);
+  const isWarning = yawLimit || pitchLimit || /预警|异常|高温|偏高|告警/i.test(state);
+  const intake = temperature - 9 - current * .35;
+  const exhaust = temperature + 4 + current * .65;
+  const pretty = (value, digits = 1) => Number.isFinite(value) ? value.toFixed(digits) : "—";
+  const readouts = {
+    current: pretty(current, 2),
+    power: pretty(power, 0),
+    temperature: pretty(isInternal ? intake : temperature),
+    secondary: isInternal ? pretty(exhaust) : pretty(Number(metrics.load), 0),
+    encoder: `${pretty(yaw)}° / ${pretty(pitch)}°`,
+    deviation: `${pretty(Number(metrics.error), 2)}°`,
+    limitLabel: (yawLimit || pitchLimit) ? "触发" : "未触发"
+  };
+  Object.entries(readouts).forEach(([field, value]) => {
+    const element = container.querySelector(`[data-read="${field}"]`);
+    if (element.textContent !== value) element.textContent = value;
+  });
+
+  const status = container.querySelector(".equipment-status");
+  const displayedStatus = (yawLimit || pitchLimit) ? "限位触发" : state;
+  if (status.textContent !== displayedStatus) status.textContent = displayedStatus;
+  status.dataset.state = isStopped ? "stopped" : isWarning ? "warning" : "running";
+  container.querySelector('[data-limit="yaw"]').dataset.engaged = String(yawLimit);
+  container.querySelector('[data-limit="pitch"]').dataset.engaged = String(pitchLimit);
+  container.querySelector('[data-led="power"]').classList.toggle("is-powered", !isStopped || isFault);
+  container.querySelector('[data-led="comm"]').classList.toggle("is-communicating", !isStopped);
+  container.querySelector('[data-led="fault"]').classList.toggle("is-fault", isFault || isWarning);
+}
+
+function createPlantEffects(canvas) {
+  const context = canvas.getContext('2d');
+  const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+  const routeLengths = new WeakMap();
+  const routePhases = new WeakMap();
+  const tau = 2 * Math.PI;
+  let previousTime;
+  let flowOpacity = 0;
+  let overviewOpacity = 1;
+
+  function line(from, to, color, width = 1) {
+    context.beginPath();
+    context.moveTo(from.x, from.y);
+    context.lineTo(to.x, to.y);
+    context.strokeStyle = color;
+    context.lineWidth = width;
+    context.stroke();
+  }
+
+  function disc(x, y, radius, fill) {
+    context.beginPath();
+    context.arc(x, y, radius, 0, tau);
+    context.fillStyle = fill;
+    context.fill();
+  }
+
+  function halo(x, y, radius, center, edge) {
+    const glow = context.createRadialGradient(x, y, 0, x, y, radius);
+    glow.addColorStop(0, center);
+    glow.addColorStop(0.28, edge);
+    glow.addColorStop(1, 'transparent');
+    disc(x, y, radius, glow);
+  }
+
+  const solarTrack = Array.from({length:49},(_,index) => {
+    const {azimuth,altitude} = solarTrackAt(index / 48);
+    return solarPosition(azimuth,altitude);
+  });
+
+  function drawSunTrack(project) {
+    context.save();
+    context.globalAlpha = overviewOpacity;
+    context.strokeStyle = 'rgba(239,191,110,.48)';
+    context.lineWidth = 1;
+    context.setLineDash([2,6]);
+    context.beginPath();
+    let previous = null;
+    for (const position of solarTrack) {
+      const point = project(position);
+      if (point && previous) context.lineTo(point.x,point.y);
+      else if (point) context.moveTo(point.x,point.y);
+      previous = point;
+    }
+    context.stroke();
+    context.setLineDash([]);
+    context.font = '10px Consolas, "Microsoft YaHei", sans-serif';
+    context.fillStyle = 'rgba(241,204,151,.82)';
+    context.textBaseline = 'middle';
+    const east = project(solarTrack[0]);
+    const west = project(solarTrack.at(-1));
+    if (east) context.fillText('东 60°',east.x+8,east.y);
+    if (west) {
+      context.textAlign = 'right';
+      context.fillText('西 300°',west.x-8,west.y);
+    }
+    context.restore();
+  }
+
+  function drawSun(point) {
+    const {x,y} = point;
+    halo(x, y, 34, 'rgba(255,221,145,.65)', 'rgba(255,164,68,.22)');
+    context.strokeStyle = 'rgba(255,210,140,.62)';
+    context.lineWidth = 1;
+    context.beginPath();
+    context.arc(x, y, 10, 0, tau);
+    context.stroke();
+    disc(x, y, 5.2, '#ffd995');
+    disc(x, y, 3.25, '#fff5d6');
+    context.save();
+    context.fillStyle = '#ffdfac';
+    context.font = '11px "Microsoft YaHei", sans-serif';
+    context.textBaseline = 'bottom';
+    context.fillText('太阳',x+13,y-7);
+    context.restore();
+  }
+
+  function drawRadar(project, seconds) {
+    const ring = (radius, start, span, steps) => {
+      context.beginPath();
+      for (let i = 0; i <= steps; i++) {
+        const angle = start + span * i / steps;
+        const point = project({ x: Math.cos(angle) * radius, y: -1, z: Math.sin(angle) * radius });
+        if (!point) return false;
+        if (i === 0) context.moveTo(point.x, point.y);
+        else context.lineTo(point.x, point.y);
+      }
+      return true;
+    };
+
+    context.save();
+    context.globalAlpha = overviewOpacity;
+    context.lineWidth = 1;
+    context.strokeStyle = 'rgba(96,218,244,.21)';
+    if (ring(86, 0, tau, 36)) context.stroke();
+    context.setLineDash([2, 5]);
+    context.strokeStyle = 'rgba(84,200,226,.16)';
+    if (ring(106, 0, tau, 48)) context.stroke();
+    context.setLineDash([]);
+    const angle = seconds * 0.6;
+    context.strokeStyle = 'rgba(146,241,255,.72)';
+    context.lineWidth = 1.4;
+    if (ring(106, angle, 0.54, 10)) context.stroke();
+    context.restore();
+  }
+
+  function drawReceiver(receiver, seconds, energy, strength) {
+    const pulse = 0.83 + 0.17 * Math.sin(seconds * 6.5);
+    context.save();
+    context.globalAlpha = strength * (0.52 + energy * 0.48) * pulse;
+    halo(receiver.x, receiver.y, 38, 'rgba(255,251,222,.55)', 'rgba(255,177,83,.22)');
+    const plume = context.createLinearGradient(receiver.x, receiver.y - 88, receiver.x, receiver.y + 14);
+    plume.addColorStop(0, 'transparent');
+    plume.addColorStop(0.68, 'rgba(34,211,238,.06)');
+    plume.addColorStop(0.98, 'rgba(255,228,172,.40)');
+    plume.addColorStop(1, 'transparent');
+    context.fillStyle = plume;
+    context.beginPath();
+    context.moveTo(receiver.x - 8, receiver.y - 88);
+    context.lineTo(receiver.x + 8, receiver.y - 88);
+    context.lineTo(receiver.x + 2, receiver.y + 13);
+    context.lineTo(receiver.x - 2, receiver.y + 13);
+    context.closePath();
+    context.fill();
+    const glint = context.createLinearGradient(receiver.x - 30, receiver.y, receiver.x + 30, receiver.y);
+    glint.addColorStop(0, 'transparent');
+    glint.addColorStop(0.5, 'rgba(255,244,211,.79)');
+    glint.addColorStop(1, 'transparent');
+    line({ x: receiver.x - 30, y: receiver.y }, { x: receiver.x + 30, y: receiver.y }, glint);
+    context.restore();
+  }
+
+  function drawBeam(mirror, origin, receiver, options) {
+    const { primary, seconds, index, strength } = options;
+    const energy = Math.min(1, Math.max(0, Number(mirror.shine) || 0));
+    const opacity = (primary ? 0.86 : 0.068) * (0.25 + energy * 0.75) * strength;
+    line(origin, receiver, 'rgba(67,226,247,' + opacity + ')', primary ? 1.35 : 0.8);
+
+    const isPulseBeam = primary || index % (flowOpacity > 0.3 ? 5 : 11) === 0;
+    if (!isPulseBeam) return;
+    const fraction = (seconds * (0.48 + (index % 5) * 0.033) + index * 0.319) % 1;
+    const tailFraction = Math.max(0, fraction - 0.085);
+    const head = {
+      x: origin.x + (receiver.x - origin.x) * fraction,
+      y: origin.y + (receiver.y - origin.y) * fraction
+    };
+    const tail = {
+      x: origin.x + (receiver.x - origin.x) * tailFraction,
+      y: origin.y + (receiver.y - origin.y) * tailFraction
+    };
+    const brightness = Math.min(0.9, (primary ? 0.75 : 0.4) * strength * energy);
+    line(tail, head, 'rgba(124,249,255,' + brightness / 2 + ')', primary ? 2.25 : 1.45);
+    disc(head.x, head.y, primary ? 1.9 : 1.15, 'rgba(200,253,255,' + brightness + ')');
+  }
+
+  function projectRay(origin, direction, distance, project) {
+    let near = 0;
+    let far = distance;
+    for (let i = 0; i < 9; i++) {
+      const sample = i === 0 ? far : (near + far) / 2;
+      const point = project({
+        x:origin.x + direction.x * sample,
+        y:origin.y + direction.y * sample,
+        z:origin.z + direction.z * sample,
+      });
+      if (i === 0 && point) return point;
+      if (point) near = sample;
+      else far = sample;
+    }
+    return near > 0 ? project({
+      x:origin.x + direction.x * near,
+      y:origin.y + direction.y * near,
+      z:origin.z + direction.z * near,
+    }) : null;
+  }
+
+  function drawIncident(start, end, seconds) {
+    const fraction = (seconds * .72) % 1;
+    const x = start.x + (end.x - start.x) * fraction;
+    const y = start.y + (end.y - start.y) * fraction;
+    context.save();
+    context.setLineDash([4,6]);
+    line(start,end,'rgba(255,200,123,.74)',1.4);
+    context.setLineDash([]);
+    disc(x,y,2.3,'#ffe1a1');
+    disc(end.x,end.y,3,'rgba(255,230,181,.94)');
+    context.restore();
+  }
+
+  function lengthsAlongRoute(route) {
+    let lengths = routeLengths.get(route);
+    if (!lengths) {
+      lengths = [0];
+      for (let i = 1; i < route.length; i++) {
+        const a = route[i - 1];
+        const b = route[i];
+        lengths.push(lengths[i - 1] + Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z));
+      }
+      routeLengths.set(route, lengths);
+    }
+    return lengths;
+  }
+
+  function pointOnRoute(route, lengths, distance, project) {
+    let end = 1;
+    while (end < lengths.length - 1 && lengths[end] < distance) end++;
+    const start = end - 1;
+    const ratio = (distance - lengths[start]) / (lengths[end] - lengths[start] || 1);
+    return project({
+      x: route[start].x + (route[end].x - route[start].x) * ratio,
+      y: route[start].y + (route[end].y - route[start].y) * ratio,
+      z: route[start].z + (route[end].z - route[start].z) * ratio
+    });
+  }
+
+  function drawRoute(route, index, project, step, velocity, pipe) {
+    if (route.length < 2) return;
+    const lengths = lengthsAlongRoute(route);
+    const length = lengths.at(-1);
+    if (length === 0) return;
+    const previous = routePhases.get(route) ?? (index * 0.173 % 1) * length;
+    const phase = ((previous + step * velocity) % length + length) % length;
+    routePhases.set(route, phase);
+    const particleCount = Math.min(8, Math.max(2, Math.round(length / (pipe ? 44 : 82))));
+    const color = pipe ? (index % 3 === 0 ? '90,174,255,' : '255,180,99,') : '76,231,248,';
+    const gap = length / particleCount;
+    for (let i = 0; i < particleCount; i++) {
+      const distance = (phase + i * gap) % length;
+      const head = pointOnRoute(route, lengths, distance, project);
+      if (!head) continue;
+      const tailDistance = Math.min(length, Math.max(0, distance - velocity * 0.2));
+      const tail = pointOnRoute(route, lengths, tailDistance, project);
+      if (tail) line(tail, head, 'rgba(' + color + '0.33)', pipe ? 1.9 : 1.6);
+      disc(head.x, head.y, pipe ? 3.6 : 3.2, 'rgba(' + color + '0.16)');
+      disc(head.x, head.y, pipe ? 1.7 : 1.55, 'rgba(' + color + '0.92)');
+    }
+  }
+
+  return function draw({ now, view, mode, azimuth, altitude, sunPoint, mirrors, selected, project, width, height, groundRoutes = [], pipeRoutes = [] }) {
+    const ratio = Math.min(2, window.devicePixelRatio || 1);
+    const pixelWidth = Math.round(width * ratio);
+    const pixelHeight = Math.round(height * ratio);
+    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
+    }
+    const delta = Math.min(0.1, Math.max(0, (now - (previousTime ?? now - 16)) / 1000));
+    previousTime = now;
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.clearRect(0, 0, width, height);
+    if (view > 3 || !width || !height) return;
+
+    const seconds = motionPreference.matches ? 0.25 : now / 1000;
+    const targetFlow = mode === 'flow' ? 1 : 0;
+    const blend = motionPreference.matches ? 1 : 1 - Math.exp(-delta * 8);
+    flowOpacity += (targetFlow - flowOpacity) * blend;
+    overviewOpacity += ((view === 1 ? 1 : 0) - overviewOpacity) * blend;
+    context.save();
+    context.beginPath();
+    context.rect(0,0,width,height);
+    context.clip();
+
+    if (overviewOpacity > 0.025) {
+      drawSunTrack(project);
+      drawRadar(project, seconds);
+    }
+
+    const receiver = project(receiverPosition);
+    const sunScreen = project(sunPoint);
+    const beamGroup = view === 3 ? (selected ? [selected] : []) : mirrors;
+    const strength = view === 1 ? 1 : view === 2 ? 0.52 : 0.8;
+    let energy = 0;
+    let selectedBeam;
+    beamGroup.forEach((mirror,index) => {
+      const {center,sun,sunDistance} = mirror.optics;
+      const origin = project(center);
+      if (!origin) return;
+      const primary = selected?.id === mirror.id;
+      const distance = (receiverPosition.y - center.y) / mirror.reflection.y;
+      const hit = primary || !receiver ? projectRay(center,mirror.reflection,distance,project) : receiver;
+      energy += mirror.shine;
+      if (primary) {
+        const incident = sunScreen || projectRay(center,sun,sunDistance,project);
+        selectedBeam = {mirror,origin,hit,incident,index};
+      } else if (hit) {
+        drawBeam(mirror,origin,hit,{primary,seconds,index,strength});
+      }
+    });
+    if (selectedBeam) {
+      const {mirror,origin,hit,incident,index} = selectedBeam;
+      if (incident) drawIncident(incident,origin,seconds);
+      if (hit) drawBeam(mirror,origin,hit,{primary:true,seconds,index,strength:Math.max(.85,strength)});
+    }
+    if (receiver) drawReceiver(receiver,seconds,energy / Math.max(1,beamGroup.length),strength);
+    if (sunScreen) drawSun(sunScreen);
+
+    if (flowOpacity > 0.025) {
+      const solarTravel = Math.sin(azimuth * Math.PI / 180);
+      const step = motionPreference.matches ? 0 : delta;
+      context.globalAlpha = flowOpacity * (view === 1 ? 1 : 0.74);
+      groundRoutes.forEach((route, index) => {
+        drawRoute(route, index, project, step, 86 * solarTravel, false);
+      });
+      pipeRoutes.forEach((route, index) => {
+        drawRoute(route, index, project, step, 78 + altitude * 0.42, true);
+      });
+    }
+    context.restore();
+  };
+}
+
+
+const drawPlantCharts = (() => {
+  const font = '11px Consolas, "Microsoft YaHei", monospace';
+  const axis = '#8095a8';
+  const grid = 'rgba(122,161,188,.16)';
+  const timeLabels = ['−60 分', '−45', '−30', '−15', '现在'];
+  const amber = { line: '#ffb868', rgb: '255,184,104' };
+  const cyan = { line: '#64e4f7', rgb: '100,228,247' };
+
+  function prepare(id, label) {
+    const canvas = document.getElementById(id);
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    const ratio = Math.min(2, window.devicePixelRatio || 1);
+    const pixelWidth = Math.round(width * ratio);
+    const pixelHeight = Math.round(height * ratio);
+    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
+    }
+
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-label', label);
+    const context = canvas.getContext('2d');
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.clearRect(0, 0, width, height);
+    context.font = font;
+    context.textBaseline = 'middle';
+    return { context, left: 39, right: width - 15, top: 15, bottom: height - 24 };
+  }
+
+  function stroke(context, x1, y1, x2, y2, color) {
+    context.beginPath();
+    context.moveTo(x1, y1);
+    context.lineTo(x2, y2);
+    context.strokeStyle = color;
+    context.lineWidth = 1;
+    context.stroke();
+  }
+
+  function drawHorizontalScale(plot, divisions, min, max, suffix = '') {
+    const { context, left, right, top, bottom } = plot;
+    context.textAlign = 'right';
+    for (let i = 0; i <= divisions; i++) {
+      const ratio = i / divisions;
+      const y = Math.round(bottom - (bottom - top) * ratio) + 0.5;
+      const label = Number((min + (max - min) * ratio).toFixed(2));
+      stroke(context, left, y, right, y, i === 0 ? 'rgba(128,169,198,.28)' : grid);
+      context.fillStyle = axis;
+      context.fillText(label + suffix, left - 8, y);
+    }
+  }
+
+  function drawSeries(id, values, title, unit, palette, threshold) {
+    if (values.length < 2) return;
+    const lowest = Math.min(...values);
+    const highest = Math.max(...values);
+    const rangeMin = threshold === undefined ? lowest : Math.min(threshold, lowest);
+    const rangeMax = threshold === undefined ? highest : Math.max(threshold, highest);
+    const roughStep = Math.max(2, (rangeMax - rangeMin + 3) / 4);
+    const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+    const step = [1, 2, 2.5, 5, 10].find(candidate => candidate * magnitude >= roughStep) * magnitude;
+    const min = Math.floor((rangeMin - step * 0.25) / step) * step;
+    const max = Math.ceil((rangeMax + step * 0.3) / step) * step;
+    const plot = prepare(id, title + '，过去 60 分钟，最低 ' + lowest.toFixed(1) + ' ' + unit +
+      '，最高 ' + highest.toFixed(1) + ' ' + unit + '，当前 ' + values.at(-1).toFixed(1) + ' ' + unit);
+    const { context, left, right, top, bottom } = plot;
+    const height = bottom - top;
+    const yForValue = value => bottom - (value - min) / (max - min) * height;
+
+    drawHorizontalScale(plot, Math.round((max - min) / step), min, max);
+    context.textAlign = 'center';
+    timeLabels.forEach((label, i) => {
+      const x = left + (right - left) * i / (timeLabels.length - 1);
+      const mark = Math.round(x) + 0.5;
+      if (i > 0 && i < timeLabels.length - 1) stroke(context, mark, top, mark, bottom, grid);
+      context.fillStyle = axis;
+      context.textAlign = i === timeLabels.length - 1 ? 'right' : i === 0 ? 'left' : 'center';
+      context.fillText(label, x, bottom + 15);
+    });
+
+    const points = values.map((value, index) => ({
+      x: left + (right - left) * index / (values.length - 1),
+      y: yForValue(value)
+    }));
+    const last = points.at(-1);
+    const trace = () => {
+      context.beginPath();
+      context.moveTo(points[0].x, points[0].y);
+      points.slice(1).forEach(point => context.lineTo(point.x, point.y));
+    };
+
+    trace();
+    context.lineTo(right, bottom);
+    context.lineTo(left, bottom);
+    context.closePath();
+    const fill = context.createLinearGradient(0, top, 0, bottom);
+    fill.addColorStop(0, 'rgba(' + palette.rgb + ',.24)');
+    fill.addColorStop(1, 'rgba(' + palette.rgb + ',.018)');
+    context.fillStyle = fill;
+    context.fill();
+
+    if (threshold !== undefined) {
+      const y = yForValue(threshold);
+      context.setLineDash([4, 5]);
+      stroke(context, left, y, right, y, 'rgba(255,137,104,.55)');
+      context.setLineDash([]);
+      context.textAlign = 'right';
+      context.fillStyle = '#f9a189';
+      context.fillText(threshold + '°C', right - 10, y - 8);
+    }
+
+    trace();
+    context.lineJoin = 'round';
+    context.lineCap = 'round';
+    context.strokeStyle = palette.line;
+    context.lineWidth = 1.65;
+    context.stroke();
+    context.beginPath();
+    context.arc(last.x, last.y, 5.6, 0, Math.PI * 2);
+    context.fillStyle = 'rgba(' + palette.rgb + ',.18)';
+    context.fill();
+    context.beginPath();
+    context.arc(last.x, last.y, 2.6, 0, Math.PI * 2);
+    context.fillStyle = palette.line;
+    context.fill();
+  }
+
+  function drawLoads(zones) {
+    if (!zones.length) return;
+    const zoneNames = zones.map(({ id }) => id.includes('区') ? id : id + ' 区');
+    const summary = zones.map(({ load }, i) => zoneNames[i] + ' ' + Math.round(load) + '%').join('，');
+    const plot = prepare('plot-load', '各镜场分区负载，' + summary);
+    const { context, left, right, top, bottom } = plot;
+    drawHorizontalScale(plot, 4, 0, 100, '%');
+    const column = (right - left) / zones.length;
+    const width = Math.min(55, column * 0.48);
+    const track = context.createLinearGradient(0, top, 0, bottom);
+    track.addColorStop(0, 'rgba(88,205,227,.08)');
+    track.addColorStop(1, 'rgba(88,205,227,.035)');
+    const cyanBar = context.createLinearGradient(0, top, 0, bottom);
+    cyanBar.addColorStop(0, 'rgba(100,228,247,.85)');
+    cyanBar.addColorStop(1, 'rgba(34,211,238,.20)');
+    const amberBar = context.createLinearGradient(0, top, 0, bottom);
+    amberBar.addColorStop(0, 'rgba(255,184,104,.90)');
+    amberBar.addColorStop(1, 'rgba(255,184,104,.20)');
+
+    zones.forEach(({ load }, index) => {
+      const middle = left + (index + 0.5) * column;
+      const x = middle - width / 2;
+      const valueY = bottom - Math.min(100, Math.max(0, load)) / 100 * (bottom - top);
+      const elevated = load >= 85;
+      context.fillStyle = track;
+      context.fillRect(x, top, width, bottom - top);
+      context.fillStyle = elevated ? amberBar : cyanBar;
+      context.fillRect(x, valueY, width, bottom - valueY);
+      stroke(context, x, valueY, x + width, valueY, elevated ? amber.line : cyan.line);
+      context.textAlign = 'center';
+      context.fillStyle = elevated ? amber.line : '#b7e9f1';
+      context.fillText(Math.round(load) + '%', middle, valueY - 8);
+      context.fillStyle = axis;
+      context.fillText(zoneNames[index], middle, bottom + 15);
+    });
+  }
+
+  return ({ temperature, current, zones }) => {
+    drawSeries('plot-temp', temperature, '吸热器出口温度', '°C', amber, 565);
+    drawSeries('plot-current', current, '镜场总电流', 'A', cyan);
+    drawLoads(zones);
+  };
+})();
+
+
+
+const $ = (id) => document.getElementById(id);
+const stage = $("stage");
+const world = $("world");
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const radians = Math.PI / 180;
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const blend = (a, b, t) => a + (b - a) * t;
+const smooth = (t) => t * t * (3 - 2 * t);
+const fixed = (value, places = 1) => value.toFixed(places);
+const show = (id, value) => { if ($(id).textContent !== value) $(id).textContent = value; };
+const mean = (items, property) => items.reduce((sum, item) => sum + item[property], 0) / items.length;
+const zoneDefinitions = [
+  { id:"A", name:"东南区", angle:0, temperatures:[468,488,501,416,530,478], loads:[50,62,73,42,58,70] },
+  { id:"B", name:"东北区", angle:90, temperatures:[548,511,531,551,488,505], loads:[67,72,83,69,76,75] },
+  { id:"C", name:"西北区", angle:180, temperatures:[558,575,587,539,557,492], loads:[84,91,96,87,77,80] },
+  { id:"D", name:"西南区", angle:270, temperatures:[410,429,464,473,451,509], loads:[36,44,50,54,56,62] },
+];
+const receiverPosition = {x:0,y:-264,z:0};
+const mirrorPivotY = -46;
+const mirrorSurfaceDepth = 2.6;
+const solarSceneRadius = 960;
+const innerAngles = [15,45,75];
+const outerAngles = [9,27,45,63,81];
+const mirrorRings = [
+  {radius:158, angles:innerAngles}, {radius:270, angles:innerAngles},
+  ...[375,480,585,690,795].map((radius) => ({radius,angles:outerAngles})),
+];
+const zoneSize = mirrorRings.reduce((size,ring) => size + ring.angles.length,0);
+const mirrorsByZone = new Map(zoneDefinitions.map((zone,zoneIndex) => {
+  let offset = 0;
+  const members = mirrorRings.flatMap(({radius,angles},ringIndex) =>
+    angles.map((angle,index) => {
+      const theta = (angle + zone.angle) * radians;
+      const sample = offset < 6 ? offset : (index + 3 * ringIndex) % zone.temperatures.length;
+      const stagger = offset < 6 ? 0 : (ringIndex + 2 * index) % 9 - 4;
+      const mirror = {
+        id:`${zone.id}-${String(offset + 1).padStart(2,"0")}`, zone:zone.id,
+        x:Math.sin(theta)*radius, z:Math.cos(theta)*radius, offset, zoneIndex,
+        baseHeat:zone.temperatures[sample] + stagger, baseLoad:zone.loads[sample] + stagger / 2,
+        reflectance:0.887 + (((zoneIndex * 5 + offset * 3) % 12) / 1000) * 2,
+      };
+      mirror.pivot = {x:mirror.x,y:mirrorPivotY,z:mirror.z};
+      offset++;
+      return mirror;
+    })
+  );
+  return [zone.id,members];
+}));
+const mirrors = [...mirrorsByZone.values()].flat();
+const mirrorById = new Map(mirrors.map((mirror) => [mirror.id,mirror]));
+const plant = buildPlant(world, mirrors);
+const effects = createPlantEffects($("effects"));
+const views = {
+  1:["PLANT OVERVIEW","上帝视角"],
+  2:["FIELD WALKWAY","第一视角"],
+  3:["HELIOSTAT INSPECTION","单镜视角"],
+  4:["DEVICE INSPECTION","单机视角"],
+  5:["INTERNAL COMPONENTS","机内视角"],
+};
+const deviceNames = {tracker:"跟踪器", motor:"驱动电机", controller:"控制箱"};
+const palette = {cyan:"#22d3ee", cool:"#4fddb6", yellow:"#eed36f", orange:"#ff9e59", red:"#f4777d"};
+const scales = {
+  temperature: {
+    title:"镜面温度指数 / °C", limits:[440,500,535,565], colors:[palette.cool,palette.cyan,palette.yellow,palette.orange,palette.red],
+    labels:["<440","440–<500","500–<535","535–565",">565"], names:["凉","正常","偏热","注意","高温"],
+  },
+  load: {
+    title:"跟踪驱动负载 / %", limits:[40,60,75,90], colors:["#5a88c9","#21bed8","#58e0bd","#ecd77b","#ff9b62"],
+    labels:["<40%","40–<60%","60–<75%","75–90%",">90%"], names:["低负载","轻载","常规","高负载","峰值"],
+  },
+  current: {
+    title:"单镜驱动电流 / A", limits:[3,4,5,6], colors:["#597bd1","#22d3ee","#5ae0c5","#e2d680","#ffad69"],
+    labels:["<3 A","3–<4 A","4–<5 A","5–6 A",">6 A"], names:["低","较低","中","较高","高"],
+  },
+  flow: {
+    title:"路径流向", colors:["#22d3ee","#ff9c58","#54a8f1"], labels:["镜场通道","高温熔盐","低温回盐"],
+    names:["反射 → 吸热器","吸热器 → 热盐罐","冷盐罐 → 吸热器"],
+  },
+};
+const solar = {
+  azimuth:162, altitude:59, requestedAzimuth:162, requestedAltitude:59,
+  fromAzimuth:162, fromAltitude:59, start:performance.now(), duration:0,
+  auto:false, phase:0, epoch:0,
+  point:solarPosition(162,59),
+};
+const state = { view:1, mode:"temperature", mirror:mirrorById.get("A-02"), device:"tracker", devicePicked:false };
+const perspective = 1180;
+let camera = viewCamera(1);
+let flight = null;
+let projectMatrix;
+let calloutsDirty = true;
+let stageWidth = stage.clientWidth;
+let stageHeight = stage.clientHeight;
+let totals;
+let lastMotion = -Infinity;
+let lastTelemetry = -Infinity;
+let boardScale = 1;
+let drag = null;
+let ignoreDragClick = false;
+
+
+function unit(x,y,z) {
+  const length = Math.hypot(x,y,z);
+  return { x:x/length, y:y/length, z:z/length };
+}
+
+function sunVector(azimuth, altitude) {
+  const az = azimuth * radians;
+  const elevation = altitude * radians;
+  return { x:Math.sin(az)*Math.cos(elevation), y:-Math.sin(elevation), z:-Math.cos(az)*Math.cos(elevation) };
+}
+
+function solarPosition(azimuth,altitude) {
+  const direction = sunVector(azimuth,altitude);
+  return {x:direction.x*solarSceneRadius,y:direction.y*solarSceneRadius,z:direction.z*solarSceneRadius};
+}
+
+function directionTo(from,to) {
+  return unit(to.x-from.x,to.y-from.y,to.z-from.z);
+}
+
+function solveMirror(mirror,sunPoint) {
+  const pivot = mirror.pivot;
+  let center = pivot;
+  let normal;
+  // The reflecting surface is in front of the shaft. Refine its position and normal together.
+  for (let iteration = 0; iteration < 3; iteration++) {
+    normal = mirrorNormal(directionTo(center,sunPoint),directionTo(center,receiverPosition));
+    center = {
+      x:pivot.x + normal.x*mirrorSurfaceDepth,
+      y:pivot.y + normal.y*mirrorSurfaceDepth,
+      z:pivot.z + normal.z*mirrorSurfaceDepth,
+    };
+  }
+  const sun = directionTo(center,sunPoint);
+  const receiver = directionTo(center,receiverPosition);
+  const sunDistance = Math.hypot(sunPoint.x-center.x,sunPoint.y-center.y,sunPoint.z-center.z);
+  return {center,normal,sun,receiver,sunDistance};
+}
+
+// In CSS world coordinates the sun and receiver vectors point away from the mirror.
+// The unit half-vector is the normal that reflects the incoming ray toward the receiver.
+function mirrorNormal(sun, receiver) {
+  return unit(sun.x + receiver.x, sun.y + receiver.y, sun.z + receiver.z);
+}
+
+function dot(vector, other) {
+  return vector.x * other.x + vector.y * other.y + vector.z * other.z;
+}
+
+function viewCamera(view) {
+  if (view === 1) return { x:65, y:-33, z:48, tilt:-49, heading:-12, distance:2440, focal:842 };
+  if (view === 2) return { x:0, y:-84, z:18, tilt:9.5, heading:0, distance:340, focal:420 };
+  const mirror = state.mirror;
+  const {normal} = mirror.optics;
+  const faceHeading = -Math.atan2(normal.x,normal.z) / radians;
+  const distance = 104;
+  // Offset the inspection camera toward an open gap so an adjacent mirror cannot hide the mechanism.
+  const candidates = [24,-24,44,-44,0].map((offset) => {
+    const heading = faceHeading + offset;
+    const sin = Math.sin(heading*radians);
+    const cos = Math.cos(heading*radians);
+    let obstruction = Math.abs(offset) / 10;
+    for (const neighbor of mirrors) {
+      if (neighbor === mirror) continue;
+      const x = neighbor.x - mirror.x;
+      const z = neighbor.z - mirror.z;
+      const depth = z*cos-x*sin;
+      const lateral = Math.abs(x*cos+z*sin);
+      if (depth > 8 && depth < distance + 35 && lateral < 60) {
+        obstruction += (60-lateral) * Math.min(1,depth / distance);
+      }
+    }
+    return {heading,obstruction};
+  });
+  candidates.sort((a,b) => a.obstruction-b.obstruction);
+  return { x:mirror.x, y:-33, z:mirror.z, tilt:-21, heading:candidates[0].heading, distance, focal:630 };
+}
+
+function applyCamera() {
+  const {x,y,z,tilt,heading,distance,focal} = camera;
+  const zoom = focal / perspective;
+  const transform = `translateZ(${perspective-distance}px) scale3d(${zoom},${zoom},1) rotateX(${tilt}deg) rotateY(${heading}deg) translate3d(${-x}px,${-y}px,${-z}px)`;
+  world.style.transform = transform;
+  projectMatrix = new DOMMatrix(transform);
+  calloutsDirty = true;
+}
+
+function flyTo(view) {
+  const end = viewCamera(view);
+  while (end.heading - camera.heading > 180) end.heading -= 360;
+  while (end.heading - camera.heading < -180) end.heading += 360;
+  if (reducedMotion.matches) {
+    camera = end;
+    flight = null;
+    applyCamera();
+    return;
+  }
+  flight = { from:camera, end, start:performance.now() };
+}
+
+function updateCamera(now) {
+  if (!flight || state.view > 3) return;
+  const progress = clamp((now - flight.start) / 980,0,1);
+  const t = smooth(progress);
+  const {from,end} = flight;
+  camera = Object.fromEntries(Object.keys(end).map((key) => [key,blend(from[key],end[key],t)]));
+  applyCamera();
+  if (progress === 1) flight = null;
+}
+
+
+function freeCameraTarget(target) {
+  return target instanceof Element && !target.closest("button,input,label,#mirror-ruler,#mirror-tools,.stage-top,.stage-bottom,#equipment-panel");
+}
+
+function stopDrag() {
+  if (!drag) return;
+  const id = drag.id;
+  drag = null;
+  stage.classList.remove("is-dragging");
+  if (stage.hasPointerCapture(id)) stage.releasePointerCapture(id);
+}
+
+function rotateCamera(dx,dy) {
+  let {heading,tilt,x,y,z,distance} = camera;
+  const nextHeading = (heading + dx * .25) % 360;
+  const nextTilt = clamp(tilt + dy * .23,state.view === 2 ? -75 : -88,state.view === 2 ? 75 : 22);
+  // The first-person camera looks around from its current position.
+  if (state.view === 2) {
+    const oldYaw = heading * radians, oldPitch = tilt * radians;
+    const newYaw = nextHeading * radians, newPitch = nextTilt * radians;
+    x += distance * (Math.sin(newYaw)*Math.cos(newPitch)-Math.sin(oldYaw)*Math.cos(oldPitch));
+    y += distance * (Math.sin(oldPitch)-Math.sin(newPitch));
+    z += distance * (Math.cos(oldYaw)*Math.cos(oldPitch)-Math.cos(newYaw)*Math.cos(newPitch));
+  }
+  Object.assign(camera,{x,y,z,heading:nextHeading,tilt:nextTilt});
+}
+
+function panCamera(dx,dy) {
+  const {heading,tilt,distance,focal} = camera;
+  const yaw = heading * radians, pitch = tilt * radians;
+  const scale = distance / focal;
+  camera.x = clamp(camera.x - scale * (dx*Math.cos(yaw) + dy*Math.sin(yaw)*Math.sin(pitch)),-2300,2300);
+  camera.y = clamp(camera.y - scale * dy*Math.cos(pitch),-1300,900);
+  camera.z = clamp(camera.z - scale * (dx*Math.sin(yaw) - dy*Math.cos(yaw)*Math.sin(pitch)),-2300,2300);
+}
+
+function zoomCamera(amount) {
+  flight = null;
+  const factor = Math.exp(clamp(amount,-280,280) * .0016);
+  if (state.view === 2) camera.focal = clamp(camera.focal / factor,175,960);
+  else camera.distance = clamp(camera.distance * factor,55,6300);
+  applyCamera();
+}
+
+stage.addEventListener("pointerdown",(event) => {
+  if (state.view > 3 || drag || (event.button !== 0 && event.button !== 2) || !freeCameraTarget(event.target)) return;
+  ignoreDragClick = false;
+  drag = {
+    id:event.pointerId, pan:event.button === 2 || event.shiftKey,
+    x:event.clientX, y:event.clientY, active:false,
+  };
+  stage.focus({preventScroll:true});
+});
+addEventListener("pointermove",(event) => {
+  if (!drag || drag.id !== event.pointerId) return;
+  const dx = (event.clientX - drag.x) / boardScale;
+  const dy = (event.clientY - drag.y) / boardScale;
+  if (!drag.active && Math.hypot(dx,dy) < 5) return;
+  if (!drag.active) {
+    drag.active = true;
+    flight = null;
+    stage.setPointerCapture(event.pointerId);
+    stage.classList.add("is-dragging");
+  }
+  if (drag.pan || event.shiftKey) panCamera(dx,dy);
+  else rotateCamera(dx,dy);
+  drag.x = event.clientX;
+  drag.y = event.clientY;
+  applyCamera();
+  event.preventDefault();
+},{passive:false});
+addEventListener("pointerup",(event) => {
+  if (drag?.id !== event.pointerId) return;
+  if (drag.active) {
+    ignoreDragClick = true;
+    setTimeout(() => { ignoreDragClick = false; },0);
+  }
+  stopDrag();
+});
+addEventListener("pointercancel",(event) => {
+  if (drag?.id === event.pointerId) stopDrag();
+});
+addEventListener("blur",stopDrag);
+stage.addEventListener("click",(event) => {
+  if (ignoreDragClick) event.stopImmediatePropagation();
+},true);
+stage.addEventListener("contextmenu",(event) => {
+  if (state.view <= 3 && freeCameraTarget(event.target)) event.preventDefault();
+});
+stage.addEventListener("wheel",(event) => {
+  if (state.view > 3 || !freeCameraTarget(event.target)) return;
+  event.preventDefault();
+  zoomCamera(event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? stageHeight : 1));
+},{passive:false});
+stage.addEventListener("keydown",(event) => {
+  if (state.view > 3 || event.target !== stage || event.ctrlKey || event.metaKey || event.altKey) return;
+  const direction = { ArrowLeft:[-28,0], ArrowRight:[28,0], ArrowUp:[0,-28], ArrowDown:[0,28] }[event.key];
+  if (direction) {
+    flight = null;
+    if (event.shiftKey) panCamera(...direction);
+    else rotateCamera(...direction);
+    applyCamera();
+  } else if (event.key === "+" || event.key === "=" || event.key === "-") {
+    zoomCamera(event.key === "-" ? 115 : -115);
+  } else if (event.key === "Home") {
+    flyTo(state.view);
+  } else return;
+  event.preventDefault();
+});
+$("camera-reset").addEventListener("click",() => flyTo(state.view));
+
+function project(point) {
+  const m = projectMatrix;
+  const tx = m.m11 * point.x + m.m21 * point.y + m.m31 * point.z + m.m41;
+  const ty = m.m12 * point.x + m.m22 * point.y + m.m32 * point.z + m.m42;
+  const tz = m.m13 * point.x + m.m23 * point.y + m.m33 * point.z + m.m43;
+  const ratio = 1 - tz / perspective;
+  if (ratio <= .025) return null;
+  return { x:stageWidth / 2 + tx / ratio, y:stageHeight / 2 + ty / ratio };
+}
+
+function colorIndex(value, scale) {
+  const index = scale.limits.findIndex((limit,i) => i === scale.limits.length - 1 ? value <= limit : value < limit);
+  return index === -1 ? scale.colors.length - 1 : index;
+}
+
+function colorFor(value, mode) {
+  const scale = scales[mode];
+  return scale.colors[colorIndex(value,scale)];
+}
+
+function solarTrackAt(day) {
+  return { azimuth:60 + 240*day, altitude:5 + 70*Math.sin(day*Math.PI) };
+}
+
+function autoSun(now) {
+  const phase = (solar.phase + (now - solar.epoch) / 30000) % 1;
+  if (phase < .93) return solarTrackAt(phase / .93);
+  return { azimuth:blend(300,60,smooth((phase-.93)/.07)), altitude:5 };
+}
+
+function updateSun(now) {
+  if (solar.auto) {
+    const target = autoSun(now);
+    solar.requestedAzimuth = target.azimuth;
+    solar.requestedAltitude = target.altitude;
+  }
+  const progress = solar.duration ? clamp((now - solar.start) / solar.duration,0,1) : 1;
+  const azimuth = blend(solar.fromAzimuth,solar.requestedAzimuth,smooth(progress));
+  const altitude = blend(solar.fromAltitude,solar.requestedAltitude,smooth(progress));
+  if (azimuth !== solar.azimuth || altitude !== solar.altitude) {
+    solar.azimuth = azimuth;
+    solar.altitude = altitude;
+    solar.point = solarPosition(azimuth,altitude);
+  }
+  if (progress === 1) solar.duration = 0;
+}
+
+function updateTrackers(now) {
+  const source = solar.point;
+  const targetSource = solar.duration ? solarPosition(solar.requestedAzimuth,solar.requestedAltitude) : source;
+  const light = -source.y / solarSceneRadius;
+  const seconds = now / 1000;
+  for (const mirror of mirrors) {
+    if (mirror.opticsSource !== source) {
+      mirror.opticsSource = source;
+      mirror.optics = solveMirror(mirror,source);
+      const {normal,sun} = mirror.optics;
+      mirror.shine = clamp(dot(sun,normal),0,1);
+      mirror.reflection = {
+        x:2*mirror.shine*normal.x - sun.x,
+        y:2*mirror.shine*normal.y - sun.y,
+        z:2*mirror.shine*normal.z - sun.z,
+      };
+    }
+    const {normal,center} = mirror.optics;
+    const targetNormal = targetSource === source ? normal :
+      mirrorNormal(directionTo(center,targetSource),mirror.optics.receiver);
+    const rawYaw = Math.atan2(normal.x,normal.z) / radians;
+    const pitch = Math.asin(-normal.y) / radians;
+    let yaw = rawYaw;
+    if (mirror.cssYaw !== undefined) yaw += 360 * Math.round((mirror.cssYaw - yaw) / 360);
+    const incidence = mirror.shine;
+    mirror.actualYaw = (180 - rawYaw + 360) % 360;
+    mirror.actualPitch = pitch;
+    mirror.precision = .018 + (mirror.offset % 9) * .004 + mirror.zoneIndex * .003;
+    mirror.error = Math.hypot(Math.acos(clamp(dot(targetNormal,normal),-1,1)) / radians, mirror.precision);
+    mirror.load = clamp(mirror.baseLoad + 3 * Math.sin(seconds*.35+mirror.offset) + (1-incidence)*4, 0, 100);
+    mirror.current = 1.05 + .058 * mirror.load;
+    mirror.power = 48 * mirror.current;
+    mirror.heat = mirror.baseHeat + (incidence - .8) * 27 + (light - .82) * 27 + 2.5 * Math.sin(seconds*.17+mirror.offset);
+    mirror.temperature = 30 + mirror.load * .25 + light * 3;
+    mirror.status = mirror.heat > 565 ? "温度告警" : mirror.heat >= 535 ? "温度偏高" : "运行中";
+    if (mirror.cssYaw !== yaw || mirror.cssPitch !== pitch) {
+      mirror.cssYaw = yaw;
+      mirror.cssPitch = pitch;
+      mirror.rotor.style.transform = `translate3d(0,${mirrorPivotY}px,0) rotateY(${yaw}deg) rotateX(${pitch}deg)`;
+    }
+    if (mirror === state.mirror && state.view === 3) mirror.setCablePose?.(yaw,pitch);
+  }
+  const flux = mirrors.reduce((sum,mirror) => sum + mirror.shine * mirror.reflectance,0) / mirrors.length * (.36 + .64 * light);
+  const zones = zoneDefinitions.map((zone) => {
+    const members = mirrorsByZone.get(zone.id);
+    return { ...zone, members, heat:mean(members,"heat"), load:mean(members,"load") };
+  });
+  const current = mirrors.reduce((sum,mirror) => sum + mirror.current,0);
+  const temperature = 408 + 218 * flux;
+  totals = {
+    zones, flux, current, temperature, load:mean(mirrors,"load"),
+    hot: Math.min(temperature - 4, 552 + 5 * flux), cold:289 + 4 * flux,
+  };
+  applyColors();
+}
+
+function applyColors() {
+  for (const mirror of mirrors) {
+    const value = state.mode === "temperature" ? mirror.heat : mirror[state.mode];
+    const tint = state.mode === "flow" ? "#369cae" : colorFor(value,state.mode);
+    const shine = (Math.round(mirror.shine * 18) / 18).toFixed(2);
+    if (mirror.renderedTint !== tint) {
+      mirror.root.style.setProperty("--tint",tint);
+      mirror.renderedTint = tint;
+    }
+    if (mirror.renderedShine !== shine) {
+      mirror.root.style.setProperty("--shine",shine);
+      mirror.renderedShine = shine;
+    }
+  }
+  const receiverValue = state.mode === "temperature" ? totals.temperature :
+    state.mode === "load" ? totals.load : totals.current / mirrors.length;
+  const receiverTint = state.mode === "flow" ? palette.cyan : colorFor(receiverValue,state.mode);
+  const receiverShine = clamp(totals.flux * 1.25,.18,1).toFixed(2);
+  if (plant.receiver.style.getPropertyValue("--tint") !== receiverTint) plant.receiver.style.setProperty("--tint",receiverTint);
+  if (plant.receiver.style.getPropertyValue("--shine") !== receiverShine) plant.receiver.style.setProperty("--shine",receiverShine);
+}
+
+
+
+const currentBadges = $("current-badges");
+const badges = mirrors.map(() => {
+  const label = document.createElement("span");
+  label.className = "current-badge";
+  currentBadges.append(label);
+  return label;
+});
+const zoneList = $("zone-list");
+show("identity-mirror-count",String(mirrors.length));
+show("zone-count-note",`${zoneDefinitions.length} 个分区 · 每区 ${zoneSize} 面`);
+show("drive-count-note",`${mirrors.length} 路驱动合计`);
+zoneList.style.setProperty("--zone-size",zoneSize);
+zoneList.innerHTML = zoneDefinitions.map((zone) => `
+  <div class="zone-row" id="zone-${zone.id}">
+    <div class="zone-top"><b class="zone-id">${zone.id}</b><span>${zone.name}</span><span class="zone-count">${zoneSize} 面</span><b class="zone-val"></b></div>
+    <div class="zone-meter">${"<i></i>".repeat(zoneSize)}</div>
+  </div>`).join("");
+const zoneRows = Array.from(zoneList.children, (row) => ({
+  value:row.querySelector(".zone-val"), units:Array.from(row.querySelectorAll(".zone-meter i")),
+}));
+const clockFormat = new Intl.DateTimeFormat("zh-CN",{hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23",timeZone:"Asia/Shanghai"});
+let oldAlertSignature = "";
+let oldLegendSignature = "";
+let shownRuler = "";
+let previousMirror, previousDevice;
+let lastAlertTime = "";
+
+function paintAlerts() {
+  const warnings = mirrors.filter((mirror) => mirror.heat > 565).sort((a,b) => b.heat - a.heat);
+  const elevated = mirrors.filter((mirror) => mirror.heat >= 535 && mirror.heat <= 565).sort((a,b) => b.heat - a.heat);
+  const entries = [...warnings,...elevated].slice(0,3);
+  const signature = entries.map((mirror) => `${mirror.id}-${mirror.status}`).join();
+  if (signature !== oldAlertSignature || !lastAlertTime) {
+    lastAlertTime = clockFormat.format(new Date());
+    oldAlertSignature = signature;
+  }
+  show("alert-count",`${warnings.length} 高温 · ${elevated.length} 注意`);
+  const list = $("alert-list");
+  const markup = entries.length ? entries.map((mirror) => `
+    <div class="alert-item" style="--severity:${mirror.heat > 565 ? palette.red : palette.orange}">
+      <div><div class="alert-title">${mirror.id} ${mirror.status}</div><div class="alert-desc">镜面温度指数 ${fixed(mirror.heat)} °C</div></div>
+      <time>${lastAlertTime}</time>
+    </div>`).join("") : `<div class="alert-item" style="--severity:${palette.cool}"><div class="alert-title">当前无温度告警</div></div>`;
+  if (list.innerHTML !== markup) list.innerHTML = markup;
+}
+
+function paintLegend() {
+  const {mode} = state;
+  const scale = scales[mode];
+  const counts = scale.colors.map(() => 0);
+  if (mode !== "flow") for (const mirror of mirrors) {
+    counts[colorIndex(mode === "temperature" ? mirror.heat : mirror[mode],scale)]++;
+  }
+  const signature = `${mode}-${counts.join(",")}`;
+  if (signature === oldLegendSignature) return;
+  oldLegendSignature = signature;
+  const legend = $("legend");
+  legend.dataset.count = mirrors.length;
+  legend.innerHTML = `<div class="legend-heading"><b>${scale.title}</b><span>${mirrors.length} 面定日镜</span></div>
+    <div class="legend-scale" style="${mode === "flow" ? "grid-auto-columns:1fr" : ""}">${scale.colors.map((color,i) =>
+      `<div class="legend-item" style="--chip:${color}"><i></i><b>${scale.names[i]}${mode === "flow" ? "" : ` · ${counts[i]}`}</b><span>${scale.labels[i]}</span></div>`).join("")}
+    </div>`;
+}
+
+function paintSelection() {
+  const {view,mirror,device} = state;
+  const isEquipment = view > 3;
+  const zoneName = zoneDefinitions[mirror.zoneIndex].name;
+  show("selection-id",mirror.id);
+  show("selection-name",`${mirror.zone} 区 · ${zoneName} / ${isEquipment || state.devicePicked ? deviceNames[device] : "定日镜"}`);
+  show("selection-state",mirror.status);
+  $("selection-status").classList.toggle("watch",mirror.status !== "运行中");
+  show("detail-reflect",`${fixed(mirror.reflectance*100)}%`);
+  show("detail-precision",`±${fixed(mirror.precision,3)}°`);
+  show("detail-current",`${fixed(mirror.current,2)} A`);
+  show("detail-power",`${fixed(mirror.power,0)} W`);
+  show("detail-temp",`${fixed(mirror.heat)} °C`);
+  show("detail-angles",`${fixed(mirror.actualYaw)}° / ${fixed(mirror.actualPitch)}°`);
+  show("detail-error",`${fixed(mirror.error,2)}°`);
+  if (isEquipment) renderEquipment($("equipment-panel"),{view,mirror,device,metrics:mirror});
+}
+
+function paintTelemetry() {
+  const {zones,temperature,hot,cold,current,load,flux} = totals;
+  show("kpi-temp",fixed(temperature));
+  show("receiver-label",`吸热器 ${fixed(temperature)} °C`);
+  show("kpi-hot",fixed(hot));
+  show("kpi-cold",fixed(cold));
+  show("kpi-online",`${mirrors.length} / ${mirrors.length}`);
+  show("kpi-current",fixed(current));
+  show("kpi-load",fixed(load));
+  show("kpi-flux",fixed(flux*100,0));
+  show("grid-current",`${fixed(current)} A`);
+  show("grid-power",`${fixed(current*48/1000,2)} kW`);
+  show("grid-feeds",`${mirrors.length} / ${mirrors.length}`);
+  show("clock",clockFormat.format(new Date()));
+  zones.forEach((zone,index) => {
+    const row = zoneRows[index];
+    row.value.textContent = `${fixed(zone.heat)}°`;
+    zone.members.forEach((mirror,i) => {
+      row.units[i].style.setProperty("--chip",colorFor(mirror.heat,"temperature"));
+      row.units[i].title = `${mirror.id} · ${fixed(mirror.heat)} °C`;
+    });
+  });
+  for (const mirror of mirrors) {
+    const value = state.mode === "current" ? `${fixed(mirror.current,2)} A` :
+      state.mode === "load" ? `${fixed(mirror.load,0)}%` :
+      state.mode === "temperature" ? `${fixed(mirror.heat)} °C` : "";
+    const title = value ? `${mirror.id} · ${value}` : mirror.id;
+    if (mirror.surface.title !== title) mirror.surface.title = title;
+  }
+  paintLegend();
+  paintAlerts();
+  paintSelection();
+}
+
+function placeTag(element, point, nudgeX, nudgeY) {
+  const screen = project(point);
+  const visible = screen && screen.x > 44 && screen.x < stageWidth - 108 && screen.y > 70 && screen.y < stageHeight - 96;
+  element.hidden = !visible;
+  if (visible) element.style.transform = `translate(${Math.round(screen.x+nudgeX)}px,${Math.round(screen.y+nudgeY)}px)`;
+}
+
+function paintCurrentBadges() {
+  const selected = project({x:state.mirror.x,y:-44,z:state.mirror.z});
+  const occupied = selected ? [{x:selected.x+43,y:selected.y+11}] : [];
+  mirrors.forEach((mirror,i) => {
+    const item = badges[i];
+    const point = project({x:mirror.x,y:-45,z:mirror.z});
+    const visible = mirror !== state.mirror && point && point.x > 46 && point.x < stageWidth - 58 &&
+      point.y > 75 && point.y < stageHeight - 96 &&
+      !occupied.some((other) => Math.abs(other.x-point.x) < 49 && Math.abs(other.y-point.y) < 19);
+    item.hidden = !visible;
+    if (!visible) return;
+    occupied.push(point);
+    const reading = `${fixed(mirror.current,2)} A`;
+    if (item.textContent !== reading) item.textContent = reading;
+    item.style.transform = `translate(${Math.round(point.x-20)}px,${Math.round(point.y+7)}px)`;
+  });
+}
+
+function paintCallouts() {
+  const towerLabel = $("receiver-label");
+  const mirrorLabel = $("mirror-label");
+  currentBadges.hidden = state.view !== 1 || state.mode !== "current";
+  if (!currentBadges.hidden) paintCurrentBadges();
+  if (state.view > 3) {
+    towerLabel.hidden = true;
+    mirrorLabel.hidden = true;
+    return;
+  }
+  placeTag(towerLabel,{x:0,y:-264,z:0},25,-28);
+  const m = state.mirror;
+  const value = state.mode === "temperature" ? `${fixed(m.heat)} °C` :
+    state.mode === "load" ? `${fixed(m.load,0)}%` :
+    state.mode === "current" ? `${fixed(m.current,2)} A` : "路径追踪";
+  show("mirror-label",`${m.id} · ${value}`);
+  placeTag(mirrorLabel,{x:m.x,y:state.view === 3 ? -68 : -44,z:m.z},state.view === 3 ? 73 : 20,state.view === 3 ? -16 : 15);
+}
+
+function setSolarLabels() {
+  const az = `${Math.round(solar.azimuth)}°`;
+  const alt = `${Math.round(solar.altitude)}°`;
+  show("solar-reading",`${solar.auto ? "自动轨迹" : "太阳位置"}　方位 ${az}　高度 ${alt}`);
+  show("azimuth-value",az);
+  show("altitude-value",alt);
+  if (solar.auto) {
+    $("azimuth").value = Math.round(solar.azimuth);
+    $("altitude").value = Math.round(solar.altitude);
+  }
+}
+
+function followSun(azimuth,altitude,now,duration) {
+  solar.fromAzimuth = solar.azimuth;
+  solar.fromAltitude = solar.altitude;
+  solar.requestedAzimuth = azimuth;
+  solar.requestedAltitude = altitude;
+  solar.start = now;
+  solar.duration = reducedMotion.matches ? 0 : duration;
+}
+
+function toggleAuto(active) {
+  solar.auto = active;
+  $("solar-auto").setAttribute("aria-pressed",String(active));
+  show("solar-auto",active ? "Ⅱ 暂停轨迹" : "▷ 自动轨迹");
+  if (active) {
+    const now = performance.now();
+    solar.phase = .93 * clamp((solar.azimuth - 60) / 240,0,1);
+    solar.epoch = now;
+    const target = autoSun(now);
+    followSun(target.azimuth,target.altitude,now,680);
+  } else {
+    followSun(solar.azimuth,solar.altitude,performance.now(),0);
+    $("azimuth").value = Math.round(solar.azimuth);
+    $("altitude").value = Math.round(solar.altitude);
+  }
+}
+
+function paintRuler() {
+  const zone = state.mirror.zone;
+  const ruler = $("mirror-ruler");
+  if (shownRuler !== zone) {
+    shownRuler = zone;
+    ruler.innerHTML = `<strong>${zone} 区镜位</strong>${mirrorsByZone.get(zone).map((m) =>
+      `<button type="button" class="rail-mirror" data-mirror-choice="${m.id}">${m.id}</button>`).join("")}`;
+  }
+  const active = ruler.querySelector(`[data-mirror-choice="${state.mirror.id}"]`);
+  ruler.querySelectorAll("button").forEach((button) => button.setAttribute("aria-pressed",String(button === active)));
+  if (active && active.offsetTop + active.offsetHeight > ruler.scrollTop + ruler.clientHeight) {
+    ruler.scrollTop = active.offsetTop - ruler.clientHeight + active.offsetHeight + 8;
+  } else if (active && active.offsetTop < ruler.scrollTop + 28) {
+    ruler.scrollTop = Math.max(0,active.offsetTop - 28);
+  }
+}
+
+function highlightDevice(mirror,device) {
+  previousDevice?.classList.remove("is-selected");
+  previousDevice = mirror.root.querySelector(`[data-device="${device}"]`);
+  previousDevice?.classList.add("is-selected");
+}
+
+function setSelection(mirror,chosenDevice = null) {
+  const device = chosenDevice || (state.mirror === mirror ? state.device : "tracker");
+  state.devicePicked = Boolean(chosenDevice);
+  if (previousMirror && previousMirror !== mirror) previousMirror.root.classList.remove("is-selected");
+  mirror.root.classList.add("is-selected");
+  if (state.view === 3) plant.showMirrorDetails(mirror);
+  previousMirror = mirror;
+  highlightDevice(mirror,device);
+  state.mirror = mirror;
+  state.device = device;
+  $("mirror-tools").querySelectorAll("button").forEach((button) =>
+    button.setAttribute("aria-pressed",String(button.dataset.deviceChoice === device)));
+  paintSelection();
+  if (state.view === 3) paintRuler();
+  calloutsDirty = true;
+}
+
+function setView(view,force = false) {
+  if (state.view === view && !force) return;
+  stopDrag();
+  state.view = view;
+  stage.dataset.view = view;
+  $("camera-reset").hidden = view > 3;
+  $("optical-key").hidden = view > 3;
+  for (const button of stage.querySelectorAll(".view-rail [data-view]")) {
+    button.setAttribute("aria-pressed",String(Number(button.dataset.view) === view));
+  }
+  show("view-code",views[view][0]);
+  show("view-subtitle",views[view][1]);
+  $("mirror-ruler").hidden = view !== 3;
+  $("mirror-tools").hidden = view !== 3;
+  $("equipment-panel").hidden = view < 4;
+  world.inert = view > 3;
+  const detailAction = ["","","","检视跟踪设备","打开机内剖视","返回单机视角"][view] || "查看定日镜结构";
+  $("detail-action").innerHTML = `${detailAction} <span>↗</span>`;
+  if (view === 3) {
+    plant.showMirrorDetails(state.mirror);
+    highlightDevice(state.mirror,state.device);
+    paintRuler();
+  } else if (view < 3) {
+    plant.showMirrorDetails(null);
+  }
+  calloutsDirty = true;
+  if (view > 3) flight = null;
+  else if (!(view === 1 && force && !projectMatrix)) flyTo(view);
+  paintSelection();
+}
+
+function setMode(mode) {
+  if (mode === state.mode) return;
+  state.mode = mode;
+  stage.dataset.mode = mode;
+  document.querySelectorAll(".mode-picker [data-mode]").forEach((button) => {
+    button.setAttribute("aria-pressed",String(button.dataset.mode === mode));
+  });
+  applyColors();
+  paintLegend();
+  calloutsDirty = true;
+}
+
+$("board").addEventListener("click",(event) => {
+  const mode = event.target.closest(".mode-picker [data-mode]")?.dataset.mode;
+  if (mode) { setMode(mode); return; }
+  const view = event.target.closest("button[data-view]")?.dataset.view;
+  if (view) { setView(Number(view)); return; }
+  const deviceChoice = event.target.closest("[data-device-choice]")?.dataset.deviceChoice;
+  if (deviceChoice) {
+    setSelection(state.mirror,deviceChoice);
+    if (state.view < 4) setView(4);
+    return;
+  }
+  const mirrorNode = event.target.closest("#world [data-mirror]");
+  const chosen = event.target.closest("[data-mirror-choice]")?.dataset.mirrorChoice || mirrorNode?.dataset.mirror;
+  if (chosen && state.view <= 3) {
+    const device = event.target.closest("[data-device]")?.dataset.device;
+    const mirror = mirrorById.get(chosen);
+    const different = state.mirror !== mirror;
+    setSelection(mirror,device);
+    if (device && state.view === 3) setView(4);
+    else if (state.view === 3 && different) flyTo(3);
+  }
+});
+
+$("mirror-label").addEventListener("click",() => setView(3));
+$("detail-action").addEventListener("click",() => setView(state.view > 4 ? 4 : state.view > 2 ? state.view + 1 : 3));
+$("solar-auto").addEventListener("click",() => toggleAuto(!solar.auto));
+for (const slider of [$("azimuth"),$("altitude")]) {
+  slider.addEventListener("input",() => {
+    const az = Number($("azimuth").value);
+    const alt = Number($("altitude").value);
+    if (solar.auto) toggleAuto(false);
+    $("azimuth").value = az;
+    $("altitude").value = alt;
+    followSun(az,alt,performance.now(),420);
+  });
+}
+document.addEventListener("keydown",(event) => {
+  if (event.altKey || event.ctrlKey || event.metaKey || event.repeat || !/^[1-5]$/.test(event.key)) return;
+  setView(Number(event.key));
+});
+
+function fitBoard() {
+  boardScale = Math.min(innerWidth / 1920,innerHeight / 1080);
+  $("board").style.setProperty("--fit",boardScale);
+  stageWidth = stage.clientWidth;
+  stageHeight = stage.clientHeight;
+  lastTelemetry = -Infinity;
+}
+addEventListener("resize",fitBoard);
+
+function paintCharts(now) {
+  const {current,temperature,zones} = totals;
+  show("plot-current-now",`${fixed(current)} A`);
+  show("plot-temp-now",`${fixed(temperature)} °C`);
+  const seconds = now / 1000;
+  const history = (value, first, second, drift, phase) => Array.from({length:25},(_,i) => {
+    const x = i / 24;
+    return value + (1-x) * drift + first * (Math.sin(x*12+phase) - Math.sin(12+phase))
+      + second * (Math.sin(x*31+phase*1.2) - Math.sin(31+phase*1.2));
+  });
+  drawPlantCharts({
+    temperature:history(temperature,4.2,1.8,-9,seconds*.025),
+    current:history(current,2.6,1.2,-3.2,seconds*.03), zones, now,
+  });
+}
+
+function frame(now) {
+  updateCamera(now);
+  if (now - lastMotion >= 31) {
+    lastMotion = now;
+    updateSun(now);
+    updateTrackers(now);
+    setSolarLabels();
+  }
+  if (now - lastTelemetry >= 220) {
+    lastTelemetry = now;
+    paintTelemetry();
+    paintCharts(now);
+    calloutsDirty = true;
+  }
+  effects({
+    now, view:state.view, mode:state.mode,
+    azimuth:solar.azimuth, altitude:solar.altitude, sunPoint:solar.point, mirrors, selected:state.mirror, project,
+    width:stageWidth, height:stageHeight,
+    groundRoutes:plant.groundRoutes, pipeRoutes:plant.pipeRoutes,
+  });
+  if (calloutsDirty) {
+    paintCallouts();
+    calloutsDirty = false;
+  }
+  requestAnimationFrame(frame);
+}
+
+fitBoard();
+updateTrackers(performance.now());
+setSelection(state.mirror);
+setView(1,true);
+applyCamera();
+requestAnimationFrame(() => requestAnimationFrame(() => world.classList.remove("initializing")));
+requestAnimationFrame(frame);
+
+
+
+</script>
+</body>
+</html>

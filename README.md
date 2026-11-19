@@ -53,6 +53,7 @@ AI 辅助生成的交互式前端作品合集，包含三维场景、数字孪�
 | <a href="./assets/project-thumbnails/tyrant-rex.webp"><img src="./assets/project-thumbnails/tyrant-rex.webp" width="160" height="90" alt="TYRANT RX-01 · 机械霸王龙拆解档案"></a> | tyrant-rex | 会行走、眨眼并转头怒吼的机械霸王龙，支持三维爆炸拆解和动力核心检视。 | [在线](https://fanhuayishiy.github.io/ai-demo/tyrant-rex/dist/) | [README](./tyrant-rex/README.md) |
 | <a href="./assets/project-thumbnails/starship-atlas.webp"><img src="./assets/project-thumbnails/starship-atlas.webp" width="160" height="90" alt="星舰档案 · 第十五次飞行"></a> | starship-atlas | 跟随星舰从发射飞到塔架捕获，定格飞行姿势，放大拆解飞船、助推器和回收塔。 | [在线](https://fanhuayishiy.github.io/ai-demo/starship-atlas/dist/) | [README](./starship-atlas/README.md) |
 | <a href="./assets/project-thumbnails/data-center-dashboard.webp"><img src="./assets/project-thumbnails/data-center-dashboard.webp" width="160" height="90" alt="DC-01 · 机房运行态势"></a> | data-center-dashboard | 24 台机柜的五层联动巡检，从机房总览、冷通道和单柜深入到设备面板及机箱内部。 | [在线](https://fanhuayishiy.github.io/ai-demo/data-center-dashboard/) | [README](./data-center-dashboard/README.md) |
+| <a href="./assets/project-thumbnails/molten-salt-tower.webp"><img src="./assets/project-thumbnails/molten-salt-tower.webp" width="160" height="90" alt="熔盐塔式发电站可视化"></a> | molten-salt-tower | 124 面定日镜实时追踪模拟太阳，沿三维光路把光反射至塔顶吸热器。 | [在线](https://fanhuayishiy.github.io/ai-demo/molten-salt-tower/) | [README](./molten-salt-tower/README.md) |
 
 ## 本地运行
 
@@ -253,6 +254,12 @@ LARGO 是一个可旋转视角的 88 键三角钢琴练习室，提供《小星�
 在温度、负载、电流和数据流之间切换，查看 24 台机柜及其配电、告警与趋势。前三层以 CSS 3D 镜头浏览，后两层以 2D 示意图查看所选设备。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/data-center-dashboard/) · [README（含主生成提示原文）](./data-center-dashboard/README.md)
+
+## molten-salt-tower — 熔盐塔式发电站可视化
+
+切换五层视角，查看四区镜场、选中镜位和设备内部。拖动太阳角度或启动自动轨迹，观察入射光与反射光，同时切换温度、负载、电流和数据流。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/molten-salt-tower/) · [README（含主生成提示原文）](./molten-salt-tower/README.md)
 
 ---
 
