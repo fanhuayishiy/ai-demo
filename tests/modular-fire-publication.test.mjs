@@ -58,8 +58,10 @@ const dataCenterPreview = 'data-center-dashboard/index.html';
 const dataCenterTitle = 'DC-01 · 机房运行态势';
 const moltenPreview = 'molten-salt-tower/index.html';
 const moltenTitle = '熔盐塔式发电站可视化';
+const offroadPreview = 'offroad-expedition-4x4/index.html';
+const offroadTitle = '荒野行者 · 复古四驱探险车';
 // 新项目一律追加到末尾，所以这个列表只会在尾部增长。
-const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview, portPreview, keyboardPreview, rainPreview, basilicaPreview, townPreview, shipyardPreview, pianoPreview, trafficPreview, spiderPreview, rexPreview, starshipPreview, dataCenterPreview, moltenPreview];
+const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview, portPreview, keyboardPreview, rainPreview, basilicaPreview, townPreview, shipyardPreview, pianoPreview, trafficPreview, spiderPreview, rexPreview, starshipPreview, dataCenterPreview, moltenPreview, offroadPreview];
 
 function* walk(node) {
   yield node;
@@ -84,7 +86,7 @@ function coverHref(cardNodes) {
   return attribute(cardNodes.find(node => node.tagName === 'a' && hasClass(node, 'badge') && hasClass(node, 'cover')), 'href');
 }
 
-test('collection appends new previews at the tail after the fourteen originals in their original order', () => {
+test('collection appends new previews in the indexed order after the fourteen original pages', () => {
   assert.deepEqual(discoverPreviews(html), [...existingPreviews, ...appendedPreviews]);
 });
 
@@ -124,46 +126,49 @@ test('FIRELINK card keeps its preview and reproduction prompt links', () => {
 
 test('the newest project sits last in the homepage grid without displacing its predecessor', () => {
   const cards = nodes.filter(node => hasClass(node, 'card'));
-  const molten = [...walk(cards.at(-1))];
+  const offroad = [...walk(cards.at(-1))];
+  assert.equal(text(offroad.find(node => node.tagName === 'h2')), offroadTitle);
+  assert.equal(coverHref(offroad), `./${offroadPreview}`);
+  const molten = [...walk(cards.at(-2))];
   assert.equal(text(molten.find(node => node.tagName === 'h2')), moltenTitle);
   assert.equal(coverHref(molten), `./${moltenPreview}`);
-  const dataCenter = [...walk(cards.at(-2))];
+  const dataCenter = [...walk(cards.at(-3))];
   assert.equal(text(dataCenter.find(node => node.tagName === 'h2')), dataCenterTitle);
   assert.equal(coverHref(dataCenter), `./${dataCenterPreview}`);
-  const starship = [...walk(cards.at(-3))];
+  const starship = [...walk(cards.at(-4))];
   assert.equal(text(starship.find(node => node.tagName === 'h2')), starshipTitle);
   assert.equal(coverHref(starship), `./${starshipPreview}`);
-  const rex = [...walk(cards.at(-4))];
+  const rex = [...walk(cards.at(-5))];
   assert.equal(text(rex.find(node => node.tagName === 'h2')), rexTitle);
   assert.equal(coverHref(rex), `./${rexPreview}`);
-  const spider = [...walk(cards.at(-5))];
+  const spider = [...walk(cards.at(-6))];
   assert.equal(text(spider.find(node => node.tagName === 'h2')), spiderTitle);
   assert.equal(coverHref(spider), `./${spiderPreview}`);
-  const traffic = [...walk(cards.at(-6))];
+  const traffic = [...walk(cards.at(-7))];
   assert.equal(text(traffic.find(node => node.tagName === 'h2')), trafficTitle);
   assert.equal(coverHref(traffic), `./${trafficPreview}`);
-  const last = [...walk(cards.at(-7))];
+  const last = [...walk(cards.at(-8))];
   assert.equal(text(last.find(node => node.tagName === 'h2')), pianoTitle);
   assert.equal(coverHref(last), `./${pianoPreview}`);
 
-  const previous = [...walk(cards.at(-8))];
+  const previous = [...walk(cards.at(-9))];
   assert.equal(text(previous.find(node => node.tagName === 'h2')), shipyardTitle);
   assert.equal(coverHref(previous), `./${shipyardPreview}`);
-  const town = [...walk(cards.at(-9))];
+  const town = [...walk(cards.at(-10))];
   assert.equal(text(town.find(node => node.tagName === 'h2')), townTitle);
   assert.equal(coverHref(town), `./${townPreview}`);
-  const basilica = [...walk(cards.at(-10))];
+  const basilica = [...walk(cards.at(-11))];
   assert.equal(text(basilica.find(node => node.tagName === 'h2')), basilicaTitle);
   assert.equal(coverHref(basilica), `./${basilicaPreview}`);
-  const rain = [...walk(cards.at(-11))];
+  const rain = [...walk(cards.at(-12))];
   assert.equal(text(rain.find(node => node.tagName === 'h2')), rainTitle);
   assert.equal(coverHref(rain), `./${rainPreview}`);
-  const keyboard = [...walk(cards.at(-12))];
+  const keyboard = [...walk(cards.at(-13))];
   assert.equal(text(keyboard.find(node => node.tagName === 'h2')), keyboardTitle);
   assert.equal(coverHref(keyboard), `./${keyboardPreview}`);
 
   // 新卡片沿用全站统一的真实截图结构。
-  for (const [card, dir, label] of [[molten, 'molten-salt-tower', '熔盐塔式发电站'], [dataCenter, 'data-center-dashboard', '机房运行态势'], [starship, 'starship-atlas', '星舰档案'], [rex, 'tyrant-rex', '机械霸王龙'], [spider, 'spider-teardown', '机器人蜘蛛'], [traffic, 'smart-traffic-intersection', '路序'], [last, 'largo-piano', 'LARGO'], [previous, 'steel-tide-shipyard', '钢潮入海'], [town, 'songfeng-town', '松风镇']]) {
+  for (const [card, dir, label] of [[offroad, 'offroad-expedition-4x4', '荒野行者'], [molten, 'molten-salt-tower', '熔盐塔式发电站'], [dataCenter, 'data-center-dashboard', '机房运行态势'], [starship, 'starship-atlas', '星舰档案'], [rex, 'tyrant-rex', '机械霸王龙'], [spider, 'spider-teardown', '机器人蜘蛛'], [traffic, 'smart-traffic-intersection', '路序'], [last, 'largo-piano', 'LARGO'], [previous, 'steel-tide-shipyard', '钢潮入海'], [town, 'songfeng-town', '松风镇']]) {
   const shot = card.find(node => node.tagName === 'img' && hasClass(node, 'project-shot'));
   assert.equal(attribute(shot, 'src'), `./assets/project-thumbnails/${dir}.webp`);
   assert.equal(attribute(shot, 'width'), '640');
@@ -180,7 +185,7 @@ test('README lists the same projects in the same order, newest last', () => {
   const rows = readme.split(/\r?\n/u).filter(line => line.startsWith('|') && /\| [a-z][\w-]+ \|/u.test(line));
   const expectedProjects = [...existingPreviews, ...appendedPreviews].map(preview => preview.split('/')[0]);
   assert.deepEqual(rows.map(row => /\| ([a-z][\w-]+) \|/u.exec(row)[1]), expectedProjects);
-  const trailingPreviews = [moltenPreview, dataCenterPreview, starshipPreview, rexPreview, spiderPreview, trafficPreview, pianoPreview, shipyardPreview, townPreview, basilicaPreview, rainPreview, keyboardPreview];
+  const trailingPreviews = [offroadPreview, moltenPreview, dataCenterPreview, starshipPreview, rexPreview, spiderPreview, trafficPreview, pianoPreview, shipyardPreview, townPreview, basilicaPreview, rainPreview, keyboardPreview];
   for (const [index, preview] of trailingPreviews.entries()) {
     const project = preview.split('/')[0];
     const row = rows.at(-1 - index);
@@ -195,14 +200,15 @@ test('README puts the newest overview immediately before the contribution instru
   const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
   const contributionIndex = headings.indexOf('## 新增项目');
   assert.ok(contributionIndex > 0);
-  assert.equal(headings[contributionIndex - 1], `## molten-salt-tower — ${moltenTitle}`);
-  assert.equal(headings[contributionIndex - 2], `## data-center-dashboard — ${dataCenterTitle}`);
-  assert.equal(headings[contributionIndex - 3], `## starship-atlas — ${starshipTitle}`);
-  assert.ok(headings[contributionIndex - 4].startsWith('## tyrant-rex '));
-  assert.ok(headings[contributionIndex - 5].startsWith('## spider-teardown '));
-  assert.ok(headings[contributionIndex - 6].startsWith('## smart-traffic-intersection '));
-  assert.ok(headings[contributionIndex - 7].startsWith('## largo-piano '));
-  assert.ok(headings[contributionIndex - 8].startsWith('## steel-tide-shipyard '));
+  assert.equal(headings[contributionIndex - 1], `## offroad-expedition-4x4 — ${offroadTitle}`);
+  assert.equal(headings[contributionIndex - 2], `## molten-salt-tower — ${moltenTitle}`);
+  assert.equal(headings[contributionIndex - 3], `## data-center-dashboard — ${dataCenterTitle}`);
+  assert.equal(headings[contributionIndex - 4], `## starship-atlas — ${starshipTitle}`);
+  assert.ok(headings[contributionIndex - 5].startsWith('## tyrant-rex '));
+  assert.ok(headings[contributionIndex - 6].startsWith('## spider-teardown '));
+  assert.ok(headings[contributionIndex - 7].startsWith('## smart-traffic-intersection '));
+  assert.ok(headings[contributionIndex - 8].startsWith('## largo-piano '));
+  assert.ok(headings[contributionIndex - 9].startsWith('## steel-tide-shipyard '));
   const moltenStart = readme.indexOf('## molten-salt-tower ');
   const moltenOverview = readme.slice(moltenStart, readme.indexOf('## 新增项目', moltenStart));
   assert.ok(moltenOverview.includes('[在线预览](https://fanhuayishiy.github.io/ai-demo/molten-salt-tower/)'));

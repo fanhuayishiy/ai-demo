@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#191e1a">
+    <meta name="description" content="可环绕观察的复古四驱探险车，包含探险装备与底盘结构。">
+    <title>荒野行者 · 四驱探险车</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="./src/styles.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three/three.module.min.js",
+          "three/addons/": "./vendor/three/addons/"
+        }
+      }
+    </script>
+    <script type="module" src="./src/main.js"></script>
+  </head>
+  <body>
+    <main class="exhibit">
+      <section class="dossier" aria-labelledby="vehicle-title">
+        <div class="identity">
+          <p class="category">复古四驱探险车</p>
+          <h1 id="vehicle-title">荒野行者</h1>
+          <div class="plate" aria-label="四轮驱动">4<span>×</span>4</div>
+        </div>
+        <div class="vehicle-actions" role="group" aria-labelledby="actions-title">
+          <h2 id="actions-title">车身控制</h2>
+          <button type="button" data-door="driver" aria-pressed="false">驾驶门 <span aria-hidden="true"></span></button>
+          <button type="button" data-door="rear" aria-pressed="false">尾门 <span aria-hidden="true"></span></button>
+          <button type="button" data-lights aria-pressed="false">灯光 <span aria-hidden="true"></span></button>
+        </div>
+        <dl class="specs">
+          <div><dt>长 × 宽 × 高</dt><dd>4.4 × 1.8 × 2.2 <small>m</small></dd></div>
+          <div><dt>轴距</dt><dd>2.49 <small>m</small></dd></div>
+        </dl>
+      </section>
+      <section class="inspection" aria-label="车辆三维预览">
+        <div class="viewport" data-viewport>
+          <p class="load-status" role="status">正在载入三维场景…</p>
+        </div>
+        <div class="toolbar">
+          <div class="view-picker" role="group" aria-label="观察视角">
+            <button type="button" data-view="front" aria-pressed="true">前侧</button>
+            <button type="button" data-view="side" aria-pressed="false">侧面</button>
+            <button type="button" data-view="rear" aria-pressed="false">后侧</button>
+            <button type="button" data-view="bottom" aria-pressed="false">底盘</button>
+          </div>
+          <p class="gesture-hint"><span class="mouse-hint">拖动旋转 · 滚轮缩放</span><span class="touch-hint">拖动旋转 · 捏合缩放</span></p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

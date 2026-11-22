@@ -54,6 +54,7 @@ AI 辅助生成的交互式前端作品合集，包含三维场景、数字孪�
 | <a href="./assets/project-thumbnails/starship-atlas.webp"><img src="./assets/project-thumbnails/starship-atlas.webp" width="160" height="90" alt="星舰档案 · 第十五次飞行"></a> | starship-atlas | 跟随星舰从发射飞到塔架捕获，定格飞行姿势，放大拆解飞船、助推器和回收塔。 | [在线](https://fanhuayishiy.github.io/ai-demo/starship-atlas/dist/) | [README](./starship-atlas/README.md) |
 | <a href="./assets/project-thumbnails/data-center-dashboard.webp"><img src="./assets/project-thumbnails/data-center-dashboard.webp" width="160" height="90" alt="DC-01 · 机房运行态势"></a> | data-center-dashboard | 24 台机柜的五层联动巡检，从机房总览、冷通道和单柜深入到设备面板及机箱内部。 | [在线](https://fanhuayishiy.github.io/ai-demo/data-center-dashboard/) | [README](./data-center-dashboard/README.md) |
 | <a href="./assets/project-thumbnails/molten-salt-tower.webp"><img src="./assets/project-thumbnails/molten-salt-tower.webp" width="160" height="90" alt="熔盐塔式发电站可视化"></a> | molten-salt-tower | 124 面定日镜实时追踪模拟太阳，沿三维光路把光反射至塔顶吸热器。 | [在线](https://fanhuayishiy.github.io/ai-demo/molten-salt-tower/) | [README](./molten-salt-tower/README.md) |
+| <a href="./assets/project-thumbnails/offroad-expedition-4x4.webp"><img src="./assets/project-thumbnails/offroad-expedition-4x4.webp" width="160" height="90" alt="荒野行者 · 复古四驱探险车"></a> | offroad-expedition-4x4 | 复古越野 4×4 三维探险车，含可开合车门、风化车漆、车顶装备与可查看的底盘。 | [在线](https://fanhuayishiy.github.io/ai-demo/offroad-expedition-4x4/) | [README](./offroad-expedition-4x4/README.md) |
 
 ## 本地运行
 
@@ -260,6 +261,12 @@ LARGO 是一个可旋转视角的 88 键三角钢琴练习室，提供《小星�
 切换五层视角，查看四区镜场、选中镜位和设备内部。拖动太阳角度或启动自动轨迹，观察入射光与反射光，同时切换温度、负载、电流和数据流。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/molten-salt-tower/) · [README（含主生成提示原文）](./molten-salt-tower/README.md)
+
+## offroad-expedition-4x4 — 荒野行者 · 复古四驱探险车
+
+方正的橄榄绿探险四驱，带锈迹、泥溅、越野轮胎、车顶行李和后备胎。可环视车身及底盘、开合驾驶门与尾门并切换灯光。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/offroad-expedition-4x4/) · [README（含主生成提示原文）](./offroad-expedition-4x4/README.md)
 
 ---
 
