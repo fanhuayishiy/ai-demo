@@ -1,0 +1,2 @@
+# Preserve the byte-for-byte offline build, including embedded license line endings.
+dist/index.html -text

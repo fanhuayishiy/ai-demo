@@ -1,0 +1,12 @@
+{
+  "name": "agras-t50-teardown",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "DJI AGRAS T50 · 农业无人机 3D 拆解与飞行",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test tests/kinematics.test.mjs",
+    "test:browser": "node tests/browser.mjs"
+  }
+}
