@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CHONGQING 8D RAIN BOX · 重庆 8D 山城雨夜微缩沙盘</title>
+  </head>
+  <body>
+    <div id="canvas-root"></div>
+
+    <!-- CAD Callout Layer (visible in Explode mode) -->
+    <div id="callout-layer" class="callout-layer" aria-hidden="true">
+      <svg id="callout-svg" class="callout-svg"></svg>
+      <div id="callout-cards"></div>
+    </div>
+
+    <!-- Top-Left Minimal Museum Header -->
+    <header id="hud-header" class="hud-header">
+      <div class="hud-eyebrow">CHONGQING 8D RAIN BOX · 1:150 ARCHITECTURAL DIORAMA</div>
+      <h1 class="hud-title">重庆 8D 山城雨夜沙盘</h1>
+      <div class="hud-tiers" id="hud-tier-status">
+        <span class="tier-chip"><i class="dot dot-sky"></i><b id="status-sky">+16m 单轨穿楼</b></span>
+        <span class="tier-sep">·</span>
+        <span class="tier-chip"><i class="dot dot-street"></i><b id="status-street">0m 梯坎老街</b></span>
+        <span class="tier-sep">·</span>
+        <span class="tier-chip"><i class="dot dot-sub"></i><b id="status-sub">-10m 穿山地铁</b></span>
+      </div>
+    </header>
+
+    <!-- Top-Right Weather & Audio Pills -->
+    <aside id="hud-topright" class="hud-topright">
+      <div class="pill-group" role="group" aria-label="气候切换">
+        <button class="pill-btn active" data-weather="rain" title="快捷键 3 循环切换气候">
+          <span class="pill-dot rain-dot"></span>巴山夜雨
+        </button>
+        <button class="pill-btn" data-weather="sun" title="快捷键 3 循环切换气候">
+          <span class="pill-dot sun-dot"></span>江城晴午
+        </button>
+        <button class="pill-btn" data-weather="snow" title="快捷键 3 循环切换气候">
+          <span class="pill-dot snow-dot"></span>山城初雪
+        </button>
+      </div>
+      <button id="btn-audio" class="pill-btn audio-btn" title="快捷键 M 切换山城原声">
+        <span class="kbd">M</span>
+        <span class="audio-label">山城原声</span>
+        <span class="audio-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+    </aside>
+
+    <!-- Bottom Control Dock -->
+    <nav id="hud-dock" class="hud-dock" aria-label="沙盘控制栏">
+      <button class="dock-btn active" data-view="hero">
+        <span class="kbd">1</span><span>微缩全景沙盘</span>
+      </button>
+      <button class="dock-btn" data-view="street">
+        <span class="kbd">2</span><span>梯坎街景追踪</span>
+      </button>
+      <button class="dock-btn" data-view="explode">
+        <span class="kbd">4</span><span>三层剖面拆解</span>
+      </button>
+      <span class="dock-divider"></span>
+      <button id="btn-convergence" class="dock-btn dock-accent">
+        <span class="kbd">Space</span><span>魔幻三层交汇</span>
+      </button>
+    </nav>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

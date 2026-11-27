@@ -62,8 +62,10 @@ const offroadPreview = 'offroad-expedition-4x4/index.html';
 const offroadTitle = '荒野行者 · 复古四驱探险车';
 const agrasPreview = 'agras-t50-teardown/dist/index.html';
 const agrasTitle = 'DJI AGRAS T50 · 农业无人机 3D 拆解与飞行';
+const chongqingPreview = 'chongqing-8d-rain-box/dist/index.html';
+const chongqingTitle = '重庆 8D 山城雨夜微缩沙盘 · CHONGQING 8D RAIN BOX';
 // 新项目一律追加到末尾，所以这个列表只会在尾部增长。
-const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview, portPreview, keyboardPreview, rainPreview, basilicaPreview, townPreview, shipyardPreview, pianoPreview, trafficPreview, spiderPreview, rexPreview, starshipPreview, dataCenterPreview, moltenPreview, offroadPreview, agrasPreview];
+const appendedPreviews = [firePreview, roadsterPreview, oceanPreview, shipPreview, cubePreview, portPreview, keyboardPreview, rainPreview, basilicaPreview, townPreview, shipyardPreview, pianoPreview, trafficPreview, spiderPreview, rexPreview, starshipPreview, dataCenterPreview, moltenPreview, offroadPreview, agrasPreview, chongqingPreview];
 
 function* walk(node) {
   yield node;
@@ -128,52 +130,55 @@ test('FIRELINK card keeps its preview and reproduction prompt links', () => {
 
 test('the newest project sits last in the homepage grid without displacing its predecessor', () => {
   const cards = nodes.filter(node => hasClass(node, 'card'));
-  const agras = [...walk(cards.at(-1))];
+  const chongqing = [...walk(cards.at(-1))];
+  assert.equal(text(chongqing.find(node => node.tagName === 'h2')), chongqingTitle);
+  assert.equal(coverHref(chongqing), `./${chongqingPreview}`);
+  const agras = [...walk(cards.at(-2))];
   assert.equal(text(agras.find(node => node.tagName === 'h2')), agrasTitle);
   assert.equal(coverHref(agras), `./${agrasPreview}`);
-  const offroad = [...walk(cards.at(-2))];
+  const offroad = [...walk(cards.at(-3))];
   assert.equal(text(offroad.find(node => node.tagName === 'h2')), offroadTitle);
   assert.equal(coverHref(offroad), `./${offroadPreview}`);
-  const molten = [...walk(cards.at(-3))];
+  const molten = [...walk(cards.at(-4))];
   assert.equal(text(molten.find(node => node.tagName === 'h2')), moltenTitle);
   assert.equal(coverHref(molten), `./${moltenPreview}`);
-  const dataCenter = [...walk(cards.at(-4))];
+  const dataCenter = [...walk(cards.at(-5))];
   assert.equal(text(dataCenter.find(node => node.tagName === 'h2')), dataCenterTitle);
   assert.equal(coverHref(dataCenter), `./${dataCenterPreview}`);
-  const starship = [...walk(cards.at(-5))];
+  const starship = [...walk(cards.at(-6))];
   assert.equal(text(starship.find(node => node.tagName === 'h2')), starshipTitle);
   assert.equal(coverHref(starship), `./${starshipPreview}`);
-  const rex = [...walk(cards.at(-6))];
+  const rex = [...walk(cards.at(-7))];
   assert.equal(text(rex.find(node => node.tagName === 'h2')), rexTitle);
   assert.equal(coverHref(rex), `./${rexPreview}`);
-  const spider = [...walk(cards.at(-7))];
+  const spider = [...walk(cards.at(-8))];
   assert.equal(text(spider.find(node => node.tagName === 'h2')), spiderTitle);
   assert.equal(coverHref(spider), `./${spiderPreview}`);
-  const traffic = [...walk(cards.at(-8))];
+  const traffic = [...walk(cards.at(-9))];
   assert.equal(text(traffic.find(node => node.tagName === 'h2')), trafficTitle);
   assert.equal(coverHref(traffic), `./${trafficPreview}`);
-  const last = [...walk(cards.at(-9))];
+  const last = [...walk(cards.at(-10))];
   assert.equal(text(last.find(node => node.tagName === 'h2')), pianoTitle);
   assert.equal(coverHref(last), `./${pianoPreview}`);
 
-  const previous = [...walk(cards.at(-10))];
+  const previous = [...walk(cards.at(-11))];
   assert.equal(text(previous.find(node => node.tagName === 'h2')), shipyardTitle);
   assert.equal(coverHref(previous), `./${shipyardPreview}`);
-  const town = [...walk(cards.at(-11))];
+  const town = [...walk(cards.at(-12))];
   assert.equal(text(town.find(node => node.tagName === 'h2')), townTitle);
   assert.equal(coverHref(town), `./${townPreview}`);
-  const basilica = [...walk(cards.at(-12))];
+  const basilica = [...walk(cards.at(-13))];
   assert.equal(text(basilica.find(node => node.tagName === 'h2')), basilicaTitle);
   assert.equal(coverHref(basilica), `./${basilicaPreview}`);
-  const rain = [...walk(cards.at(-13))];
+  const rain = [...walk(cards.at(-14))];
   assert.equal(text(rain.find(node => node.tagName === 'h2')), rainTitle);
   assert.equal(coverHref(rain), `./${rainPreview}`);
-  const keyboard = [...walk(cards.at(-14))];
+  const keyboard = [...walk(cards.at(-15))];
   assert.equal(text(keyboard.find(node => node.tagName === 'h2')), keyboardTitle);
   assert.equal(coverHref(keyboard), `./${keyboardPreview}`);
 
   // 新卡片沿用全站统一的真实截图结构。
-  for (const [card, dir, label] of [[agras, 'agras-t50-teardown', 'AGRAS T50'], [offroad, 'offroad-expedition-4x4', '荒野行者'], [molten, 'molten-salt-tower', '熔盐塔式发电站'], [dataCenter, 'data-center-dashboard', '机房运行态势'], [starship, 'starship-atlas', '星舰档案'], [rex, 'tyrant-rex', '机械霸王龙'], [spider, 'spider-teardown', '机器人蜘蛛'], [traffic, 'smart-traffic-intersection', '路序'], [last, 'largo-piano', 'LARGO'], [previous, 'steel-tide-shipyard', '钢潮入海'], [town, 'songfeng-town', '松风镇']]) {
+  for (const [card, dir, label] of [[chongqing, 'chongqing-8d-rain-box', '重庆 8D'], [agras, 'agras-t50-teardown', 'AGRAS T50'], [offroad, 'offroad-expedition-4x4', '荒野行者'], [molten, 'molten-salt-tower', '熔盐塔式发电站'], [dataCenter, 'data-center-dashboard', '机房运行态势'], [starship, 'starship-atlas', '星舰档案'], [rex, 'tyrant-rex', '机械霸王龙'], [spider, 'spider-teardown', '机器人蜘蛛'], [traffic, 'smart-traffic-intersection', '路序'], [last, 'largo-piano', 'LARGO'], [previous, 'steel-tide-shipyard', '钢潮入海'], [town, 'songfeng-town', '松风镇']]) {
   const shot = card.find(node => node.tagName === 'img' && hasClass(node, 'project-shot'));
   assert.equal(attribute(shot, 'src'), `./assets/project-thumbnails/${dir}.webp`);
   assert.equal(attribute(shot, 'width'), '640');
@@ -190,7 +195,7 @@ test('README lists the same projects in the same order, newest last', () => {
   const rows = readme.split(/\r?\n/u).filter(line => line.startsWith('|') && /\| [a-z][\w-]+ \|/u.test(line));
   const expectedProjects = [...existingPreviews, ...appendedPreviews].map(preview => preview.split('/')[0]);
   assert.deepEqual(rows.map(row => /\| ([a-z][\w-]+) \|/u.exec(row)[1]), expectedProjects);
-  const trailingPreviews = [agrasPreview, offroadPreview, moltenPreview, dataCenterPreview, starshipPreview, rexPreview, spiderPreview, trafficPreview, pianoPreview, shipyardPreview, townPreview, basilicaPreview, rainPreview, keyboardPreview];
+  const trailingPreviews = [chongqingPreview, agrasPreview, offroadPreview, moltenPreview, dataCenterPreview, starshipPreview, rexPreview, spiderPreview, trafficPreview, pianoPreview, shipyardPreview, townPreview, basilicaPreview, rainPreview, keyboardPreview];
   for (const [index, preview] of trailingPreviews.entries()) {
     const project = preview.split('/')[0];
     const row = rows.at(-1 - index);
@@ -205,16 +210,17 @@ test('README puts the newest overview immediately before the contribution instru
   const headings = readme.split(/\r?\n/u).filter(line => line.startsWith('## '));
   const contributionIndex = headings.indexOf('## 新增项目');
   assert.ok(contributionIndex > 0);
-  assert.equal(headings[contributionIndex - 1], `## agras-t50-teardown — ${agrasTitle}`);
-  assert.equal(headings[contributionIndex - 2], `## offroad-expedition-4x4 — ${offroadTitle}`);
-  assert.equal(headings[contributionIndex - 3], `## molten-salt-tower — ${moltenTitle}`);
-  assert.equal(headings[contributionIndex - 4], `## data-center-dashboard — ${dataCenterTitle}`);
-  assert.equal(headings[contributionIndex - 5], `## starship-atlas — ${starshipTitle}`);
-  assert.ok(headings[contributionIndex - 6].startsWith('## tyrant-rex '));
-  assert.ok(headings[contributionIndex - 7].startsWith('## spider-teardown '));
-  assert.ok(headings[contributionIndex - 8].startsWith('## smart-traffic-intersection '));
-  assert.ok(headings[contributionIndex - 9].startsWith('## largo-piano '));
-  assert.ok(headings[contributionIndex - 10].startsWith('## steel-tide-shipyard '));
+  assert.equal(headings[contributionIndex - 1], `## chongqing-8d-rain-box — ${chongqingTitle}`);
+  assert.equal(headings[contributionIndex - 2], `## agras-t50-teardown — ${agrasTitle}`);
+  assert.equal(headings[contributionIndex - 3], `## offroad-expedition-4x4 — ${offroadTitle}`);
+  assert.equal(headings[contributionIndex - 4], `## molten-salt-tower — ${moltenTitle}`);
+  assert.equal(headings[contributionIndex - 5], `## data-center-dashboard — ${dataCenterTitle}`);
+  assert.equal(headings[contributionIndex - 6], `## starship-atlas — ${starshipTitle}`);
+  assert.ok(headings[contributionIndex - 7].startsWith('## tyrant-rex '));
+  assert.ok(headings[contributionIndex - 8].startsWith('## spider-teardown '));
+  assert.ok(headings[contributionIndex - 9].startsWith('## smart-traffic-intersection '));
+  assert.ok(headings[contributionIndex - 10].startsWith('## largo-piano '));
+  assert.ok(headings[contributionIndex - 11].startsWith('## steel-tide-shipyard '));
   const moltenStart = readme.indexOf('## molten-salt-tower ');
   const moltenOverview = readme.slice(moltenStart, readme.indexOf('## 新增项目', moltenStart));
   assert.ok(moltenOverview.includes('[在线预览](https://fanhuayishiy.github.io/ai-demo/molten-salt-tower/)'));

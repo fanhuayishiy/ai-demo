@@ -56,6 +56,7 @@ AI 辅助生成的交互式前端作品合集，包含三维场景、数字孪�
 | <a href="./assets/project-thumbnails/molten-salt-tower.webp"><img src="./assets/project-thumbnails/molten-salt-tower.webp" width="160" height="90" alt="熔盐塔式发电站可视化"></a> | molten-salt-tower | 124 面定日镜实时追踪模拟太阳，沿三维光路把光反射至塔顶吸热器。 | [在线](https://fanhuayishiy.github.io/ai-demo/molten-salt-tower/) | [README](./molten-salt-tower/README.md) |
 | <a href="./assets/project-thumbnails/offroad-expedition-4x4.webp"><img src="./assets/project-thumbnails/offroad-expedition-4x4.webp" width="160" height="90" alt="荒野行者 · 复古四驱探险车"></a> | offroad-expedition-4x4 | 复古越野 4×4 三维探险车，含可开合车门、风化车漆、车顶装备与可查看的底盘。 | [在线](https://fanhuayishiy.github.io/ai-demo/offroad-expedition-4x4/) | [README](./offroad-expedition-4x4/README.md) |
 | <a href="./assets/project-thumbnails/agras-t50-teardown.webp"><img src="./assets/project-thumbnails/agras-t50-teardown.webp" width="160" height="90" alt="DJI AGRAS T50 · 农业无人机 3D 拆解与飞行"></a> | agras-t50-teardown | 交互拆解大疆 T50 的八组部件，观看从起飞、前进、双喷头撒药到降落的一程飞行。 | [在线](https://fanhuayishiy.github.io/ai-demo/agras-t50-teardown/dist/) | [README](./agras-t50-teardown/README.md) |
+| <a href="./assets/project-thumbnails/chongqing-8d-rain-box.webp"><img src="./assets/project-thumbnails/chongqing-8d-rain-box.webp" width="160" height="90" alt="重庆 8D 山城雨夜微缩沙盘 · CHONGQING 8D RAIN BOX"></a> | chongqing-8d-rain-box | 1:150 重庆 8D 三层立体剖面微缩沙盘：李子坝单轨穿楼、长江索道、巴渝吊脚楼老街与地下防空洞火锅（Gemini 4 Neon 生成）。 | [在线](https://fanhuayishiy.github.io/ai-demo/chongqing-8d-rain-box/dist/) | [README](./chongqing-8d-rain-box/README.md) |
 
 ## 本地运行
 
@@ -274,6 +275,12 @@ LARGO 是一个可旋转视角的 88 键三角钢琴练习室，提供《小星�
 大疆 AGRAS T50 农业无人机的 3D 展台，支持装配、爆炸拆解、透视和八组部件特写。飞行时间线可回看起飞、前进、双喷头撒药与落地，单文件可离线打开。
 
 [在线预览](https://fanhuayishiy.github.io/ai-demo/agras-t50-teardown/dist/) · [README（含主生成提示原文）](./agras-t50-teardown/README.md)
+
+## chongqing-8d-rain-box — 重庆 8D 山城雨夜微缩沙盘 · CHONGQING 8D RAIN BOX
+
+1:150 博物馆级重庆 8D 山城立体剖面微缩沙盘，涵盖李子坝单轨穿楼与长江索道、巴渝吊脚楼老街与黄桷树梯坎，以及地下穿山地铁和 1969 防空洞老火锅；支持雨夜/晴午/初雪三气候、三层剖面拆解与程序化山城原声。由 Gemini 4 Neon (High) 程序化生成，可离线运行。
+
+[在线预览](https://fanhuayishiy.github.io/ai-demo/chongqing-8d-rain-box/dist/) · [README（含主生成提示原文）](./chongqing-8d-rain-box/README.md)
 
 ---
 
